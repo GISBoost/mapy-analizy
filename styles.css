@@ -1,0 +1,71 @@
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #e3e8ee;
+  --ink: #1b2430;
+  --ink-muted: #5c6b7a;
+  --border: #d2d9e1;
+  --chrome: #33465c;
+  --chrome-ink: #f3f6fa;
+  --accent: #2c5c94;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
+    --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
+    --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
+  --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
+  --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+header { background: var(--chrome); color: var(--chrome-ink); padding: 40px 28px 32px; }
+header .wrap { max-width: 900px; margin: 0 auto; }
+header h1 {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.9rem;
+  margin: 0 0 10px; text-wrap: balance;
+}
+header p { margin: 0; color: #b9c4d1; font-size: 0.94rem; max-width: 62ch; line-height: 1.55; }
+header a { color: #cfe0f0; }
+
+main.wrap { max-width: 900px; margin: 0 auto; padding: 32px 28px 48px; }
+
+.eyebrow {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-muted); margin: 0 0 16px;
+}
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+
+.card {
+  display: block; text-decoration: none; color: inherit; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card h2 {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.08rem;
+  margin: 0 0 8px; color: var(--ink);
+}
+.card p { margin: 0 0 14px; font-size: 0.86rem; color: var(--ink-muted); line-height: 1.5; }
+.card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.card .tag {
+  font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; padding: 2px 7px;
+  border-radius: 4px; background: var(--surface-2); color: var(--ink-muted);
+}
+
+footer.note {
+  max-width: 900px; margin: 0 auto; padding: 20px 28px 40px; font-size: 0.78rem;
+  color: var(--ink-muted); border-top: 1px solid var(--border);
+}
+footer.note a { color: var(--ink-muted); }

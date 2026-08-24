@@ -1,0 +1,120 @@
+{
+  "order": [
+    "gdansk",
+    "krakow",
+    "lodz",
+    "poznan",
+    "szczecin",
+    "warszawa"
+  ],
+  "cities": {
+    "lodz": {
+      "label": "Łódź",
+      "names": {
+        "politechnika": "Politechnika Łódzka",
+        "uniwersytet": "Uniwersytet Łódzki",
+        "medyczny": "Uniwersytet Medyczny"
+      },
+      "bounds": [
+        [
+          51.709562,
+          19.389414
+        ],
+        [
+          51.826496,
+          19.536271
+        ]
+      ]
+    },
+    "warszawa": {
+      "label": "Warszawa",
+      "names": {
+        "politechnika": "Politechnika Warszawska",
+        "uniwersytet": "Uniwersytet Warszawski",
+        "medyczny": "Warszawski Uniwersytet Medyczny"
+      },
+      "bounds": [
+        [
+          52.1382,
+          20.89147
+        ],
+        [
+          52.299846,
+          21.127929
+        ]
+      ]
+    },
+    "krakow": {
+      "label": "Kraków",
+      "names": {
+        "politechnika": "Politechnika Krakowska",
+        "uniwersytet": "Uniwersytet Jagielloński",
+        "medyczny": "Collegium Medicum UJ"
+      },
+      "bounds": [
+        [
+          50.000109,
+          19.816957
+        ],
+        [
+          50.105695,
+          20.055649
+        ]
+      ]
+    },
+    "gdansk": {
+      "label": "Gdańsk",
+      "names": {
+        "politechnika": "Politechnika Gdańska",
+        "uniwersytet": "Uniwersytet Gdański",
+        "medyczny": "Gdański Uniwersytet Medyczny"
+      },
+      "bounds": [
+        [
+          54.315269,
+          18.542636
+        ],
+        [
+          54.425256,
+          18.818735
+        ]
+      ]
+    },
+    "poznan": {
+      "label": "Poznań",
+      "names": {
+        "politechnika": "Politechnika Poznańska",
+        "uniwersytet": "Uniwersytet im. Adama Mickiewicza",
+        "medyczny": "Uniwersytet Medyczny im. K. Marcinkowskiego"
+      },
+      "bounds": [
+        [
+          52.366395,
+          16.828881
+        ],
+        [
+          52.479703,
+          17.010384
+        ]
+      ]
+    },
+    "szczecin": {
+      "label": "Szczecin",
+      "names": {
+        "politechnika": "Zachodniopomorski Uniwersytet Technologiczny",
+        "uniwersytet": "Uniwersytet Szczeciński",
+        "medyczny": "Pomorski Uniwersytet Medyczny"
+      },
+      "bounds": [
+        [
+          53.365289,
+          14.457305
+        ],
+        [
+          53.481992,
+          14.642447
+        ]
+      ]
+    }
+  }
+}

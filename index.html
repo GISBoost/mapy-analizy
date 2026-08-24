@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Analizy mapowe — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interaktywne mapy z analiz przestrzennych GISBoost — dostępność transportowa i inne tematy, jedna analiza = jeden folder.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Analizy mapowe</h1>
+    <p>
+      Interaktywne mapy z analiz przestrzennych <a href="https://gisboost.github.io/">GISBoost</a> —
+      dostępność transportowa i pokrewne tematy. Każda analiza to osobny folder tego repo
+      i osobna podstrona; kod i metoda liczenia danych są opisane w README każdego folderu.
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="eyebrow">Dostępne analizy</p>
+  <div class="cards">
+    <a class="card" href="uczelnie-dostepnosc/">
+      <h2>Dojazd na uczelnię</h2>
+      <p>Dostępność do 3 uczelni w 6 polskich miastach w 30 min (spacer + transit), siatka heksagonalna 500 m — dominująca uczelnia, liczba dostępnych, nakładanie stref.</p>
+      <div class="tags"><span class="tag">r5r</span><span class="tag">OSM</span><span class="tag">6 miast</span></div>
+    </a>
+  </div>
+</main>
+
+<footer class="note">
+  Kod: <a href="https://github.com/GISBoost/mapy-analizy">github.com/GISBoost/mapy-analizy</a> (MIT)
+  · dane pochodne z OpenStreetMap i GTFS poszczególnych operatorów
+</footer>
+
+</body>
+</html>
