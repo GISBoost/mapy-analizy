@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Jak długo czekać na przystanku — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Mediana odstępu między kolejnymi przyjazdami na przystanku, siatka heksagonalna 500 m, 4 polskie miasta — dane GTFS-RT, GISBoost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1>Jak długo trzeba czekać na przystanku?</h1>
+  <p>Mediana odstępu między kolejnymi przyjazdami dowolnej linii, dla każdego przystanku z osobna, uśredniona do siatki heksagonalnej 500 m. Zakładka = miasto, okno czasowe niżej przelicza medianę tylko z obserwacji w tym przedziale. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
+  <div class="citytabs" id="citytabs"></div>
+</header>
+
+<div class="app">
+  <aside>
+    <div>
+      <p class="eyebrow">Okno czasowe</p>
+      <div class="windowbar" id="windowbar"></div>
+    </div>
+
+    <div>
+      <p class="eyebrow">Legenda</p>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div>
+      <p class="eyebrow">Przezroczystość warstwy</p>
+      <div class="opacity-row">
+        <input type="range" id="opacity" min="0.15" max="0.95" step="0.05" value="0.75">
+        <span id="opacity-val">75%</span>
+      </div>
+    </div>
+
+    <div class="statline" id="statline"></div>
+
+    <div class="sidenote">
+      Ta sama analiza jako statyczny plakat, z drugim panelem pokazującym wahania w ciągu dnia:
+      <a href="https://github.com/GISBoost/easy-OTP/blob/main/tools/transit_charts/assets/examples/J39_I37_four_cities_2026-08-13.png" target="_blank" rel="noopener">J39/I37 na GitHubie</a>.
+    </div>
+  </aside>
+
+  <main>
+    <div id="map"></div>
+    <div class="map-loading" id="maploading">wczytywanie danych…</div>
+  </main>
+</div>
+
+<footer class="note">
+  <a href="../">&larr; wszystkie analizy</a>
+  · Dane i kod: <a href="https://github.com/GISBoost/mapy-analizy/tree/main/odstepy-przystankow">github.com/GISBoost/mapy-analizy</a>
+  · metoda i dane źródłowe: <a href="https://github.com/GISBoost/easy-OTP/tree/main/tools/transit_charts">easy-OTP/tools/transit_charts</a> (I37)
+  · podkład: <span class="badge">© OpenStreetMap contributors</span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>

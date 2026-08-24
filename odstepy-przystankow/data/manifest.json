@@ -1,0 +1,184 @@
+{
+  "order": [
+    "warszawa",
+    "krakow",
+    "lodz",
+    "gdansk"
+  ],
+  "windows": [
+    "all",
+    "h06_10",
+    "h10_14",
+    "h14_18",
+    "h18_22"
+  ],
+  "window_labels": {
+    "all": "Cały dzień (6-22)",
+    "h06_10": "6:00-10:00",
+    "h10_14": "10:00-14:00",
+    "h14_18": "14:00-18:00",
+    "h18_22": "18:00-22:00"
+  },
+  "cities": {
+    "warszawa": {
+      "label": "Warszawa",
+      "bounds": [
+        [
+          52.09572324536746,
+          20.849449096416382
+        ],
+        [
+          52.37080788634442,
+          21.2747360047213
+        ]
+      ],
+      "windows": {
+        "all": {
+          "count": 4151,
+          "hex_count": 1965,
+          "median_min": 9.8
+        },
+        "h06_10": {
+          "count": 4108,
+          "hex_count": 1953,
+          "median_min": 9.0
+        },
+        "h10_14": {
+          "count": 4027,
+          "hex_count": 1933,
+          "median_min": 10.6
+        },
+        "h14_18": {
+          "count": 4081,
+          "hex_count": 1949,
+          "median_min": 8.8
+        },
+        "h18_22": {
+          "count": 4050,
+          "hex_count": 1934,
+          "median_min": 10.0
+        }
+      }
+    },
+    "krakow": {
+      "label": "Kraków",
+      "bounds": [
+        [
+          49.96544595180969,
+          19.78944909641638
+        ],
+        [
+          50.12840928857027,
+          20.218625824004576
+        ]
+      ],
+      "windows": {
+        "all": {
+          "count": 1842,
+          "hex_count": 966,
+          "median_min": 16.0
+        },
+        "h06_10": {
+          "count": 330,
+          "hex_count": 183,
+          "median_min": 4.3
+        },
+        "h10_14": {
+          "count": 1483,
+          "hex_count": 807,
+          "median_min": 15.2
+        },
+        "h14_18": {
+          "count": 1666,
+          "hex_count": 882,
+          "median_min": 12.6
+        },
+        "h18_22": {
+          "count": 1812,
+          "hex_count": 957,
+          "median_min": 16.7
+        }
+      }
+    },
+    "lodz": {
+      "label": "Łódź",
+      "bounds": [
+        [
+          51.68380390846064,
+          19.31944909641638
+        ],
+        [
+          51.8616792880859,
+          19.643600703356107
+        ]
+      ],
+      "windows": {
+        "all": {
+          "count": 1832,
+          "hex_count": 879,
+          "median_min": 15.4
+        },
+        "h06_10": {
+          "count": 1761,
+          "hex_count": 846,
+          "median_min": 13.5
+        },
+        "h10_14": {
+          "count": 1747,
+          "hex_count": 840,
+          "median_min": 14.0
+        },
+        "h14_18": {
+          "count": 1765,
+          "hex_count": 844,
+          "median_min": 13.6
+        },
+        "h18_22": {
+          "count": 1745,
+          "hex_count": 839,
+          "median_min": 14.6
+        }
+      }
+    },
+    "gdansk": {
+      "label": "Gdańsk",
+      "bounds": [
+        [
+          54.27346367892796,
+          18.425559277133104
+        ],
+        [
+          54.44881081072757,
+          18.951981486803216
+        ]
+      ],
+      "windows": {
+        "all": {
+          "count": 1270,
+          "hex_count": 684,
+          "median_min": 14.0
+        },
+        "h06_10": {
+          "count": 1225,
+          "hex_count": 664,
+          "median_min": 11.3
+        },
+        "h10_14": {
+          "count": 1208,
+          "hex_count": 653,
+          "median_min": 14.4
+        },
+        "h14_18": {
+          "count": 1229,
+          "hex_count": 667,
+          "median_min": 11.5
+        },
+        "h18_22": {
+          "count": 1171,
+          "hex_count": 633,
+          "median_min": 15.0
+        }
+      }
+    }
+  }
+}
