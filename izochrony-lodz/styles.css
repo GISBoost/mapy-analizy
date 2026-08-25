@@ -1,0 +1,144 @@
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #e3e8ee;
+  --ink: #1b2430;
+  --ink-muted: #5c6b7a;
+  --border: #d2d9e1;
+  --chrome: #33465c;
+  --chrome-ink: #f3f6fa;
+  --accent: #2c5c94;
+  /* Cutoff bands + pin + boundary sit ON the OSM tile layer, which is always
+     light regardless of UI theme -- so unlike the chrome/surface tokens
+     below, these are deliberately NOT overridden per color-scheme. One
+     definition, always applied. Sequential: one hue (blue-cyan), light ->
+     dark, 45min = widest/most permissive (bottom) -> 15min = narrowest/most
+     useful (top). Checked against a light surface with dataviz's
+     validate_palette.js: CVD/normal-vision separation passes (dE 21.7+
+     between adjacent steps); the lightest step alone still reads under 3:1
+     against a near-white surface -- inherent to "pastel", accepted as the
+     45min band is meant to read as background context, not a focal color;
+     nudge --cut-45 darker here if it washes out on your basemap. */
+  --cut-45: #6cc3ea;
+  --cut-30: #1f7cb8;
+  --cut-15: #0a2e52;
+  --pin: #c0392b;
+  --boundary: #232323;
+  --shadow: 0 8px 24px rgba(27, 36, 48, 0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
+    --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
+    --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+    --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
+  --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
+  --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+header { background: var(--chrome); color: var(--chrome-ink); padding: 16px 28px 14px; flex: none; }
+header h1 {
+  font-family: "Archivo", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+  text-wrap: balance;
+}
+header p { margin: 0; color: #b9c4d1; font-size: 0.86rem; max-width: 68ch; }
+header a { color: #cfe0f0; }
+
+.app { flex: 1; display: grid; grid-template-columns: 300px 1fr; min-height: 0; }
+
+aside {
+  background: var(--surface); border-right: 1px solid var(--border); padding: 18px;
+  overflow-y: auto; display: flex; flex-direction: column; gap: 18px;
+}
+
+.eyebrow {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-muted); margin: 0 0 8px;
+}
+
+.variantbar, .cutoffs { display: flex; flex-wrap: wrap; gap: 6px; }
+.variantbar button {
+  all: unset; cursor: pointer; font-family: "IBM Plex Sans", sans-serif; font-weight: 600;
+  font-size: 0.78rem; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border);
+  color: var(--ink); background: var(--surface-2);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.variantbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.variantbar button.active { background: var(--chrome); color: var(--chrome-ink); border-color: var(--chrome); }
+
+.cutoff-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+.cutoff-row input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; flex: none; }
+.cutoff-row .swatch { width: 15px; height: 15px; border-radius: 3px; flex: none; border: 1px solid rgba(0, 0, 0, 0.15); }
+
+.timerow { display: flex; align-items: center; gap: 10px; }
+.timerow input[type="range"] { flex: 1; accent-color: var(--accent); }
+.timerow span {
+  font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; color: var(--ink);
+  width: 4.2ch; text-align: right; font-variant-numeric: tabular-nums;
+}
+
+.statline {
+  font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; color: var(--ink-muted);
+  background: var(--surface-2); border-radius: 8px; padding: 10px 12px; line-height: 1.6;
+}
+.statline b { color: var(--ink); font-weight: 500; }
+.statline button {
+  all: unset; cursor: pointer; color: var(--accent); font-family: inherit; font-size: inherit;
+  text-decoration: underline;
+}
+
+.sidenote { font-size: 0.78rem; color: var(--ink-muted); line-height: 1.5; }
+.sidenote a { color: var(--accent); }
+
+main { position: relative; min-width: 0; min-height: 0; }
+#map { width: 100%; height: 100%; background: var(--surface-2); cursor: crosshair; }
+
+.leaflet-tooltip {
+  background: var(--chrome);
+  color: var(--chrome-ink);
+  border: none;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.8rem;
+  padding: 10px 12px;
+}
+.leaflet-tooltip-top:before { border-top-color: var(--chrome); }
+.leaflet-control-attribution { background: rgba(255, 255, 255, 0.75); font-size: 0.68rem; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-control-attribution { background: rgba(23, 28, 36, 0.75); color: var(--ink-muted); }
+}
+:root[data-theme="dark"] .leaflet-control-attribution { background: rgba(23, 28, 36, 0.75); color: var(--ink-muted); }
+
+footer.note {
+  flex: none; padding: 8px 28px; font-size: 0.72rem; color: var(--ink-muted);
+  background: var(--surface); border-top: 1px solid var(--border);
+}
+footer.note a { color: var(--ink-muted); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+@media (max-width: 720px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  aside { border-right: none; border-bottom: 1px solid var(--border); max-height: 45vh; }
+}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dokąd dojadę? — Łódź — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interaktywna izochrona dojazdu transportem publicznym w Łodzi — najedź kursorem na dowolne miejsce, przypnij pinezkę kliknięciem, przesuwaj porę dnia suwakiem. Rozkład jazdy vs dane GTFS-RT, GISBoost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/pbf@3.2.1/dist/pbf.js"></script>
+<script src="https://unpkg.com/geobuf@3.0.2/dist/geobuf.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>Dokąd dojadę transportem publicznym?</h1>
+  <p>Najedź kursorem na mapę Łodzi, aby zobaczyć zasięg dojazdu z tego miejsca. Kliknij, żeby przypiąć punkt, i przesuwaj porę dnia — zasięg zmienia się razem z częstotliwością kursowania. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
+</header>
+
+<div class="app">
+  <aside>
+    <div>
+      <p class="eyebrow">Dane</p>
+      <div class="variantbar" id="variantbar"></div>
+    </div>
+
+    <div>
+      <p class="eyebrow">Pora dnia</p>
+      <div class="timerow">
+        <input type="range" id="hourslider" min="0" max="16" step="1" value="6">
+        <span id="hourval">12:00</span>
+      </div>
+    </div>
+
+    <div>
+      <p class="eyebrow">Czas dojazdu</p>
+      <div class="cutoffs" id="cutoffs"></div>
+    </div>
+
+    <div class="statline" id="statline">Najedź na mapę, żeby zobaczyć zasięg dojazdu z tego miejsca.</div>
+
+    <div class="sidenote">
+      Metoda: <code>r5r::isochrone()</code>, siatka origins co 500 m, dane GTFS z 21.08.2026 —
+      rozkład jazdy vs zrealizowany przejazd (mediana obserwacji, GTFS-RT).
+      Kod i metodologia:
+      <a href="https://github.com/GISBoost/easy-OTP/tree/main/tools/isochrones_lodz" target="_blank" rel="noopener">easy-OTP/tools/isochrones_lodz</a>.
+    </div>
+  </aside>
+
+  <main>
+    <div id="map"></div>
+  </main>
+</div>
+
+<footer class="note">
+  <a href="../">&larr; wszystkie analizy</a>
+  · Dane i kod: <a href="https://github.com/GISBoost/mapy-analizy/tree/main/izochrony-lodz">github.com/GISBoost/mapy-analizy</a>
+  · podkład: <span class="badge">© OpenStreetMap contributors</span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>
