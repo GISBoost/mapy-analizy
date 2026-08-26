@@ -29,6 +29,17 @@
   // benefit -- see tools/isochrones_lodz/README.md decision log.
   const NEIGHBOR_PREFETCH_N = 6;
 
+  // Every origin in the grid has complete data (checked directly: all 1479
+  // Lodz origin files carry exactly 17 hours x 3 cutoffs, zero gaps) -- so
+  // "looks stuck" near the city edge isn't missing data, it's hovering
+  // *outside* the analyzed grid entirely, where nearestOrigins() still
+  // returns the closest origin no matter how far away it actually is,
+  // silently rendering an increasingly-irrelevant isochrone. Past this
+  // distance (roughly one hex-cell radius past a 500m-spacing grid, well
+  // clear of normal edge-of-hex hovering) treat it as no coverage instead.
+  const MAX_HOVER_DIST_M = 450;
+  const MAX_HOVER_DIST_DEG_SQ = (MAX_HOVER_DIST_M / 111320) ** 2;
+
   const citytabsEl = document.getElementById("citytabs");
   const variantbarEl = document.getElementById("variantbar");
   const cutoffsEl = document.getElementById("cutoffs");
@@ -77,6 +88,7 @@
   let pinnedOriginId = null;
   let pinMarker = null;
   let lastMoveTs = 0;
+  let outsideCoverage = false; // hovering farther than MAX_HOVER_DIST_M from any origin
 
   // city -> { manifest: Promise, boundary: Promise, origin: { variant: { id: Promise<FeatureCollection> } } }
   const cache = {};
@@ -116,21 +128,22 @@
     // Flat-plane approx is fine at city scale (~30km across). Sorting the
     // full origin list (up to ~2500 points for the largest city) per call is
     // still sub-millisecond and only runs once per throttled/settled hover
-    // tick, not per animation frame.
+    // tick, not per animation frame. Returns {origin, distSq} (degrees^2) so
+    // callers can tell a nearby origin from a far one, not just find one.
     const lat0 = latlng.lat, lng0 = latlng.lng;
     const cosLat = Math.cos((lat0 * Math.PI) / 180);
     const scored = cityManifest.origins.map((o) => {
       const dLat = o.lat - lat0;
       const dLng = (o.lon - lng0) * cosLat;
-      return [dLat * dLat + dLng * dLng, o];
+      return { origin: o, distSq: dLat * dLat + dLng * dLng };
     });
-    scored.sort((a, b) => a[0] - b[0]);
-    return scored.slice(0, n).map((s) => s[1]);
+    scored.sort((a, b) => a.distSq - b.distSq);
+    return scored.slice(0, n);
   }
 
   function prefetchNeighbors(origin) {
     const neighbors = nearestOrigins({ lat: origin.lat, lng: origin.lon }, NEIGHBOR_PREFETCH_N + 1);
-    for (const n of neighbors) {
+    for (const { origin: n } of neighbors) {
       if (n.id !== origin.id) fetchOrigin(currentCity, currentVariant, n.id);
     }
   }
@@ -161,6 +174,10 @@
   }
 
   function updateStat() {
+    if (outsideCoverage) {
+      statlineEl.innerHTML = t("statOutsideArea");
+      return;
+    }
     if (!displayOriginId) {
       statlineEl.innerHTML = t("statHint");
       return;
@@ -175,6 +192,7 @@
   }
 
   function placePin(origin) {
+    outsideCoverage = false; // onMapClick already checked -- this origin is in range
     pinnedOriginId = origin.id;
     displayOriginId = origin.id;
     if (pinMarker) map.removeLayer(pinMarker);
@@ -195,8 +213,19 @@
     const now = Date.now();
     if (now - lastMoveTs < MOVE_THROTTLE_MS) return;
     lastMoveTs = now;
-    const [nearest] = nearestOrigins(e.latlng, 1);
-    if (!nearest || nearest.id === displayOriginId) return;
+    const [{ origin: nearest, distSq }] = nearestOrigins(e.latlng, 1);
+
+    if (distSq > MAX_HOVER_DIST_DEG_SQ) {
+      if (outsideCoverage) return; // already showing "no coverage", nothing changed
+      outsideCoverage = true;
+      displayOriginId = null;
+      for (const c of CUTOFFS) isoLayers[c.min].clearLayers();
+      updateStat();
+      return;
+    }
+    outsideCoverage = false;
+
+    if (nearest.id === displayOriginId) return;
     displayOriginId = nearest.id;
     renderCurrent();
     prefetchNeighbors(nearest);
@@ -204,8 +233,9 @@
 
   function onMapClick(e) {
     if (!cityManifest) return;
-    const [nearest] = nearestOrigins(e.latlng, 1);
-    if (nearest) placePin(nearest);
+    const [{ origin: nearest, distSq }] = nearestOrigins(e.latlng, 1);
+    if (distSq > MAX_HOVER_DIST_DEG_SQ) return; // nothing to pin outside the analyzed area
+    placePin(nearest);
   }
 
   function buildCityTabs() {
@@ -284,6 +314,7 @@
     cityManifest = cm;
     unpin();
     displayOriginId = null;
+    outsideCoverage = false;
 
     hourSliderEl.max = String(cityManifest.hours.length - 1);
     hourIndex = Math.min(hourIndex, cityManifest.hours.length - 1);
