@@ -1,5 +1,10 @@
 {
   "cities": [
-    { "id": "lodz", "label": "Łódź" }
+    { "id": "lodz", "label": "Łódź" },
+    { "id": "warszawa", "label": "Warszawa" },
+    { "id": "krakow", "label": "Kraków" },
+    { "id": "gdansk", "label": "Gdańsk" },
+    { "id": "poznan", "label": "Poznań" },
+    { "id": "szczecin", "label": "Szczecin" }
   ]
 }
