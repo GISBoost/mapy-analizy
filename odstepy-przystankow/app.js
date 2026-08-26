@@ -2,13 +2,14 @@
 (function () {
   "use strict";
 
-  // Same 5 classes/colours/labels as tools/transit_charts/styles/stop_headway_hex.qml (I37).
+  // Same 5 classes/colours as tools/transit_charts/styles/stop_headway_hex.qml (I37).
+  // Labels come from i18n.js (t("class1".."class5")), not hardcoded here.
   const CLASSES = [
-    { max: 6, css: "--hw-1", label: "0-6 min - odstęp na tyle krótki, że rozkład jest zbędny" },
-    { max: 12, css: "--hw-2", label: "6-12 min - nadal można przyjść bez planowania" },
-    { max: 18, css: "--hw-3", label: "12-18 min - warto zerknąć w rozkład przed wyjściem" },
-    { max: 30, css: "--hw-4", label: "18-30 min - podróż wymaga zaplanowania" },
-    { max: Infinity, css: "--hw-5", label: "30+ min - na granicy realnej dostępności transportu" },
+    { max: 6, css: "--hw-1", key: "class1" },
+    { max: 12, css: "--hw-2", key: "class2" },
+    { max: 18, css: "--hw-3", key: "class3" },
+    { max: 30, css: "--hw-4", key: "class4" },
+    { max: Infinity, css: "--hw-5", key: "class5" },
   ];
 
   // window key -> hex filename suffix, matches tools/transit_charts/export_odstepy_przystankow.py WINDOWS.
@@ -45,9 +46,9 @@
 
   function hexTooltip(p) {
     return (
-      '<div class="tt-title">Heksagon 500 m</div>' +
-      '<div class="tt-row"><span>mediana odstępu</span><b>' + p.mean_min.toFixed(1) + " min</b></div>" +
-      '<div class="tt-row"><span>przystanki w heksie</span><b>' + p.count + "</b></div>"
+      '<div class="tt-title">' + t("hexTooltipTitle") + "</div>" +
+      '<div class="tt-row"><span>' + t("hexTooltipMedian") + "</span><b>" + p.mean_min.toFixed(1) + " min</b></div>" +
+      '<div class="tt-row"><span>' + t("hexTooltipCount") + "</span><b>" + p.count + "</b></div>"
     );
   }
 
@@ -80,7 +81,7 @@
     CLASSES.forEach((cls) => {
       const div = document.createElement("div");
       div.className = "legend-row";
-      div.innerHTML = '<span class="swatch" style="background:var(' + cls.css + ')"></span>' + cls.label;
+      div.innerHTML = '<span class="swatch" style="background:var(' + cls.css + ')"></span>' + t(cls.key);
       legendEl.appendChild(div);
     });
   }
@@ -88,12 +89,14 @@
   function updateStat() {
     const s = manifest.cities[currentCity].windows[currentWindow];
     if (!s.count) {
-      statlineEl.innerHTML = "brak wystarczających danych w tym oknie czasowym";
+      statlineEl.innerHTML = t("statLineEmpty");
       return;
     }
-    statlineEl.innerHTML =
-      "<b>" + s.count.toLocaleString("pl-PL") + "</b> przystanków w <b>" + s.hex_count.toLocaleString("pl-PL") +
-      "</b> heksagonach (500 m) &middot; mediana ważona odstępu <b>" + s.median_min.toLocaleString("pl-PL") + " min</b>";
+    statlineEl.innerHTML = t("statLineHtml", {
+      count: s.count.toLocaleString(dtLocale()),
+      hexCount: s.hex_count.toLocaleString(dtLocale()),
+      median: s.median_min.toLocaleString(dtLocale()),
+    });
   }
 
   function render() {
@@ -174,7 +177,7 @@
     windowbarEl.innerHTML = "";
     manifest.windows.forEach((key) => {
       const btn = document.createElement("button");
-      btn.textContent = manifest.window_labels[key];
+      btn.textContent = t("window_" + key);
       btn.dataset.window = key;
       if (key === currentWindow) btn.classList.add("active");
       btn.addEventListener("click", () => {
@@ -194,6 +197,16 @@
   opacityVal.textContent = Math.round(opacity * 100) + "%";
 
   renderLegend();
+
+  // Rebuild everything language-dependent: legend text, window-bar labels,
+  // and the hex/boundary layers (tooltips are baked in at build time via
+  // onEachFeature, so they need a rebuild too -- loadView() re-fetches from
+  // its own cache, so this is cheap after the first load).
+  setLangChangeHandler(() => {
+    renderLegend();
+    buildWindowbar();
+    if (currentCity) loadView(currentCity, currentWindow);
+  });
 
   fetch("data/manifest.json")
     .then((r) => r.json())

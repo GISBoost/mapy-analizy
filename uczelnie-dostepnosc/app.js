@@ -44,12 +44,12 @@
 
   function hexTooltip(p, names) {
     return (
-      '<div class="tt-title">Heksagon #' + p.hex_id + "</div>" +
-      '<div class="tt-row"><span>studenci 20-29</span><b>' + Math.round(p.pop_20_29) + "</b></div>" +
+      '<div class="tt-title">' + t("tooltipHexTitle", { id: p.hex_id }) + "</div>" +
+      '<div class="tt-row"><span>' + t("tooltipStudents") + "</span><b>" + Math.round(p.pop_20_29) + "</b></div>" +
       '<div class="tt-row"><span>' + names.politechnika + "</span><b>" + p.politechnika_30min + "</b></div>" +
       '<div class="tt-row"><span>' + names.uniwersytet + "</span><b>" + p.uniwersytet_30min + "</b></div>" +
       '<div class="tt-row"><span>' + names.medyczny + "</span><b>" + p.medyczny_30min + "</b></div>" +
-      '<div class="tt-row"><span>dominująca</span><b>' + p.dominant_label + "</b></div>"
+      '<div class="tt-row"><span>' + t("tooltipDominant") + "</span><b>" + p.dominant_label + "</b></div>"
     );
   }
 
@@ -114,18 +114,18 @@
         { color: "var(--pl)", label: names.politechnika },
         { color: "var(--ul)", label: names.uniwersytet },
         { color: "var(--um)", label: names.medyczny },
-        { color: "var(--none)", label: "brak dostępu (30 min)" },
+        { color: "var(--none)", label: t("legendNoAccess") },
       ],
       count: [
-        { color: "var(--seq-1)", label: "1 uczelnia w zasięgu" },
-        { color: "var(--seq-2)", label: "2 uczelnie w zasięgu" },
-        { color: "var(--seq-3)", label: "wszystkie 3 uczelnie" },
+        { color: "var(--seq-1)", label: t("legendCount1") },
+        { color: "var(--seq-2)", label: t("legendCount2") },
+        { color: "var(--seq-3)", label: t("legendCount3") },
       ],
       overlap: [
         { color: "var(--pl)", label: names.politechnika },
         { color: "var(--ul)", label: names.uniwersytet },
         { color: "var(--um)", label: names.medyczny },
-        { color: "var(--ink-muted)", label: "nakładające się warstwy = mieszanka kolorów" },
+        { color: "var(--ink-muted)", label: t("legendOverlapMix") },
       ],
     };
     legendEl.innerHTML = "";
@@ -170,9 +170,11 @@
     const feats = cache[currentCity].hex.features;
     const withThree = feats.filter((f) => uniCount(f.properties) === 3).length;
     const totalPop = feats.reduce((s, f) => s + (f.properties.pop_20_29 || 0), 0);
-    statlineEl.innerHTML =
-      "<b>" + feats.length + "</b> heksagonów z dostępem do &ge;1 uczelni · <b>" + withThree +
-      "</b> widzi wszystkie 3 · <b>" + Math.round(totalPop).toLocaleString("pl-PL") + "</b> studentów 20-29 w tych heksagonach";
+    statlineEl.innerHTML = t("statLineHtml", {
+      n: feats.length,
+      withThree: withThree,
+      pop: Math.round(totalPop).toLocaleString(dtLocale()),
+    });
   }
 
   function render(mode) {
@@ -251,6 +253,13 @@
     applyOpacity();
   });
   opacityVal.textContent = Math.round(opacity * 100) + "%";
+
+  // Rebuild everything language-dependent: legend, tooltips (baked in at
+  // layer-build time), stat line. loadCity() re-fetches from its own cache,
+  // so this is cheap after the first load.
+  setLangChangeHandler(() => {
+    if (currentCity) loadCity(currentCity);
+  });
 
   fetch("data/manifest.json")
     .then((r) => r.json())

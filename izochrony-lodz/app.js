@@ -1,19 +1,35 @@
-// Dokad dojade? -- interactive transit isochrone, Lodz pilot. Vanilla JS + Leaflet,
-// no build step (mirrors odstepy-przystankow / uczelnie-dostepnosc).
+// Dokad dojade? -- interactive transit isochrone, multi-city (Lodz live, more
+// cities land as their data is computed). Vanilla JS + Leaflet, no build step
+// (mirrors odstepy-przystankow / uczelnie-dostepnosc, including its city-tabs
+// pattern for buildCityTabs()/loadCity() below).
 (function () {
   "use strict";
 
   const CUTOFFS = [
-    { min: 45, css: "--cut-45", label: "do 45 min" },
-    { min: 30, css: "--cut-30", label: "do 30 min" },
-    { min: 15, css: "--cut-15", label: "do 15 min" },
+    { min: 45, css: "--cut-45", key: "cutoff45" },
+    { min: 30, css: "--cut-30", key: "cutoff30" },
+    { min: 15, css: "--cut-15", key: "cutoff15" },
   ]; // draw order: widest/lightest first (bottom), narrowest/darkest last (top)
+     // -- isoLayers below are created once in this order, so z-order is fixed
+     // at init and never needs re-establishing per render. Labels come from
+     // i18n.js (t(c.key)), not hardcoded here.
 
-  const VARIANTS = [
-    { key: "rt", label: "Zrealizowany przejazd (GTFS-RT)" },
-    { key: "static", label: "Rozkład jazdy" },
-  ];
+  const VARIANT_KEYS = { rt: "variantRt", static: "variantStatic" };
 
+  // A hover only fires a fetch at most this often -- without it, a fast mouse
+  // sweep across many 500m hexes fires a fetch per hex per mousemove tick,
+  // which is invisible on localhost but a real, jank-causing round-trip on
+  // GitHub Pages (measured: production felt "muli" on hover, this plus the
+  // neighbor-prefetch below is the fix).
+  const MOVE_THROTTLE_MS = 50;
+  // After a hover settles on an origin, warm its nearest neighbors in the
+  // background so continuing to hover nearby hits cache instead of the
+  // network. Bounded and cheap (~6 fetches), unlike the whole-city prefetch
+  // tried earlier and reverted for costing ~10.8s of CPU for no longer-needed
+  // benefit -- see tools/isochrones_lodz/README.md decision log.
+  const NEIGHBOR_PREFETCH_N = 6;
+
+  const citytabsEl = document.getElementById("citytabs");
   const variantbarEl = document.getElementById("variantbar");
   const cutoffsEl = document.getElementById("cutoffs");
   const hourSliderEl = document.getElementById("hourslider");
@@ -34,95 +50,126 @@
     maxZoom: 19,
   }).addTo(map);
 
-  let manifest = null;
-  let currentVariant = "rt";
+  // Persistent layers (created once, populated via clearLayers()+addData()
+  // per render instead of destroy+recreate) -- less per-hover allocation/GC,
+  // and boundary stays below the cutoff fills simply because it was added
+  // to the map first.
+  const boundaryLayer = L.geoJSON(null, {
+    interactive: false,
+    style: () => ({ color: cssVar("--boundary"), weight: 1.4, fill: false }),
+  }).addTo(map);
+
+  const isoLayers = {}; // cutoff_min -> persistent L.geoJSON layer
+  for (const c of CUTOFFS) {
+    isoLayers[c.min] = L.geoJSON(null, {
+      interactive: false, // let hover/click pass through to the map -- see onMapMouseMove/onMapClick
+      style: () => ({ color: "transparent", weight: 0, fillColor: cssVar(c.css), fillOpacity: 0.55 }),
+    }).addTo(map);
+  }
+
+  let topManifest = null;
+  let currentCity = null;
+  let cityManifest = null; // manifest of currentCity: {hours, cutoffs_min, variants, bounds, origins}
+  let currentVariant = null;
   let activeCutoffs = new Set([45, 30, 15]);
-  let hourIndex = 6; // index into manifest.hours (default ~ noon-ish start)
+  let hourIndex = 6; // index into cityManifest.hours
   let displayOriginId = null; // the origin currently drawn (hover or pin)
   let pinnedOriginId = null;
   let pinMarker = null;
+  let lastMoveTs = 0;
 
-  // variant -> originId -> Promise<FeatureCollection> (in-flight or resolved,
-  // same dedup pattern as odstepy-przystankow's fetchCityHex)
-  const cache = { rt: {}, static: {} };
-  const isoLayers = {}; // cutoff_min -> current L.geoJSON layer
+  // city -> { manifest: Promise, boundary: Promise, origin: { variant: { id: Promise<FeatureCollection> } } }
+  const cache = {};
 
-  function fetchOrigin(variant, originId) {
-    if (!cache[variant][originId]) {
+  function cityCache(city) {
+    if (!cache[city]) cache[city] = { manifest: null, boundary: null, origin: {} };
+    return cache[city];
+  }
+
+  function fetchCityManifest(city) {
+    const c = cityCache(city);
+    if (!c.manifest) c.manifest = fetch(`data/${city}/manifest.json`).then((r) => r.json());
+    return c.manifest;
+  }
+
+  function fetchCityBoundary(city) {
+    const c = cityCache(city);
+    if (!c.boundary) c.boundary = fetch(`data/${city}/boundary.geojson`).then((r) => r.json());
+    return c.boundary;
+  }
+
+  function fetchOrigin(city, variant, originId) {
+    const c = cityCache(city);
+    if (!c.origin[variant]) c.origin[variant] = {};
+    if (!c.origin[variant][originId]) {
       // geobuf binary, not raw GeoJSON -- ~1/5 the size on disk and still
       // ~2x smaller than gzipped GeoJSON would be (see tools/isochrones_lodz
       // README decision log). Decoded client-side via pbf.js + geobuf.js.
-      cache[variant][originId] = fetch(`data/${variant}/${originId}.pbf`)
+      c.origin[variant][originId] = fetch(`data/${city}/${variant}/${originId}.pbf`)
         .then((r) => r.arrayBuffer())
         .then((buf) => geobuf.decode(new Pbf(new Uint8Array(buf))));
     }
-    return cache[variant][originId];
+    return c.origin[variant][originId];
   }
 
-  function nearestOriginId(latlng) {
-    // Flat-plane approx is fine at city scale (~30km across); origins are
-    // 500m apart so brute force over ~1500 points is trivial per event.
+  function nearestOrigins(latlng, n) {
+    // Flat-plane approx is fine at city scale (~30km across). Sorting the
+    // full origin list (up to ~2500 points for the largest city) per call is
+    // still sub-millisecond and only runs once per throttled/settled hover
+    // tick, not per animation frame.
     const lat0 = latlng.lat, lng0 = latlng.lng;
     const cosLat = Math.cos((lat0 * Math.PI) / 180);
-    let best = null, bestD = Infinity;
-    for (const o of manifest.origins) {
+    const scored = cityManifest.origins.map((o) => {
       const dLat = o.lat - lat0;
       const dLng = (o.lon - lng0) * cosLat;
-      const d = dLat * dLat + dLng * dLng;
-      if (d < bestD) { bestD = d; best = o; }
-    }
-    return best;
+      return [dLat * dLat + dLng * dLng, o];
+    });
+    scored.sort((a, b) => a[0] - b[0]);
+    return scored.slice(0, n).map((s) => s[1]);
   }
 
-  function clearIsoLayers() {
-    Object.values(isoLayers).forEach((l) => map.removeLayer(l));
-    for (const k of Object.keys(isoLayers)) delete isoLayers[k];
+  function prefetchNeighbors(origin) {
+    const neighbors = nearestOrigins({ lat: origin.lat, lng: origin.lon }, NEIGHBOR_PREFETCH_N + 1);
+    for (const n of neighbors) {
+      if (n.id !== origin.id) fetchOrigin(currentCity, currentVariant, n.id);
+    }
   }
 
   async function renderCurrent() {
     if (!displayOriginId) return;
     const requestedOriginId = displayOriginId;
     const requestedVariant = currentVariant;
-    const hour = manifest.hours[hourIndex];
-    // No loading indicator here on purpose: the previous isochrone stays on
-    // screen (cleared only after the new data is ready, below) so a brief
-    // fetch for a not-yet-cached origin (~7ms decode + one small request,
-    // measured) never blanks or flashes the map.
-    const fc = await fetchOrigin(requestedVariant, requestedOriginId);
-    const features = fc.features.filter((f) => f.properties.hour === hour);
-    // superseded by a later hover/click/variant switch while this was in flight
-    if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant) return;
+    const requestedCity = currentCity;
+    const hour = cityManifest.hours[hourIndex];
+    // No loading indicator here on purpose: layers are only cleared below,
+    // after the new data is ready, so a brief fetch for a not-yet-cached
+    // origin never blanks or flashes the map -- the previous isochrone stays
+    // on screen throughout.
+    const fc = await fetchOrigin(requestedCity, requestedVariant, requestedOriginId);
+    // superseded by a later hover/click/variant/city switch while this was in flight
+    if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant || currentCity !== requestedCity) return;
 
-    clearIsoLayers();
-    // draw bottom-to-top: widest cutoff first
+    const features = fc.features.filter((f) => f.properties.hour === hour);
     for (const c of CUTOFFS) {
+      const layer = isoLayers[c.min];
+      layer.clearLayers();
       if (!activeCutoffs.has(c.min)) continue;
       const feats = features.filter((f) => f.properties.cutoff_min === c.min);
-      if (!feats.length) continue;
-      const layer = L.geoJSON({ type: "FeatureCollection", features: feats }, {
-        interactive: false, // let hover/click pass through to the map -- see onMapMouseMove/onMapClick
-        style: () => ({
-          color: "transparent", weight: 0,
-          fillColor: cssVar(c.css), fillOpacity: 0.55,
-        }),
-      });
-      layer.addTo(map);
-      isoLayers[c.min] = layer;
+      if (feats.length) layer.addData({ type: "FeatureCollection", features: feats });
     }
     updateStat();
   }
 
   function updateStat() {
     if (!displayOriginId) {
-      statlineEl.innerHTML = "Najedź na mapę, żeby zobaczyć zasięg dojazdu z tego miejsca.";
+      statlineEl.innerHTML = t("statHint");
       return;
     }
-    const hour = manifest.hours[hourIndex];
+    const hour = cityManifest.hours[hourIndex];
     const pinState = pinnedOriginId
-      ? '<button id="unpin-btn">odepnij pinezkę</button>'
-      : "kliknij, żeby przypiąć";
-    statlineEl.innerHTML =
-      `godz. <b>${String(hour).padStart(2, "0")}:00</b> &middot; ${pinState}`;
+      ? `<button id="unpin-btn">${t("statUnpinButton")}</button>`
+      : t("statClickToPin");
+    statlineEl.innerHTML = t("statHtml", { hour: String(hour).padStart(2, "0"), pinState });
     const btn = document.getElementById("unpin-btn");
     if (btn) btn.addEventListener("click", unpin);
   }
@@ -144,28 +191,59 @@
   }
 
   function onMapMouseMove(e) {
-    if (pinnedOriginId) return; // pin locks the display until unpinned
-    if (!manifest) return;
-    const nearest = nearestOriginId(e.latlng);
+    if (pinnedOriginId || !cityManifest) return;
+    const now = Date.now();
+    if (now - lastMoveTs < MOVE_THROTTLE_MS) return;
+    lastMoveTs = now;
+    const [nearest] = nearestOrigins(e.latlng, 1);
     if (!nearest || nearest.id === displayOriginId) return;
     displayOriginId = nearest.id;
     renderCurrent();
+    prefetchNeighbors(nearest);
   }
 
   function onMapClick(e) {
-    if (!manifest) return;
-    const nearest = nearestOriginId(e.latlng);
+    if (!cityManifest) return;
+    const [nearest] = nearestOrigins(e.latlng, 1);
     if (nearest) placePin(nearest);
   }
 
-  function buildVariantBar() {
-    variantbarEl.innerHTML = "";
-    VARIANTS.forEach((v) => {
+  function buildCityTabs() {
+    citytabsEl.innerHTML = "";
+    topManifest.cities.forEach((city) => {
       const btn = document.createElement("button");
-      btn.textContent = v.label;
-      if (v.key === currentVariant) btn.classList.add("active");
+      btn.textContent = city.label;
+      if (city.id === currentCity) btn.classList.add("active");
       btn.addEventListener("click", () => {
-        currentVariant = v.key;
+        citytabsEl.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        loadCity(city.id);
+      });
+      citytabsEl.appendChild(btn);
+    });
+  }
+
+  function buildVariantBar(variants) {
+    // Only Lodz has both a scheduled and a realized (GTFS-RT) run -- the
+    // other cities' pipeline only ever downloaded realized GTFS (see
+    // tools/isochrones_lodz/README.md), so there's nothing to toggle there.
+    const wrapper = variantbarEl.parentElement;
+    if (variants.length <= 1) {
+      wrapper.style.display = "none";
+      currentVariant = variants[0];
+      return;
+    }
+    wrapper.style.display = "";
+    if (!variants.includes(currentVariant)) {
+      currentVariant = variants.includes("rt") ? "rt" : variants[0];
+    }
+    variantbarEl.innerHTML = "";
+    variants.forEach((v) => {
+      const btn = document.createElement("button");
+      btn.textContent = t(VARIANT_KEYS[v] || v);
+      if (v === currentVariant) btn.classList.add("active");
+      btn.addEventListener("click", () => {
+        currentVariant = v;
         variantbarEl.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         renderCurrent();
@@ -175,6 +253,7 @@
   }
 
   function buildCutoffCheckboxes() {
+    // Same 3 cutoffs for every city -- built once, not per city switch.
     cutoffsEl.innerHTML = "";
     CUTOFFS.forEach((c) => {
       const row = document.createElement("label");
@@ -191,14 +270,38 @@
       swatch.style.background = `var(${c.css})`;
       row.appendChild(cb);
       row.appendChild(swatch);
-      row.appendChild(document.createTextNode(c.label));
+      row.appendChild(document.createTextNode(t(c.key)));
       cutoffsEl.appendChild(row);
     });
   }
 
+  async function loadCity(city) {
+    currentCity = city;
+    const requestedCity = city;
+    const [cm, boundary] = await Promise.all([fetchCityManifest(city), fetchCityBoundary(city)]);
+    if (currentCity !== requestedCity) return; // superseded by a later tab click
+
+    cityManifest = cm;
+    unpin();
+    displayOriginId = null;
+
+    hourSliderEl.max = String(cityManifest.hours.length - 1);
+    hourIndex = Math.min(hourIndex, cityManifest.hours.length - 1);
+    hourSliderEl.value = String(hourIndex);
+    hourValEl.textContent = `${String(cityManifest.hours[hourIndex]).padStart(2, "0")}:00`;
+
+    buildVariantBar(cityManifest.variants);
+    boundaryLayer.clearLayers();
+    boundaryLayer.addData(boundary);
+    for (const c of CUTOFFS) isoLayers[c.min].clearLayers();
+
+    map.fitBounds(cityManifest.bounds, { padding: [20, 20] });
+    updateStat();
+  }
+
   hourSliderEl.addEventListener("input", () => {
     hourIndex = parseInt(hourSliderEl.value, 10);
-    const hour = manifest ? manifest.hours[hourIndex] : hourIndex;
+    const hour = cityManifest ? cityManifest.hours[hourIndex] : hourIndex;
     hourValEl.textContent = `${String(hour).padStart(2, "0")}:00`;
     renderCurrent();
   });
@@ -206,30 +309,22 @@
   map.on("mousemove", onMapMouseMove);
   map.on("click", onMapClick);
 
-  buildVariantBar();
   buildCutoffCheckboxes();
 
-  // City boundary (dissolved outline of the 500m hex grid, same source as
-  // the origins) -- reference layer so it's clear where isochrone coverage
-  // could ever reach vs. where there's just no data. Colour: --boundary in
-  // styles.css.
-  fetch("data/lodz_boundary.geojson")
-    .then((r) => r.json())
-    .then((geojson) => {
-      L.geoJSON(geojson, {
-        interactive: false,
-        style: () => ({ color: cssVar("--boundary"), weight: 1.4, fill: false }),
-      }).addTo(map);
-    });
+  // Rebuild everything language-dependent: cutoff labels, variant labels,
+  // stat line. Cheap -- no data refetch, just re-reads t() with the new lang.
+  setLangChangeHandler(() => {
+    buildCutoffCheckboxes();
+    if (cityManifest) buildVariantBar(cityManifest.variants);
+    updateStat();
+  });
 
   fetch("data/manifest.json")
     .then((r) => r.json())
     .then((m) => {
-      manifest = m;
-      hourSliderEl.max = String(manifest.hours.length - 1);
-      hourIndex = Math.min(hourIndex, manifest.hours.length - 1);
-      hourSliderEl.value = String(hourIndex);
-      hourValEl.textContent = `${String(manifest.hours[hourIndex]).padStart(2, "0")}:00`;
-      map.fitBounds(manifest.bounds, { padding: [20, 20] });
+      topManifest = m;
+      currentCity = topManifest.cities[0].id;
+      buildCityTabs();
+      loadCity(currentCity);
     });
 })();

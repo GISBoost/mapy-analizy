@@ -14,34 +14,35 @@
 <body>
 
 <header>
-  <h1>Dojazd na uczelnię — 6 miast</h1>
-  <p>Siatka heksagonalna 500 m, dostępność 30 min (spacer + transit publiczny), dane r5r / OSM. Zakładka = miasto, panel po lewej = widok tego samego wyniku. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
+  <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  <h1 data-i18n="h1">Dojazd na uczelnię — 6 miast</h1>
+  <p data-i18n-html="introHtml">Siatka heksagonalna 500 m, dostępność 30 min (spacer + transit publiczny), dane r5r / OSM. Zakładka = miasto, panel po lewej = widok tego samego wyniku. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
   <div class="citytabs" id="citytabs"></div>
 </header>
 
 <div class="app">
   <aside>
     <div>
-      <p class="eyebrow">Widok</p>
+      <p class="eyebrow" data-i18n="eyebrowView">Widok</p>
       <div class="modeswitch" id="modeswitch">
-        <button data-mode="dominant" class="active">Dominująca uczelnia<span class="sub">która uczelnia „wygrywa” ten heksagon</span></button>
-        <button data-mode="count">Liczba dostępnych<span class="sub">ile z 3 uczelni da się dojechać</span></button>
-        <button data-mode="overlap">Nakładanie (przełączalne)<span class="sub">włączaj/wyłączaj uczelnie osobno</span></button>
+        <button data-mode="dominant" class="active"><span data-i18n="modeDominantTitle">Dominująca uczelnia</span><span class="sub" data-i18n="modeDominantSub">która uczelnia „wygrywa” ten heksagon</span></button>
+        <button data-mode="count"><span data-i18n="modeCountTitle">Liczba dostępnych</span><span class="sub" data-i18n="modeCountSub">ile z 3 uczelni da się dojechać</span></button>
+        <button data-mode="overlap"><span data-i18n="modeOverlapTitle">Nakładanie (przełączalne)</span><span class="sub" data-i18n="modeOverlapSub">włączaj/wyłączaj uczelnie osobno</span></button>
       </div>
     </div>
 
     <div id="overlap-controls" style="display:none;">
-      <p class="eyebrow">Uczelnie</p>
+      <p class="eyebrow" data-i18n="eyebrowUniversities">Uczelnie</p>
       <div class="togglelist" id="togglelist"></div>
     </div>
 
     <div>
-      <p class="eyebrow">Legenda</p>
+      <p class="eyebrow" data-i18n="eyebrowLegend">Legenda</p>
       <div class="legend" id="legend"></div>
     </div>
 
     <div>
-      <p class="eyebrow">Przezroczystość warstwy</p>
+      <p class="eyebrow" data-i18n="eyebrowOpacity">Przezroczystość warstwy</p>
       <div class="opacity-row">
         <input type="range" id="opacity" min="0.15" max="0.95" step="0.05" value="0.7">
         <span id="opacity-val">70%</span>
@@ -53,18 +54,19 @@
 
   <main>
     <div id="map"></div>
-    <div class="map-loading" id="maploading">wczytywanie danych…</div>
+    <div class="map-loading" id="maploading" data-i18n="loadingText">wczytywanie danych…</div>
   </main>
 </div>
 
 <footer class="note">
-  <a href="../">&larr; wszystkie analizy</a>
-  · Dane i kod: <a href="https://github.com/GISBoost/mapy-analizy/tree/main/uczelnie-dostepnosc">github.com/GISBoost/mapy-analizy</a>
-  · metoda: <a href="https://gisboost.github.io/analizy/dostepnosc-uczelnie/">wpis na blogu</a>
+  <a href="../" data-i18n-html="footerBackLink">&larr; wszystkie analizy</a>
+  · <span data-i18n="footerDataCode">Dane i kod:</span> <a href="https://github.com/GISBoost/mapy-analizy/tree/main/uczelnie-dostepnosc">github.com/GISBoost/mapy-analizy</a>
+  · <span data-i18n="footerMethod">metoda:</span> <a href="https://gisboost.github.io/analizy/dostepnosc-uczelnie/" data-i18n="footerMethodLink">wpis na blogu</a>
   · podkład: <span class="badge">© OpenStreetMap contributors</span>
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -14,8 +14,9 @@
 
 <header>
   <div class="wrap">
-    <h1>Analizy mapowe</h1>
-    <p>
+    <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+    <h1 data-i18n="h1">Analizy mapowe</h1>
+    <p data-i18n-html="introHtml">
       Interaktywne mapy z analiz przestrzennych <a href="https://gisboost.github.io/">GISBoost</a> —
       dostępność transportowa i pokrewne tematy. Każda analiza to osobny folder tego repo
       i osobna podstrona; kod i metoda liczenia danych są opisane w README każdego folderu.
@@ -24,30 +25,31 @@
 </header>
 
 <main class="wrap">
-  <p class="eyebrow">Dostępne analizy</p>
+  <p class="eyebrow" data-i18n="eyebrowAnalyses">Dostępne analizy</p>
   <div class="cards">
     <a class="card" href="uczelnie-dostepnosc/">
-      <h2>Dojazd na uczelnię</h2>
-      <p>Dostępność do 3 uczelni w 6 polskich miastach w 30 min (spacer + transit), siatka heksagonalna 500 m — dominująca uczelnia, liczba dostępnych, nakładanie stref.</p>
-      <div class="tags"><span class="tag">r5r</span><span class="tag">OSM</span><span class="tag">6 miast</span></div>
+      <h2 data-i18n="card1Title">Dojazd na uczelnię</h2>
+      <p data-i18n="card1Desc">Dostępność do 3 uczelni w 6 polskich miastach w 30 min (spacer + transit), siatka heksagonalna 500 m — dominująca uczelnia, liczba dostępnych, nakładanie stref.</p>
+      <div class="tags"><span class="tag">r5r</span><span class="tag">OSM</span><span class="tag" data-i18n="tag6cities">6 miast</span></div>
     </a>
     <a class="card" href="odstepy-przystankow/">
-      <h2>Jak długo czekać na przystanku?</h2>
-      <p>Mediana odstępu między kolejnymi przyjazdami dowolnej linii na przystanku, siatka heksagonalna 500 m — 4 polskie miasta, dane GTFS-RT.</p>
-      <div class="tags"><span class="tag">GTFS-RT</span><span class="tag">OSM</span><span class="tag">4 miasta</span></div>
+      <h2 data-i18n="card2Title">Jak długo czekać na przystanku?</h2>
+      <p data-i18n="card2Desc">Mediana odstępu między kolejnymi przyjazdami dowolnej linii na przystanku, siatka heksagonalna 500 m — 4 polskie miasta, dane GTFS-RT.</p>
+      <div class="tags"><span class="tag">GTFS-RT</span><span class="tag">OSM</span><span class="tag" data-i18n="tag4cities">4 miasta</span></div>
     </a>
     <a class="card" href="izochrony-lodz/">
-      <h2>Dokąd dojadę?</h2>
-      <p>Interaktywna izochrona dojazdu transportem publicznym — najedź kursorem, przypnij pinezkę, przesuwaj porę dnia suwakiem. Rozkład jazdy vs GTFS-RT, pilot: Łódź.</p>
+      <h2 data-i18n="card3Title">Dokąd dojadę?</h2>
+      <p data-i18n="card3Desc">Interaktywna izochrona dojazdu transportem publicznym — najedź kursorem, przypnij pinezkę, przesuwaj porę dnia suwakiem. Rozkład jazdy vs GTFS-RT, pilot: Łódź.</p>
       <div class="tags"><span class="tag">r5r</span><span class="tag">isochrone</span><span class="tag">Łódź</span></div>
     </a>
   </div>
 </main>
 
-<footer class="note">
+<footer class="note" data-i18n-html="footerHtml">
   Kod: <a href="https://github.com/GISBoost/mapy-analizy">github.com/GISBoost/mapy-analizy</a> (MIT)
   · dane pochodne z OpenStreetMap i GTFS poszczególnych operatorów
 </footer>
 
+<script src="i18n.js"></script>
 </body>
 </html>
