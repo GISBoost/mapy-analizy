@@ -308,6 +308,10 @@
   async function loadCity(city) {
     currentCity = city;
     const requestedCity = city;
+    // Only one city is ever on screen -- drop decoded origin data for every
+    // other city so touring several cities doesn't accumulate their caches
+    // forever (a full city's worth of hovered origins is tens-hundreds of MB).
+    for (const k of Object.keys(cache)) if (k !== city) delete cache[k];
     const [cm, boundary] = await Promise.all([fetchCityManifest(city), fetchCityBoundary(city)]);
     if (currentCity !== requestedCity) return; // superseded by a later tab click
 
