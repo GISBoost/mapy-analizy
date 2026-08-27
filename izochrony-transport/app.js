@@ -254,9 +254,10 @@
   }
 
   function buildVariantBar(variants) {
-    // Only Lodz has both a scheduled and a realized (GTFS-RT) run -- the
-    // other cities' pipeline only ever downloaded realized GTFS (see
-    // tools/isochrones_lodz/README.md), so there's nothing to toggle there.
+    // Hides the toggle when a city's manifest only lists one variant.
+    // As of 2026-08-27 all 6 cities list both ("rt" + "static") -- an
+    // earlier comment here claimed only Lodz did; that was stale, see
+    // tools/isochrones_lodz/README.md's correction note.
     const wrapper = variantbarEl.parentElement;
     if (variants.length <= 1) {
       wrapper.style.display = "none";

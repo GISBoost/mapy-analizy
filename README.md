@@ -14,6 +14,8 @@ Wdrożenie: GitHub Pages z brancha `main`, `index.html` w korzeniu = strona-spis
 
 - **[uczelnie-dostepnosc](uczelnie-dostepnosc/)** — dostępność do uczelni, 6 miast.
 - **[odstepy-przystankow](odstepy-przystankow/)** — mediana odstępu między przyjazdami na przystanku, 4 miasta.
+- **[izochrony-transport](izochrony-transport/)** — interaktywna izochrona dojazdu (hover/klik/suwak pory dnia), 6 miast. Też
+  lustrzana na [Cloudflare Pages](https://mapy-analizy.pages.dev/izochrony-transport/) — patrz README tego folderu.
 
 ## Dodawanie nowej analizy
 
