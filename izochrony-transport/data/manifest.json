@@ -5,6 +5,8 @@
     { "id": "krakow", "label": "Kraków" },
     { "id": "gdansk", "label": "Gdańsk" },
     { "id": "poznan", "label": "Poznań" },
-    { "id": "szczecin", "label": "Szczecin" }
+    { "id": "szczecin", "label": "Szczecin" },
+    { "id": "gzm", "label": "GZM" },
+    { "id": "kielce", "label": "Kielce" }
   ]
 }
