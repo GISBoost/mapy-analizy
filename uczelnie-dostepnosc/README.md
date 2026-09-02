@@ -22,7 +22,7 @@ potem `http://localhost:8000/uczelnie-dostepnosc/`.
 `data/{city}_buildings.geojson` — budynki uczelni (OSM), pole `role` do kolorowania.
 `data/manifest.json` — lista miast, etykiety, nazwy uczelni per rola, bounding box.
 
-Wygenerowane z [`easy-OTP/tools/accessibility_cities`](https://github.com/GISBoost/easy-OTP)
+Wygenerowane z [`easy-R5/tools/accessibility_cities`](https://github.com/GISBoost/easy-R5/tree/main/tools/accessibility_cities)
 (r5r + OSM, patrz repo źródłowe po metodę). Odświeżenie danych = ponowne uruchomienie
 pipeline'u tam i re-eksport do `data/` (na razie ręcznie).
 

@@ -28,7 +28,7 @@ const STRINGS = {
       "Metoda: <code>r5r::isochrone()</code>, siatka origins co 500 m, dane GTFS z 21.08.2026 — " +
       "rozkład jazdy vs zrealizowany przejazd (mediana obserwacji, GTFS-RT). " +
       "Kod i metodologia: " +
-      '<a href="https://github.com/GISBoost/easy-OTP/tree/main/tools/isochrones_lodz" target="_blank" rel="noopener">easy-OTP/tools/isochrones_lodz</a>.',
+      '<a href="https://github.com/GISBoost/easy-R5/tree/main/tools/isochrones_lodz" target="_blank" rel="noopener">easy-R5/tools/isochrones_lodz</a>.',
     footerBackLink: "&larr; wszystkie analizy",
     footerDataCode: "Dane i kod:",
 
@@ -57,7 +57,7 @@ const STRINGS = {
       "Method: <code>r5r::isochrone()</code>, origins every 500 m, GTFS data from 2026-08-21 — " +
       "scheduled vs. realized service (median of observations, GTFS-RT). " +
       "Code and methodology: " +
-      '<a href="https://github.com/GISBoost/easy-OTP/tree/main/tools/isochrones_lodz" target="_blank" rel="noopener">easy-OTP/tools/isochrones_lodz</a>.',
+      '<a href="https://github.com/GISBoost/easy-R5/tree/main/tools/isochrones_lodz" target="_blank" rel="noopener">easy-R5/tools/isochrones_lodz</a>.',
     footerBackLink: "&larr; all analyses",
     footerDataCode: "Data and code:",
 

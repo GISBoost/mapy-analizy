@@ -11,9 +11,9 @@ Vanilla JS + [Leaflet](https://leafletjs.com/), zero build stepu. Jeden folder =
 jedna analiza w [mapy-analizy](../README.md). Zaczęte jako pilot na Łódź — inspiracja:
 [chronotrains.com](https://www.chronotrains.com/pl/about), metoda dostosowana do
 transportu publicznego w polskim mieście. **Wszystkie 6 miast z badania
-[`accessibility_cities`](https://github.com/GISBoost/easy-OTP/tree/main/tools/accessibility_cities)
+[`accessibility_cities`](https://github.com/GISBoost/easy-R5/tree/main/tools/accessibility_cities)
 policzone i live** (Łódź, Warszawa, Kraków, Gdańsk, Poznań, Szczecin), patrz
-`easy-OTP/tools/isochrones_lodz/README.md`.
+`easy-R5/tools/isochrones_lodz/README.md`.
 
 **Hostowane w dwóch miejscach** (test A/B, 2026-08-27): główny link
 [gisboost.github.io/mapy-analizy/izochrony-transport](https://gisboost.github.io/mapy-analizy/izochrony-transport/)
@@ -57,7 +57,7 @@ spowolnienie ("muli") przy szybkim ruchu myszką, mimo że lokalnie
 (`http.server`) niewidoczne — zmierzone bezpośrednio (TTFB ~150ms/request na
 GitHub Pages), stąd Cloudflare Pages jako preferowany link (patrz wyżej).
 
-Policzone przez [`easy-OTP/tools/isochrones_lodz`](https://github.com/GISBoost/easy-OTP/tree/main/tools/isochrones_lodz)
+Policzone przez [`easy-R5/tools/isochrones_lodz`](https://github.com/GISBoost/easy-R5/tree/main/tools/isochrones_lodz)
 (`r5r::isochrone()`). Odświeżenie/dodanie miasta = ponowne uruchomienie
 pipeline'u tam i re-eksport tutaj (ręczne, jak w pozostałych dwóch analizach) +
 dopisanie wpisu do top-level `data/manifest.json`.
