@@ -35,10 +35,43 @@
   // *outside* the analyzed grid entirely, where nearestOrigins() still
   // returns the closest origin no matter how far away it actually is,
   // silently rendering an increasingly-irrelevant isochrone. Past this
-  // distance (roughly one hex-cell radius past a 500m-spacing grid, well
+  // distance (roughly one hex-cell radius past the grid's own spacing, well
   // clear of normal edge-of-hex hovering) treat it as no coverage instead.
-  const MAX_HOVER_DIST_M = 450;
-  const MAX_HOVER_DIST_DEG_SQ = (MAX_HOVER_DIST_M / 111320) ** 2;
+  //
+  // Grid spacing varies by city (500m most cities, 1000m Warszawa, 2000m
+  // GZM -- see tools/isochrones_lodz/compute_isochrones_city.R), so this
+  // can't be one global constant: a 450m threshold tuned for a 500m grid
+  // covers only a sliver of a 2000m-spaced hex, making GZM hover/click flip
+  // in and out of "outside coverage" across most of each hex's own area --
+  // reported as hover/drag "feeling broken/slow" (it isn't a perf issue --
+  // GZM's per-origin files are smaller than Warszawa's, not bigger). Ratio
+  // 0.9 preserves the original tuning: 450 / 500m spacing = 0.9.
+  const HOVER_COVERAGE_RATIO = 0.9;
+  let maxHoverDistDegSq = ((500 * HOVER_COVERAGE_RATIO) / 111320) ** 2; // placeholder until first loadCity() sets it from real spacing
+
+  // Median nearest-neighbor distance (meters) across a sample of origins --
+  // cheap (O(sampleSize x n), a few ms even at n~2500) and only runs once
+  // per city load, not per hover tick.
+  function estimateGridSpacingM(origins) {
+    const sampleSize = Math.min(origins.length, 40);
+    const step = Math.max(1, Math.floor(origins.length / sampleSize));
+    const dists = [];
+    for (let i = 0; i < origins.length; i += step) {
+      const o = origins[i];
+      const cosLat = Math.cos((o.lat * Math.PI) / 180);
+      let minDistSq = Infinity;
+      for (const other of origins) {
+        if (other === o) continue;
+        const dLat = other.lat - o.lat;
+        const dLng = (other.lon - o.lon) * cosLat;
+        const distSq = dLat * dLat + dLng * dLng;
+        if (distSq < minDistSq) minDistSq = distSq;
+      }
+      dists.push(Math.sqrt(minDistSq) * 111320);
+    }
+    dists.sort((a, b) => a - b);
+    return dists[Math.floor(dists.length / 2)];
+  }
 
   const citytabsEl = document.getElementById("citytabs");
   const variantbarEl = document.getElementById("variantbar");
@@ -88,7 +121,7 @@
   let pinnedOriginId = null;
   let pinMarker = null;
   let lastMoveTs = 0;
-  let outsideCoverage = false; // hovering farther than MAX_HOVER_DIST_M from any origin
+  let outsideCoverage = false; // hovering farther than maxHoverDistDegSq from any origin
 
   // city -> { manifest: Promise, boundary: Promise, origin: { variant: { id: Promise<FeatureCollection> } } }
   const cache = {};
@@ -215,7 +248,7 @@
     lastMoveTs = now;
     const [{ origin: nearest, distSq }] = nearestOrigins(e.latlng, 1);
 
-    if (distSq > MAX_HOVER_DIST_DEG_SQ) {
+    if (distSq > maxHoverDistDegSq) {
       if (outsideCoverage) return; // already showing "no coverage", nothing changed
       outsideCoverage = true;
       displayOriginId = null;
@@ -234,7 +267,7 @@
   function onMapClick(e) {
     if (!cityManifest) return;
     const [{ origin: nearest, distSq }] = nearestOrigins(e.latlng, 1);
-    if (distSq > MAX_HOVER_DIST_DEG_SQ) return; // nothing to pin outside the analyzed area
+    if (distSq > maxHoverDistDegSq) return; // nothing to pin outside the analyzed area
     placePin(nearest);
   }
 
@@ -320,6 +353,8 @@
     unpin();
     displayOriginId = null;
     outsideCoverage = false;
+    const gridSpacingM = estimateGridSpacingM(cityManifest.origins);
+    maxHoverDistDegSq = ((gridSpacingM * HOVER_COVERAGE_RATIO) / 111320) ** 2;
 
     hourSliderEl.max = String(cityManifest.hours.length - 1);
     hourIndex = Math.min(hourIndex, cityManifest.hours.length - 1);
