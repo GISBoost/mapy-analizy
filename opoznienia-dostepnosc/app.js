@@ -10,6 +10,12 @@
 // A hexagon with no static-schedule baseline for a category (delta_<category>
 // / net_delta = null) is filtered out of the layer entirely -- same as QGIS's
 // graduated renderer drawing no symbol for an unmatched (null) value.
+//
+// Two reference overlays sit above the choropleth (fill:false, so they never
+// hide colours): the city boundary (resolution-independent, loaded once) and
+// "siatka", the full hex grid outline per resolution -- it includes the
+// hexagons the data layer filters out as null, so the grid stays visible even
+// where there is nothing to colour.
 (function () {
   "use strict";
 
@@ -55,8 +61,11 @@
   let currentMode = "school";
   let opacity = parseFloat(opacityInput.value);
   let currentLayer = null;
+  let boundaryLayer = null;
+  let siatkaLayer = null;
 
-  const cache = {}; // resolution key -> parsed GeoJSON
+  const cache = {}; // resolution key -> parsed hex_<res>.geojson
+  const siatkaCache = {}; // resolution key -> parsed siatka_<res>.geojson
 
   function fieldFor(mode) { return mode === "net" ? "net_delta" : "delta_" + mode; }
   function edgesFor(mode) { return mode === "net" ? NET_EDGES : CATEGORY_EDGES; }
@@ -149,6 +158,11 @@
     if (currentLayer) map.removeLayer(currentLayer);
     currentLayer = buildLayerForMode(mode);
     currentLayer.addTo(map);
+    // Grid outline + city boundary sit above the choropleth fill (both have
+    // fill:false, so they never hide the colours) so they stay crisp and
+    // cover the hexagons the data layer filters out as null.
+    if (siatkaLayer) siatkaLayer.bringToFront();
+    if (boundaryLayer) boundaryLayer.bringToFront();
     updateStat(mode);
   }
 
@@ -163,12 +177,34 @@
     return data;
   }
 
+  async function fetchSiatka(res) {
+    if (siatkaCache[res]) return siatkaCache[res];
+    const data = await fetch("data/siatka_" + res + ".geojson").then((r) => r.json());
+    siatkaCache[res] = data;
+    return data;
+  }
+
   async function loadResolution(res) {
     currentRes = res;
     loadingEl.classList.add("visible");
-    await fetchResolution(res);
+    const [, siatkaData] = await Promise.all([fetchResolution(res), fetchSiatka(res)]);
     loadingEl.classList.remove("visible");
+
+    if (siatkaLayer) map.removeLayer(siatkaLayer);
+    siatkaLayer = L.geoJSON(siatkaData, {
+      style: () => ({ color: "#808080", weight: 0.5, opacity: 0.45, fill: false }),
+      interactive: false,
+    }).addTo(map);
+
     render(currentMode);
+  }
+
+  async function loadBoundary() {
+    const data = await fetch("data/boundary.geojson").then((r) => r.json());
+    boundaryLayer = L.geoJSON(data, {
+      style: () => ({ color: "#232323", weight: 2, opacity: 0.9, fill: false }),
+      interactive: false,
+    }).addTo(map);
   }
 
   function buildRestabs() {
@@ -229,6 +265,7 @@
       map.fitBounds(manifest.bounds, { padding: [20, 20] });
       buildRestabs();
       buildModeswitch();
+      loadBoundary();
       loadResolution(currentRes);
     });
 })();

@@ -25,6 +25,11 @@ potem `http://localhost:8000/opoznienia-dostepnosc/`.
 `net_delta` / `net_delta_n` (suma zmian po porównywalnych kategoriach / ile z 4 weszło
 do sumy). Kategorie: `school`, `pharmacy`, `university`, `mall`.
 `data/manifest.json` — rozdzielczości, granice mapy, etykiety kategorii.
+`data/boundary.geojson` (obwódka miasta, ta sama dla obu rozdzielczości) i
+`data/siatka_250.geojson` / `siatka_500.geojson` (sama siatka heksagonalna, bez atrybutów) —
+dwie warstwy referencyjne rysowane zawsze na wierzchu (bez wypełnienia, więc nie zasłaniają
+kolorów) — `siatka` pokazuje pełny zasięg heksagonów, także te bez danych (odfiltrowane z
+warstwy właściwej jako `null`).
 
 Wygenerowane z [`easy-R5/tools/realtime_delay_lodz`](https://github.com/GISBoost/easy-R5/tree/main/tools/realtime_delay_lodz)
 (`export_geojson.py`) — tam jest pełna metoda, w tym dlaczego `base_<kategoria> = 0`
