@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Ile kosztują opóźnienia? — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Gdzie opóźnienia GTFS-RT najbardziej psują dostępność do szkół, aptek, uczelni i centrów handlowych w Łodzi — interaktywna mapa heksagonalna, dane Easy-R5, GISBoost.">
+<link rel="icon" href="../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  <h1 data-i18n="h1">Ile kosztują opóźnienia? — Łódź</h1>
+  <p data-i18n-html="introHtml">Siatka heksagonalna, dostępność 30 min (spacer + transit) w oknie 7:00–9:00, porównanie rozkładu <b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS, 2026-08-21. Dane Easy-R5 (QGIS). Zakładka = rozmiar heksagonu, panel po lewej = kategoria. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
+  <div class="restabs" id="restabs"></div>
+</header>
+
+<div class="app">
+  <aside>
+    <div>
+      <p class="eyebrow" data-i18n="eyebrowCategory">Kategoria</p>
+      <div class="modeswitch" id="modeswitch"></div>
+    </div>
+
+    <div>
+      <p class="eyebrow" data-i18n="eyebrowLegend">Legenda</p>
+      <div class="legend" id="legend"></div>
+      <p class="legend-note" data-i18n="legendNote">Puste (bez wypełnienia) = brak bazowego dostępu w rozkładzie statycznym — nie ma czego tracić ani zyskiwać, więc nie liczymy tego jako "bez zmian".</p>
+    </div>
+
+    <div>
+      <p class="eyebrow" data-i18n="eyebrowOpacity">Przezroczystość warstwy</p>
+      <div class="opacity-row">
+        <input type="range" id="opacity" min="0.15" max="0.95" step="0.05" value="0.75">
+        <span id="opacity-val">75%</span>
+      </div>
+    </div>
+
+    <div class="statline" id="statline"></div>
+  </aside>
+
+  <main>
+    <div id="map"></div>
+    <div class="map-loading" id="maploading" data-i18n="loadingText">wczytywanie danych…</div>
+  </main>
+</div>
+
+<footer class="note">
+  <a href="../" data-i18n-html="footerBackLink">&larr; wszystkie analizy</a>
+  · <span data-i18n="footerDataCode">Dane i kod:</span> <a href="https://github.com/GISBoost/mapy-analizy/tree/main/opoznienia-dostepnosc">github.com/GISBoost/mapy-analizy</a>
+  · <span data-i18n="footerMethod">metoda:</span> <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/realtime_delay_lodz" data-i18n="footerMethodLink">tools/realtime_delay_lodz</a>
+  · podkład: <span class="badge">© OpenStreetMap contributors</span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

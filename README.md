@@ -16,6 +16,7 @@ Wdrożenie: GitHub Pages z brancha `main`, `index.html` w korzeniu = strona-spis
 - **[odstepy-przystankow](odstepy-przystankow/)** — mediana odstępu między przyjazdami na przystanku, 4 miasta.
 - **[izochrony-transport](izochrony-transport/)** — interaktywna izochrona dojazdu (hover/klik/suwak pory dnia), 6 miast. Też
   lustrzana na [Cloudflare Pages](https://mapy-analizy.pages.dev/izochrony-transport/) — patrz README tego folderu.
+- **[opoznienia-dostepnosc](opoznienia-dostepnosc/)** — gdzie opóźnienia GTFS-RT najbardziej psują dostępność (szkoły, apteki, uczelnie, centra handlowe), rozkład statyczny vs zrealizowany P50, siatka 250 m i 500 m, pilot: Łódź.
 
 ## Dodawanie nowej analizy
 

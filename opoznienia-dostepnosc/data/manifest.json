@@ -1,0 +1,48 @@
+{
+  "city": "Łódź",
+  "date": "2026-08-21",
+  "bounds": [
+    [
+      51.684831551015925,
+      19.32081548520777
+    ],
+    [
+      51.86001527161406,
+      19.641593572174685
+    ]
+  ],
+  "resolutions": [
+    {
+      "key": "250",
+      "label": "250 m",
+      "featureCount": 5662
+    },
+    {
+      "key": "500",
+      "label": "500 m",
+      "featureCount": 1479
+    }
+  ],
+  "categories": [
+    {
+      "key": "school",
+      "label_pl": "Szkoły",
+      "label_en": "Schools"
+    },
+    {
+      "key": "pharmacy",
+      "label_pl": "Apteki",
+      "label_en": "Pharmacies"
+    },
+    {
+      "key": "university",
+      "label_pl": "Uczelnie",
+      "label_en": "Universities"
+    },
+    {
+      "key": "mall",
+      "label_pl": "Centra handlowe",
+      "label_en": "Malls"
+    }
+  ]
+}

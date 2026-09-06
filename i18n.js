@@ -29,6 +29,10 @@ const STRINGS = {
     card3Desc:
       "Interaktywna izochrona dojazdu transportem publicznym — najedź kursorem, przypnij pinezkę, " +
       "przesuwaj porę dnia suwakiem. Rozkład jazdy vs GTFS-RT, pilot: Łódź.",
+    card4Title: "Ile kosztują opóźnienia?",
+    card4Desc:
+      "Gdzie opóźnienia najbardziej psują dostępność do szkół, aptek, uczelni i centrów handlowych — " +
+      "rozkład statyczny vs zrealizowany P50, siatka heksagonalna 250 m i 500 m, pilot: Łódź.",
     tag6cities: "6 miast",
     tag4cities: "4 miasta",
     footerHtml:
@@ -56,6 +60,10 @@ const STRINGS = {
     card3Desc:
       "Interactive transit-isochrone map — hover to preview, click to pin, scrub the time-of-day slider. " +
       "Scheduled vs. GTFS-RT, pilot: Łódź.",
+    card4Title: "What do delays cost?",
+    card4Desc:
+      "Where delays hurt reachability of schools, pharmacies, universities and malls the most — " +
+      "scheduled vs. realized P50, 250 m and 500 m hex grid, pilot: Łódź.",
     tag6cities: "6 cities",
     tag4cities: "4 cities",
     footerHtml:
