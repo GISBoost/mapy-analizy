@@ -48,6 +48,7 @@
   const statlineEl = document.getElementById("statline");
   const opacityInput = document.getElementById("opacity");
   const opacityVal = document.getElementById("opacity-val");
+  const tooltipsToggle = document.getElementById("tooltipsToggle");
   const loadingEl = document.getElementById("maploading");
 
   const map = L.map("map", { zoomControl: true, minZoom: 3 });
@@ -58,8 +59,9 @@
 
   let manifest = null;
   let currentRes = null;
-  let currentMode = "school";
+  let currentMode = "net";
   let opacity = parseFloat(opacityInput.value);
+  let tooltipsEnabled = tooltipsToggle.checked;
   let currentLayer = null;
   let boundaryLayer = null;
   let siatkaLayer = null;
@@ -118,7 +120,9 @@
         color: "#808080", weight: 0.4, opacity: 0.5,
         fillColor: RDBU7[classify(f.properties[field], edges)], fillOpacity: opacity,
       }),
-      onEachFeature: (f, l) => l.bindTooltip(tooltipHtml(f.properties, mode), { sticky: true }),
+      onEachFeature: (f, l) => {
+        if (tooltipsEnabled) l.bindTooltip(tooltipHtml(f.properties, mode), { sticky: true });
+      },
     });
   }
 
@@ -248,6 +252,11 @@
     applyOpacity();
   });
   opacityVal.textContent = Math.round(opacity * 100) + "%";
+
+  tooltipsToggle.addEventListener("change", () => {
+    tooltipsEnabled = tooltipsToggle.checked;
+    if (currentRes) render(currentMode);
+  });
 
   // Rebuild everything language-dependent: mode buttons, legend, tooltips
   // (baked in at layer-build time), stat line. loadResolution() re-fetches

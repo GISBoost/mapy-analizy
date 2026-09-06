@@ -92,6 +92,9 @@ aside {
 
 .swatch { width: 13px; height: 13px; border-radius: 3px; flex: none; border: 1px solid rgba(0, 0, 0, 0.15); }
 
+.toggle { display: flex; align-items: center; gap: 9px; font-size: 0.84rem; cursor: pointer; user-select: none; color: var(--ink); }
+.toggle input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; flex: none; }
+
 .legend { display: flex; flex-direction: column; gap: 7px; }
 .legend-row { display: flex; align-items: center; gap: 9px; font-size: 0.82rem; color: var(--ink); }
 .legend-row .swatch { width: 15px; height: 15px; border-radius: 3px; }
