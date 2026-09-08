@@ -14,7 +14,8 @@ const STRINGS = {
     h1: "Ile kosztują opóźnienia? — Łódź",
     introHtml:
       "Siatka heksagonalna, dostępność 30 min (spacer + transit) w oknie 7:00–9:00, porównanie rozkładu " +
-      "<b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS, 2026-08-21. Dane Easy-R5 (QGIS). " +
+      "<b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS, 2026-08-21. Dane " +
+      '<a href="https://gisboost.github.io/easy-R5/">Easy-R5</a> (QGIS). ' +
       'Zakładka = rozmiar heksagonu, panel po lewej = kategoria. Jedna z <a href="../">analiz mapowych GISBoost</a>.',
     eyebrowCategory: "Kategoria",
     eyebrowLegend: "Legenda",
@@ -59,7 +60,8 @@ const STRINGS = {
     h1: "What do delays cost? — Łódź",
     introHtml:
       "Hex grid, 30 min accessibility (walk + transit) in the 7:00–9:00 window, comparing the " +
-      "<b>static</b> vs the <b>realized P50</b> GTFS schedule, 2026-08-21. Easy-R5 (QGIS) data. " +
+      "<b>static</b> vs the <b>realized P50</b> GTFS schedule, 2026-08-21. " +
+      '<a href="https://gisboost.github.io/easy-R5/">Easy-R5</a> (QGIS) data. ' +
       'Tab = hex size, the left panel picks the category. One of <a href="../">GISBoost\'s map analyses</a>.',
     eyebrowCategory: "Category",
     eyebrowLegend: "Legend",
