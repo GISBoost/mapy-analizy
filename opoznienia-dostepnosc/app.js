@@ -1,10 +1,9 @@
 // Ile kosztuja opoznienia? -- 6 cities. Vanilla JS + Leaflet, no build step
 // (mirrors uczelnie-dostepnosc / gtfs-dashboard).
 //
-// Three independent switches: CITY (top select, reloads that city's boundary
-// + data + refits the map), RESOLUTION (top tabs, reloads a GeoJSON file --
-// per-city, Warszawa has 500 m only) and CATEGORY (left panel, just restyles
-// the already-loaded data).
+// Three independent switches: CITY (top select, reloads data + refits the map),
+// RESOLUTION (top tabs, reloads a GeoJSON file -- per-city, Warszawa has 500 m
+// only) and CATEGORY (left panel, just restyles the already-loaded data).
 //
 // Classification mirrors tools/realtime_delay_lodz/style_delay_layers.py
 // EXACTLY: same half-integer class edges, same ColorBrewer RdBu-7 colours.
@@ -13,8 +12,9 @@
 // graduated renderer drawing no symbol for an unmatched (null) value.
 //
 // Two reference overlays sit above the choropleth (fill:false): the city
-// boundary (per city, resolution-independent) and "siatka", the full hex grid
-// outline per city+resolution -- it includes the hexagons the data layer
+// boundary (per city+resolution -- the 250 m and 500 m hex grids dissolve to
+// different staircases) and "siatka", the full hex grid outline per
+// city+resolution -- it includes the hexagons the data layer
 // filters out as null, so the grid stays visible even where there is nothing
 // to colour.
 (function () {
@@ -72,7 +72,7 @@
 
   const cache = {};        // "<city>_<res>" -> parsed hex geojson
   const siatkaCache = {};  // "<city>_<res>" -> parsed siatka geojson
-  const boundaryCache = {}; // city -> parsed boundary geojson
+  const boundaryCache = {}; // "<city>_<res>" -> parsed boundary geojson
 
   function key() { return currentCity + "_" + currentRes; }
   function fieldFor(mode) { return mode === "net" ? "net_delta" : "delta_" + mode; }
@@ -193,15 +193,27 @@
     return siatkaCache[k];
   }
 
+  async function fetchBoundary() {
+    const k = key();
+    if (!boundaryCache[k]) boundaryCache[k] = await fetchJSON("data/boundary_" + k + ".geojson");
+    return boundaryCache[k];
+  }
+
   async function loadResolution(res) {
     currentRes = res;
     loadingEl.classList.add("visible");
-    const [, siatkaData] = await Promise.all([fetchResolution(), fetchSiatka()]);
+    const [, siatkaData, boundaryData] = await Promise.all([fetchResolution(), fetchSiatka(), fetchBoundary()]);
     loadingEl.classList.remove("visible");
 
     if (siatkaLayer) map.removeLayer(siatkaLayer);
     siatkaLayer = L.geoJSON(siatkaData, {
       style: () => ({ color: "#808080", weight: 0.5, opacity: 0.45, fill: false }),
+      interactive: false,
+    }).addTo(map);
+
+    if (boundaryLayer) map.removeLayer(boundaryLayer);
+    boundaryLayer = L.geoJSON(boundaryData, {
+      style: () => ({ color: "#232323", weight: 2, opacity: 0.9, fill: false }),
       interactive: false,
     }).addTo(map);
 
@@ -211,15 +223,6 @@
   async function loadCity(cityKey, fit) {
     currentCity = cityKey;
     const city = cityByKey[cityKey];
-
-    if (!boundaryCache[cityKey]) {
-      boundaryCache[cityKey] = await fetchJSON("data/boundary_" + cityKey + ".geojson");
-    }
-    if (boundaryLayer) map.removeLayer(boundaryLayer);
-    boundaryLayer = L.geoJSON(boundaryCache[cityKey], {
-      style: () => ({ color: "#232323", weight: 2, opacity: 0.9, fill: false }),
-      interactive: false,
-    }).addTo(map);
 
     if (fit) map.fitBounds(city.bounds, { padding: [20, 20] });
 

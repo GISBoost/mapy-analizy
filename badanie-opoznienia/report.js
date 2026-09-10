@@ -266,7 +266,7 @@ function legend(id, items) {
 function ringCell(city) {
   const res = city.resolutions["250"] || city.resolutions["500"];
   const rings = res.rings.filter((r) => r.pop > 0 || Math.abs(r.mean) > 0.01);
-  const w = 224, h = 118, m = { t: 6, r: 6, b: 16, l: 24 };
+  const w = 224, h = 132, m = { t: 6, r: 6, b: 30, l: 24 };
   const iw = w - m.l - m.r, ih = h - m.t - m.b;
   const maxAbs = Math.max(1, Math.ceil(Math.max(...rings.map((r) => Math.abs(r.mean)))));
   const y0 = m.t + ih * 0.5;
@@ -278,17 +278,18 @@ function ringCell(city) {
   s += text(m.l - 3, y0 + 3, "0", "val", "end");
   s += text(m.l - 3, m.t + 7, "+" + maxAbs, "val", "end");
   s += text(m.l - 3, m.t + ih, "−" + maxAbs, "val", "end");
+  const tickAt = new Set([0, Math.floor((rings.length - 1) / 2), rings.length - 1]);
   rings.forEach((r, i) => {
     const cx = m.l + (i + 0.5) * (iw / rings.length);
     const v = Math.max(-maxAbs, Math.min(maxAbs, r.mean));
     const yv = yFor(v);
     const fill = r.mean >= 0 ? COL.pos : COL.neg;
     s += rect(cx - bw / 2, Math.min(y0, yv), bw, Math.abs(yv - y0), fill);
-    if (i === 0 || i === rings.length - 1 || i % 4 === 3) {
-      s += text(cx, h - 4, String(Math.round(r.hi)), "val", "middle");
+    if (tickAt.has(i)) {
+      s += text(cx, m.t + ih + 12, String(Math.round(r.hi)), "val", "middle");
     }
   });
-  s += text(m.l + iw, h - 4, t("kmAxis"), "val", "end");
+  s += text(m.l + iw / 2, h - 4, t("kmAxis"), "val", "middle");
   const dipRes = ["250", "500"].some((k) => city.resolutions[k] && city.resolutions[k].dip);
   return (
     `<div class="ring-cell">` +
@@ -330,7 +331,11 @@ function renderNet() {
       const by = cy + 8 + bi * (bh + 3);
       const fill = k === "250" ? COL.pos : COL.posSoft;
       s += rect(Math.min(x0, xFor(v)), by, Math.abs(xFor(v) - x0), bh, fill);
-      s += text(xFor(v) + (v >= 0 ? 4 : -4), by + bh - 2.5, (v > 0 ? "+" : "") + v.toFixed(2), "val", v >= 0 ? "start" : "end");
+      // label always to the right: past the bar end for positives, just right of
+      // the zero line for negatives (their bar sits left of it) -- keeps short
+      // negative bars from colliding with the city name in the left gutter.
+      const lx = v >= 0 ? xFor(v) + 4 : x0 + 4;
+      s += text(lx, by + bh - 2.5, (v > 0 ? "+" : "") + v.toFixed(2), "val", "start");
     });
   });
   setSvg("netChart", s, `0 0 ${W} ${H}`);
@@ -340,8 +345,8 @@ function renderNet() {
 function renderShift() {
   legend("shiftLegend", [{ c: COL.pos, l: t("legEarly") }, { c: COL.neg, l: t("legLate") }]);
   const cities = DATA.cities.filter((c) => c.shift_peak);
-  const W = 720, m = { t: 14, r: 20, b: 24, l: 96 };
-  const grpH = 58, H = m.t + m.b + cities.length * grpH;
+  const W = 720, m = { t: 14, r: 24, b: 24, l: 150 };
+  const grpH = 60, H = m.t + m.b + cities.length * grpH;
   const iw = W - m.l - m.r;
   const mid = m.l + iw / 2;
   const maxPct = 55;
@@ -357,17 +362,20 @@ function renderShift() {
   s += text(mid, H - m.b + 14, "0", "val", "middle");
   cities.forEach((c, i) => {
     const gy = m.t + i * grpH;
-    s += text(m.l - 8, gy + grpH / 2 + 4, CITY_PL[c.key] || c.label, "lbl", "end");
+    s += text(6, gy + grpH / 2 + 4, CITY_PL[c.key] || c.label, "lbl", "start");
     [["tram", t("tram")], ["autobus", t("bus")]].forEach(([mode, lbl], mi) => {
       const d = c.shift_peak[mode];
       if (!d) return;
       const bh = 15;
       const by = gy + 8 + mi * (bh + 6);
+      const yTxt = by + bh - 3;
+      s += text(m.l - 10, yTxt, lbl, "val", "end");
       s += rect(mid - xFor(d.early_pct), by, xFor(d.early_pct), bh, COL.pos);
       s += rect(mid, by, xFor(d.late_pct), bh, COL.neg);
-      s += text(mid - xFor(d.early_pct) - 4, by + bh - 3, d.early_pct.toFixed(0) + "%", "val", "end");
-      s += text(mid + xFor(d.late_pct) + 4, by + bh - 3, d.late_pct.toFixed(0) + "%", "val", "start");
-      s += text(m.l + 2, by + bh - 3, lbl, "val", "start");
+      const showEarly = d.early_pct >= 0.5, showLate = d.late_pct >= 0.5;
+      if (showEarly) s += text(mid - xFor(d.early_pct) - 4, yTxt, Math.round(d.early_pct) + "%", "val", "end");
+      if (showLate) s += text(mid + xFor(d.late_pct) + 4, yTxt, Math.round(d.late_pct) + "%", "val", "start");
+      if (!showEarly && !showLate) s += text(mid + 6, yTxt, "0%", "val", "start");
     });
   });
   setSvg("shiftChart", s, `0 0 ${W} ${H}`);
@@ -416,7 +424,8 @@ function renderCompute() {
     const c = byKey[k];
     if (!c) return;
     const cm = c.compute || {};
-    rows += `<tr><td>${esc(CITY_PL[k] || c.label)}</td><td>${esc(cm.wall || "—")}</td><td>${esc(cm.note || "")}</td></tr>`;
+    const note = cm.note && typeof cm.note === "object" ? (cm.note[getLang()] || cm.note.pl || "") : (cm.note || "");
+    rows += `<tr><td>${esc(CITY_PL[k] || c.label)}</td><td>${esc(cm.wall || "—")}</td><td>${esc(note)}</td></tr>`;
   });
   rows += "</tbody>";
   document.getElementById("computeTable").innerHTML = rows;

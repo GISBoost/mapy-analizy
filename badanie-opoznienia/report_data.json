@@ -36,7 +36,10 @@
       "compute": {
         "wall": "~12m",
         "seconds": 720,
-        "note": "the original pilot run"
+        "note": {
+          "pl": "pierwotny przebieg pilotażowy",
+          "en": "the original pilot run"
+        }
       },
       "resolutions": {
         "250": {
@@ -354,7 +357,10 @@
       "compute": {
         "wall": "23m 00s",
         "seconds": 1380,
-        "note": "500 MB network.dat, 500 m only"
+        "note": {
+          "pl": "network.dat 500 MB, tylko 500 m",
+          "en": "500 MB network.dat, 500 m only"
+        }
       },
       "resolutions": {
         "500": {
@@ -1272,7 +1278,10 @@
       "compute": {
         "wall": "13m 03s",
         "seconds": 783,
-        "note": "networks were cache-warm"
+        "note": {
+          "pl": "sieci były w cache",
+          "en": "networks were cache-warm"
+        }
       },
       "resolutions": {
         "250": {
@@ -1730,7 +1739,10 @@
       "compute": {
         "wall": "21m 12s",
         "seconds": 1272,
-        "note": "most origins + densest network"
+        "note": {
+          "pl": "najwięcej źródeł, najgęstsza sieć",
+          "en": "most origins + densest network"
+        }
       },
       "resolutions": {
         "250": {

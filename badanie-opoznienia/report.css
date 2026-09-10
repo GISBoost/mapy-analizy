@@ -3,9 +3,9 @@
    light/dark switching as the rest of mapy-analizy. Structure mirrors
    gtfs-dashboard/diagnostics: hero + stat tiles + sections with chart cards. */
 
-.report { max-width: 900px; margin: 0 auto; padding: 28px 28px 56px; }
+.report { max-width: 900px; margin: 0 auto; padding: 40px 44px 80px; }
 
-.crumbs { font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 18px; }
+.crumbs { font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 20px; }
 .crumbs a { color: var(--accent); text-decoration: none; }
 .crumbs a:hover { text-decoration: underline; }
 .crumbs .sep { margin: 0 7px; opacity: 0.5; }
@@ -34,7 +34,7 @@
 
 .stat-tiles {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
-  margin: 0 0 34px;
+  margin: 0 0 44px;
 }
 .stat-tile {
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
@@ -46,34 +46,35 @@
 }
 .stat-label { font-size: 0.75rem; color: var(--ink-muted); margin-top: 3px; line-height: 1.35; }
 
-.section { margin: 0 0 40px; }
+.section { margin: 0 0 56px; }
 .section h2 {
   font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.18rem;
-  margin: 0 0 8px; letter-spacing: -0.01em;
+  margin: 0 0 10px; letter-spacing: -0.01em;
 }
 .section .sub {
-  font-size: 0.88rem; line-height: 1.6; color: var(--ink-muted); margin: 0 0 16px;
+  font-size: 0.88rem; line-height: 1.6; color: var(--ink-muted); margin: 0 0 18px;
   text-align: justify; text-align-last: left; hyphens: auto;
 }
 
 .chart-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-  padding: 18px 18px 14px;
+  padding: 22px 24px 18px;
 }
+.chart-card svg { display: block; margin-top: 4px; }
 .chart-caption {
   font-size: 0.8rem; line-height: 1.55; color: var(--ink-muted);
-  margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed var(--border);
+  margin: 16px 0 0; padding-top: 14px; border-top: 1px dashed var(--border);
 }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 12px; }
 .legend .item { display: flex; align-items: center; gap: 6px; }
 .legend .swatch { width: 11px; height: 11px; border-radius: 2px; flex: none; }
 
-.ring-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
-.ring-cell { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px 6px; }
+.ring-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ring-cell { border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px 8px; }
 .ring-cell .ring-title {
   font-size: 0.82rem; font-weight: 600; color: var(--ink); display: flex;
-  justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 2px;
+  justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 4px;
 }
 .ring-cell .ring-verdict { font-size: 0.72rem; font-weight: 600; }
 .ring-cell .ring-verdict.dip { color: #b2182b; }
@@ -105,7 +106,7 @@ table.datatable td.num { text-align: right; }
 .section a, .source-note a, .chart-caption a { color: var(--accent); }
 
 .report-footer {
-  max-width: 900px; margin: 0 auto; padding: 18px 28px 44px;
+  max-width: 900px; margin: 0 auto; padding: 20px 44px 48px;
   border-top: 1px solid var(--border); display: flex; justify-content: space-between;
   flex-wrap: wrap; gap: 10px; font-size: 0.8rem;
 }
@@ -114,5 +115,7 @@ table.datatable td.num { text-align: right; }
 
 @media (max-width: 560px) {
   .report h1 { font-size: 1.45rem; }
-  .report { padding: 22px 18px 44px; }
+  .report { padding: 26px 20px 52px; }
+  .chart-card { padding: 16px 14px 14px; }
+  .report-footer { padding: 18px 20px 40px; }
 }
