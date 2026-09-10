@@ -11,6 +11,9 @@ const STRINGS = {
   pl: {
     langToggleAriaLabel: "Przełącz język",
     title: "Analizy mapowe — GISBoost",
+    brandSub: "/ analizy mapowe",
+    navCatalog: "Analizy",
+    navReport: "Badanie: opóźnienia",
     h1: "Analizy mapowe",
     introHtml:
       'Interaktywne mapy z analiz przestrzennych <a href="https://gisboost.github.io/">GISBoost</a> — ' +
@@ -31,8 +34,14 @@ const STRINGS = {
       "przesuwaj porę dnia suwakiem. Rozkład jazdy vs GTFS-RT, pilot: Łódź.",
     card4Title: "Ile kosztują opóźnienia?",
     card4Desc:
-      "Gdzie opóźnienia najbardziej psują dostępność do szkół, aptek, uczelni i centrów handlowych — " +
-      "rozkład statyczny vs zrealizowany P50, siatka heksagonalna 250 m i 500 m, pilot: Łódź.",
+      "Gdzie rozkład zrealizowany P50 zmienia dostępność do szkół, aptek, uczelni i centrów handlowych — " +
+      "statyczny vs zrealizowany, siatka heksagonalna 250 m i 500 m, 6 miast.",
+    eyebrowReport: "Z tych danych",
+    reportCardTitle: "Badanie: co „opóźnienia” robią z dostępnością",
+    reportCardDesc:
+      "Krótki raport z analizy dla 6 miast — czy opóźnienia uderzają w pierścień przesiadkowy wokół centrum " +
+      "(hipoteza), dlaczego znak efektu zależy od tego, jak napięty jest rozkład, i ile heksagonów faktycznie się zmienia.",
+    tagReport: "raport",
     tag6cities: "6 miast",
     tag4cities: "4 miasta",
     footerHtml:
@@ -42,6 +51,9 @@ const STRINGS = {
   en: {
     langToggleAriaLabel: "Switch language",
     title: "Map analyses — GISBoost",
+    brandSub: "/ map analyses",
+    navCatalog: "Analyses",
+    navReport: "Study: delays",
     h1: "Map analyses",
     introHtml:
       'Interactive maps from <a href="https://gisboost.github.io/">GISBoost</a>\'s spatial analyses — ' +
@@ -62,8 +74,14 @@ const STRINGS = {
       "Scheduled vs. GTFS-RT, pilot: Łódź.",
     card4Title: "What do delays cost?",
     card4Desc:
-      "Where delays hurt reachability of schools, pharmacies, universities and malls the most — " +
-      "scheduled vs. realized P50, 250 m and 500 m hex grid, pilot: Łódź.",
+      "Where the realized P50 schedule shifts reachability of schools, pharmacies, universities and malls — " +
+      "scheduled vs. realized, 250 m and 500 m hex grid, 6 cities.",
+    eyebrowReport: "From this data",
+    reportCardTitle: "Study: what “delays” do to accessibility",
+    reportCardDesc:
+      "A short write-up of the 6-city analysis — whether delays hit a transfer ring around the core " +
+      "(the hypothesis), why the sign of the effect depends on how tight the timetable is, and how many hexagons actually move.",
+    tagReport: "write-up",
     tag6cities: "6 cities",
     tag4cities: "4 cities",
     footerHtml:

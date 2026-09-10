@@ -58,6 +58,14 @@ header p { margin: 0 0 12px; color: #b9c4d1; font-size: 0.86rem; max-width: 68ch
 header a { color: #cfe0f0; }
 header b { color: var(--chrome-ink); }
 
+.cityrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cityrow .eyebrow { margin: 0; color: #b9c4d1; }
+.cityrow select {
+  font-family: "IBM Plex Sans", sans-serif; font-weight: 600; font-size: 0.9rem;
+  padding: 7px 10px; border-radius: 6px; border: 1px solid #3a475a;
+  background: var(--bg); color: var(--ink); cursor: pointer;
+}
+
 .restabs { display: flex; gap: 2px; overflow-x: auto; }
 .restabs button {
   all: unset; cursor: pointer; font-family: "IBM Plex Sans", sans-serif; font-weight: 600;

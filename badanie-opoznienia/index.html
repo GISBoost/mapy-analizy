@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Badanie: co „opóźnienia" robią z dostępnością — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Raport z analizy Easy-R5 dla 6 polskich miast: rozkład statyczny vs zrealizowany P50, dostępność 30 min w porannym szczycie, hipoteza stref przesiadkowych.">
+<link rel="icon" href="../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="report.css">
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="../">GISBoost <span class="sub" data-i18n="brandSub">/ analizy mapowe</span></a>
+  <nav class="topnav">
+    <a class="topnav-link" href="../" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navReport">Badanie: opóźnienia</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
+<main class="report">
+
+  <div class="crumbs">
+    <a href="../" data-i18n="navCatalog">Analizy</a>
+    <span class="sep">/</span>
+    <span data-i18n="crumbHere">Badanie: opóźnienia</span>
+  </div>
+
+  <p class="kicker" data-i18n="kicker">Easy-R5 · analiza dostępności · 6 miast</p>
+  <h1 data-i18n="h1">Co „opóźnienia" robią z dostępnością — i gdzie</h1>
+
+  <div class="hero">
+    <p class="lede" data-i18n-html="lede1Html"></p>
+    <p class="lede" data-i18n-html="lede2Html"></p>
+    <p class="note" data-i18n-html="glossaryHtml"></p>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="stat-tile"><div class="stat-value">6</div><div class="stat-label" data-i18n="tileCities">miast</div></div>
+    <div class="stat-tile"><div class="stat-value">250 · 500 m</div><div class="stat-label" data-i18n="tileGrid">siatka heksagonalna</div></div>
+    <div class="stat-tile"><div class="stat-value">30 min</div><div class="stat-label" data-i18n="tileCutoff">okno 7:00–9:00</div></div>
+    <div class="stat-tile"><div class="stat-value">4</div><div class="stat-label" data-i18n="tileCats">kategorie celów</div></div>
+  </div>
+
+  <section class="section">
+    <h2 data-i18n="s1Heading">1. Hipoteza pierścienia przesiadkowego — nie potwierdza się</h2>
+    <p class="sub" data-i18n-html="s1SubHtml"></p>
+    <div class="chart-card">
+      <div class="ring-grid" id="ringGrid"></div>
+      <p class="chart-caption" data-i18n-html="s1CaptionHtml"></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s2Heading">2. Znak efektu mówi o rozkładzie, nie o opóźnieniach</h2>
+    <p class="sub" data-i18n-html="s2SubHtml"></p>
+    <div class="chart-card">
+      <div class="legend" id="netLegend"></div>
+      <svg id="netChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="netChartTitle"></svg>
+      <span id="netChartTitle" hidden data-i18n="s2Heading"></span>
+      <p class="chart-caption" data-i18n-html="s2CaptionHtml"></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s3Heading">3. Które kursy się przesunęły — szczyt, tramwaj vs autobus</h2>
+    <p class="sub" data-i18n-html="s3SubHtml"></p>
+    <div class="chart-card">
+      <div class="legend" id="shiftLegend"></div>
+      <svg id="shiftChart" viewBox="0 0 720 430" width="100%" role="img" aria-labelledby="shiftChartTitle"></svg>
+      <span id="shiftChartTitle" hidden data-i18n="s3Heading"></span>
+      <p class="chart-caption" data-i18n-html="s3CaptionHtml"></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s4Heading">4. Ile heksagonów faktycznie się zmienia</h2>
+    <p class="sub" data-i18n-html="s4SubHtml"></p>
+    <div class="chart-card">
+      <div class="legend" id="hexLegend"></div>
+      <svg id="hexChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="hexChartTitle"></svg>
+      <span id="hexChartTitle" hidden data-i18n="s4Heading"></span>
+      <p class="chart-caption" data-i18n-html="s4CaptionHtml"></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s5Heading">5. Czas liczenia</h2>
+    <p class="sub" data-i18n-html="s5SubHtml"></p>
+    <div class="table-wrap">
+      <table class="datatable" id="computeTable"></table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s6Heading">Metoda i źródła</h2>
+    <p class="sub" data-i18n-html="s6SubHtml"></p>
+    <p class="source-note" data-i18n-html="sourceNoteHtml"></p>
+  </section>
+
+</main>
+
+<footer class="report-footer">
+  <a href="../" data-i18n="footerBack">← wszystkie analizy</a>
+  <a href="https://gisboost.github.io/" target="_blank" rel="noopener">Michał Kaczorowski — GISBoost</a>
+</footer>
+
+<script src="report.js"></script>
+</body>
+</html>

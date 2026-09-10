@@ -11,12 +11,14 @@ const STRINGS = {
   pl: {
     langToggleAriaLabel: "Przełącz język",
     title: "Ile kosztują opóźnienia? — GISBoost",
-    h1: "Ile kosztują opóźnienia? — Łódź",
+    h1: "Ile kosztują opóźnienia? — 6 miast",
     introHtml:
       "Siatka heksagonalna, dostępność 30 min (spacer + transit) w oknie 7:00–9:00, porównanie rozkładu " +
-      "<b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS, 2026-08-21. Dane " +
+      "<b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS (Łódź 2026-08-21, pozostałe 2026-08-24). Dane " +
       '<a href="https://gisboost.github.io/easy-R5/">Easy-R5</a> (QGIS). ' +
-      'Zakładka = rozmiar heksagonu, panel po lewej = kategoria. Jedna z <a href="../">analiz mapowych GISBoost</a>.',
+      'Wybierz miasto, zakładka = rozmiar heksagonu, panel po lewej = kategoria. ' +
+      'Interpretacja i wnioski: <a href="../badanie-opoznienia/">raport z badania</a>. Jedna z <a href="../">analiz mapowych GISBoost</a>.',
+    eyebrowCity: "Miasto",
     eyebrowCategory: "Kategoria",
     eyebrowLegend: "Legenda",
     eyebrowOpacity: "Przezroczystość warstwy",
@@ -25,7 +27,7 @@ const STRINGS = {
     footerBackLink: "&larr; wszystkie analizy",
     footerDataCode: "Dane i kod:",
     footerMethod: "metoda:",
-    footerMethodLink: "tools/realtime_delay_lodz",
+    footerMethodLink: "tools/realtime_delay_cities",
 
     catSchoolTitle: "Szkoły", catSchoolSub: "amenity=school, bez przedszkoli",
     catPharmacyTitle: "Apteki", catPharmacySub: "amenity=pharmacy",
@@ -35,7 +37,8 @@ const STRINGS = {
 
     legendNote:
       'Puste (bez wypełnienia) = brak bazowego dostępu w rozkładzie statycznym — nie ma czego tracić ani ' +
-      'zyskiwać, więc nie liczymy tego jako "bez zmian".',
+      'zyskiwać, więc nie liczymy tego jako "bez zmian". Siatka pokazuje tylko heksagony z zabudową ' +
+      'mieszkaniową (ludność GUS rozłożona po footprintcie budynków OSM); pola, tory i port są poza analizą.',
     legendClassLe4: "≤ -4", legendClassM3M2: "-3 .. -2", legendClassM1: "-1",
     legendClass0: "0 (bez zmian)", legendClassP1: "+1", legendClassP2P3: "+2 .. +3", legendClassGe4: "≥ +4",
     legendClassLe6: "≤ -6", legendClassM5M2: "-5 .. -2", legendClassP2P5: "+2 .. +5", legendClassGe6: "≥ +6",
@@ -57,12 +60,14 @@ const STRINGS = {
   en: {
     langToggleAriaLabel: "Switch language",
     title: "What do delays cost? — GISBoost",
-    h1: "What do delays cost? — Łódź",
+    h1: "What do delays cost? — 6 cities",
     introHtml:
       "Hex grid, 30 min accessibility (walk + transit) in the 7:00–9:00 window, comparing the " +
-      "<b>static</b> vs the <b>realized P50</b> GTFS schedule, 2026-08-21. " +
+      "<b>static</b> vs the <b>realized P50</b> GTFS schedule (Łódź 2026-08-21, the rest 2026-08-24). " +
       '<a href="https://gisboost.github.io/easy-R5/">Easy-R5</a> (QGIS) data. ' +
-      'Tab = hex size, the left panel picks the category. One of <a href="../">GISBoost\'s map analyses</a>.',
+      'Pick a city, the tab = hex size, the left panel picks the category. ' +
+      'Reading and conclusions: <a href="../badanie-opoznienia/">the study write-up</a>. One of <a href="../">GISBoost\'s map analyses</a>.',
+    eyebrowCity: "City",
     eyebrowCategory: "Category",
     eyebrowLegend: "Legend",
     eyebrowOpacity: "Layer opacity",
@@ -71,7 +76,7 @@ const STRINGS = {
     footerBackLink: "&larr; all analyses",
     footerDataCode: "Data and code:",
     footerMethod: "method:",
-    footerMethodLink: "tools/realtime_delay_lodz",
+    footerMethodLink: "tools/realtime_delay_cities",
 
     catSchoolTitle: "Schools", catSchoolSub: "amenity=school, no kindergartens",
     catPharmacyTitle: "Pharmacies", catPharmacySub: "amenity=pharmacy",
@@ -81,7 +86,8 @@ const STRINGS = {
 
     legendNote:
       "Blank (no fill) = no baseline access under the static schedule — nothing to lose or gain, " +
-      'so it does not count as "no change".',
+      'so it does not count as "no change". The grid only shows hexagons with residential buildings ' +
+      "(census population spread by OSM building footprint); fields, tracks and port land are out of scope.",
     legendClassLe4: "≤ -4", legendClassM3M2: "-3 .. -2", legendClassM1: "-1",
     legendClass0: "0 (no change)", legendClassP1: "+1", legendClassP2P3: "+2 .. +3", legendClassGe4: "≥ +4",
     legendClassLe6: "≤ -6", legendClassM5M2: "-5 .. -2", legendClassP2P5: "+2 .. +5", legendClassGe6: "≥ +6",

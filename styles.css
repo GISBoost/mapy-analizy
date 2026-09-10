@@ -28,7 +28,30 @@ body {
   font-family: "IBM Plex Sans", system-ui, sans-serif;
 }
 
-header { background: var(--chrome); color: var(--chrome-ink); padding: 40px 28px 32px; }
+/* Top belt — shared across the catalog and the research write-up, so the two
+   are one site you switch between (same idea as gtfs-dashboard's top nav). */
+.topbar {
+  background: var(--chrome); color: var(--chrome-ink);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding: 10px 28px;
+}
+.topbar .brand {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.9rem;
+  letter-spacing: 0.01em; color: var(--chrome-ink); text-decoration: none; white-space: nowrap;
+}
+.topbar .brand .sub { color: #9fb3c8; font-weight: 600; }
+.topnav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+.topnav-link {
+  all: unset; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+  color: #c7d4e2; padding: 6px 11px; border-radius: 7px; white-space: nowrap;
+}
+.topnav-link:hover { background: rgba(255, 255, 255, 0.08); color: var(--chrome-ink); }
+.topnav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.topnav-link[aria-current="page"] { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.topnav-link.lang { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: #9fb3c8; }
+
+header { background: var(--chrome); color: var(--chrome-ink); padding: 32px 28px 32px; }
 header .wrap { max-width: 900px; margin: 0 auto; position: relative; }
 
 .lang-toggle {

@@ -16,9 +16,13 @@
 
 <header>
   <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
-  <h1 data-i18n="h1">Ile kosztują opóźnienia? — Łódź</h1>
-  <p data-i18n-html="introHtml">Siatka heksagonalna, dostępność 30 min (spacer + transit) w oknie 7:00–9:00, porównanie rozkładu <b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS, 2026-08-21. Dane Easy-R5 (QGIS). Zakładka = rozmiar heksagonu, panel po lewej = kategoria. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
-  <div class="restabs" id="restabs"></div>
+  <h1 data-i18n="h1">Ile kosztują opóźnienia? — 6 miast</h1>
+  <p data-i18n-html="introHtml">Siatka heksagonalna, dostępność 30 min (spacer + transit) w oknie 7:00–9:00, porównanie rozkładu <b>statycznego</b> vs <b>zrealizowanego P50</b> GTFS. Dane Easy-R5 (QGIS). Wybierz miasto, zakładka = rozmiar heksagonu, panel po lewej = kategoria. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
+  <div class="cityrow">
+    <label class="eyebrow" for="cityselect" data-i18n="eyebrowCity">Miasto</label>
+    <select id="cityselect"></select>
+    <div class="restabs" id="restabs"></div>
+  </div>
 </header>
 
 <div class="app">
@@ -61,7 +65,7 @@
 <footer class="note">
   <a href="../" data-i18n-html="footerBackLink">&larr; wszystkie analizy</a>
   · <span data-i18n="footerDataCode">Dane i kod:</span> <a href="https://github.com/GISBoost/mapy-analizy/tree/main/opoznienia-dostepnosc">github.com/GISBoost/mapy-analizy</a>
-  · <span data-i18n="footerMethod">metoda:</span> <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/realtime_delay_lodz" data-i18n="footerMethodLink">tools/realtime_delay_lodz</a>
+  · <span data-i18n="footerMethod">metoda:</span> <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/realtime_delay_cities" data-i18n="footerMethodLink">tools/realtime_delay_cities</a>
   · podkład: <span class="badge">© OpenStreetMap contributors</span>
 </footer>
 

@@ -1,0 +1,2115 @@
+{
+  "meta": {
+    "generated": "2026-09-10",
+    "cutoff_min": 30,
+    "window": "07:00-09:00",
+    "date_lodz": "2026-08-21",
+    "date_other": "2026-08-24",
+    "categories": [
+      {
+        "key": "school",
+        "pl": "szkoły",
+        "en": "schools"
+      },
+      {
+        "key": "pharmacy",
+        "pl": "apteki",
+        "en": "pharmacies"
+      },
+      {
+        "key": "university",
+        "pl": "uczelnie",
+        "en": "universities"
+      },
+      {
+        "key": "mall",
+        "pl": "centra handlowe",
+        "en": "malls"
+      }
+    ]
+  },
+  "cities": [
+    {
+      "key": "lodz",
+      "label": "Łódź",
+      "date": "2026-08-21",
+      "compute": {
+        "wall": "~12m",
+        "seconds": 720,
+        "note": "the original pilot run"
+      },
+      "resolutions": {
+        "250": {
+          "net": -0.3,
+          "hex_comparable": 3416,
+          "hex_net_zero": 1500,
+          "dip": true,
+          "worst_ring_km": "2-3",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 27347.579999999998,
+              "n_hex": 56,
+              "mean": 0.7913800782372699
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 72757.39,
+              "n_hex": 164,
+              "mean": 0.13336294773630564
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 86373.20999999999,
+              "n_hex": 275,
+              "mean": -2.483631325037011
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 144253.43,
+              "n_hex": 363,
+              "mean": -0.266584718297513
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 112701.78,
+              "n_hex": 471,
+              "mean": 0.11055308975599142
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 93526.69,
+              "n_hex": 513,
+              "mean": -0.08521931012420089
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 59204.31,
+              "n_hex": 508,
+              "mean": -0.04510566882715134
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 39943.259999999995,
+              "n_hex": 430,
+              "mean": 0.33064501996081447
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 12625.609999999999,
+              "n_hex": 286,
+              "mean": 0.6022647618610112
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 4019.57,
+              "n_hex": 177,
+              "mean": 0.007655047679229369
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 5641.43,
+              "n_hex": 103,
+              "mean": 0.20706983867565493
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 2764.7999999999993,
+              "n_hex": 55,
+              "mean": -0.10886501736111115
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 236.67000000000002,
+              "n_hex": 15,
+              "mean": -0.11818143406430894
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": -0.122,
+              "mean_unweighted": -0.031,
+              "comparable": 3211,
+              "no_baseline": 890,
+              "gain": 704,
+              "loss": 690,
+              "unchanged": 1817
+            },
+            "pharmacy": {
+              "mean": -0.085,
+              "mean_unweighted": 0.071,
+              "comparable": 3220,
+              "no_baseline": 881,
+              "gain": 895,
+              "loss": 705,
+              "unchanged": 1620
+            },
+            "university": {
+              "mean": 0.008,
+              "mean_unweighted": 0.096,
+              "comparable": 1035,
+              "no_baseline": 3066,
+              "gain": 251,
+              "loss": 237,
+              "unchanged": 547
+            },
+            "mall": {
+              "mean": -0.113,
+              "mean_unweighted": -0.089,
+              "comparable": 1942,
+              "no_baseline": 2159,
+              "gain": 174,
+              "loss": 255,
+              "unchanged": 1513
+            }
+          },
+          "net_unweighted": 0.017,
+          "hex": {
+            "comparable": 3416,
+            "no_baseline": 685,
+            "gain": 1044,
+            "loss": 872,
+            "unchanged": 1500
+          }
+        },
+        "500": {
+          "net": 0.135,
+          "hex_comparable": 998,
+          "hex_net_zero": 469,
+          "dip": true,
+          "worst_ring_km": "2-3",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 32411.870000000003,
+              "n_hex": 16,
+              "mean": 0.5431001049923996
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 67783.89,
+              "n_hex": 41,
+              "mean": 1.4818668565642954
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 78027.59000000001,
+              "n_hex": 68,
+              "mean": -1.9997307362690555
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 149988.23,
+              "n_hex": 104,
+              "mean": -0.08397225568966306
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 117943.56000000001,
+              "n_hex": 128,
+              "mean": 0.3061076840482007
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 90761.75999999998,
+              "n_hex": 139,
+              "mean": 0.32466426389263514
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 62341.009999999995,
+              "n_hex": 154,
+              "mean": 0.4182492391445054
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 36780.36,
+              "n_hex": 143,
+              "mean": 0.7795456596944674
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 12176.849999999999,
+              "n_hex": 91,
+              "mean": 1.7337644793193643
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 4116.75,
+              "n_hex": 55,
+              "mean": -0.13933807007955304
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 5250.57,
+              "n_hex": 37,
+              "mean": -0.06398924307265688
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 2759.77,
+              "n_hex": 16,
+              "mean": -0.16760817024607122
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 190.78,
+              "n_hex": 6,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": 0.071,
+              "mean_unweighted": 0.013,
+              "comparable": 926,
+              "no_baseline": 347,
+              "gain": 212,
+              "loss": 174,
+              "unchanged": 540
+            },
+            "pharmacy": {
+              "mean": 0.159,
+              "mean_unweighted": 0.178,
+              "comparable": 906,
+              "no_baseline": 367,
+              "gain": 267,
+              "loss": 191,
+              "unchanged": 448
+            },
+            "university": {
+              "mean": -0.016,
+              "mean_unweighted": 0.011,
+              "comparable": 279,
+              "no_baseline": 994,
+              "gain": 59,
+              "loss": 61,
+              "unchanged": 159
+            },
+            "mall": {
+              "mean": -0.097,
+              "mean_unweighted": -0.087,
+              "comparable": 530,
+              "no_baseline": 743,
+              "gain": 34,
+              "loss": 60,
+              "unchanged": 436
+            }
+          },
+          "net_unweighted": 0.13,
+          "hex": {
+            "comparable": 998,
+            "no_baseline": 275,
+            "gain": 293,
+            "loss": 236,
+            "unchanged": 469
+          }
+        }
+      },
+      "shift_peak": {
+        "tram": {
+          "trips": 334,
+          "late_pct": 41.0,
+          "early_pct": 9.9,
+          "median_s": 16
+        },
+        "autobus": {
+          "trips": 701,
+          "late_pct": 19.3,
+          "early_pct": 36.4,
+          "median_s": -12
+        }
+      }
+    },
+    {
+      "key": "warszawa",
+      "label": "Warszawa",
+      "date": "2026-08-24",
+      "compute": {
+        "wall": "23m 00s",
+        "seconds": 1380,
+        "note": "500 MB network.dat, 500 m only"
+      },
+      "resolutions": {
+        "500": {
+          "net": 3.449,
+          "hex_comparable": 1904,
+          "hex_net_zero": 582,
+          "dip": false,
+          "worst_ring_km": "14-15",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 27863.2,
+              "n_hex": 14,
+              "mean": 4.821328977770696
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 70776.1,
+              "n_hex": 44,
+              "mean": 8.734873786561403
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 108972.5,
+              "n_hex": 64,
+              "mean": 3.8281561231158774
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 186648.4,
+              "n_hex": 97,
+              "mean": 4.8583312643806496
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 214608.5,
+              "n_hex": 121,
+              "mean": 5.768233651455173
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 207718.6,
+              "n_hex": 147,
+              "mean": 4.4475038510037885
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 235504.0,
+              "n_hex": 158,
+              "mean": 4.440420789527276
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 190303.7,
+              "n_hex": 172,
+              "mean": 1.9594812333361724
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 159139.4,
+              "n_hex": 177,
+              "mean": 1.0196843810554233
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 120504.8,
+              "n_hex": 173,
+              "mean": 2.906412441662075
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 123543.9,
+              "n_hex": 166,
+              "mean": 0.6822004494760362
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 84100.5,
+              "n_hex": 154,
+              "mean": 0.8121928601401205
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 45663.0,
+              "n_hex": 121,
+              "mean": 0.4504246760618653
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 23045.9,
+              "n_hex": 115,
+              "mean": 0.18320829301524347
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 22940.7,
+              "n_hex": 94,
+              "mean": -0.04306968435616474
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 15962.0,
+              "n_hex": 54,
+              "mean": 0.5584015526886059
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 5799.4,
+              "n_hex": 28,
+              "mean": 0.6598435705639529
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 564.4,
+              "n_hex": 5,
+              "mean": 0.6119241672572644
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": 1.483,
+              "mean_unweighted": 0.717,
+              "comparable": 1853,
+              "no_baseline": 168,
+              "gain": 693,
+              "loss": 382,
+              "unchanged": 778
+            },
+            "pharmacy": {
+              "mean": 1.642,
+              "mean_unweighted": 0.912,
+              "comparable": 1813,
+              "no_baseline": 208,
+              "gain": 779,
+              "loss": 360,
+              "unchanged": 674
+            },
+            "university": {
+              "mean": 0.196,
+              "mean_unweighted": 0.179,
+              "comparable": 519,
+              "no_baseline": 1502,
+              "gain": 132,
+              "loss": 105,
+              "unchanged": 282
+            },
+            "mall": {
+              "mean": 0.246,
+              "mean_unweighted": 0.156,
+              "comparable": 1362,
+              "no_baseline": 659,
+              "gain": 265,
+              "loss": 125,
+              "unchanged": 972
+            }
+          },
+          "net_unweighted": 1.726,
+          "hex": {
+            "comparable": 1904,
+            "no_baseline": 117,
+            "gain": 884,
+            "loss": 438,
+            "unchanged": 582
+          }
+        }
+      },
+      "shift_peak": {
+        "tram": {
+          "trips": 701,
+          "late_pct": 20.5,
+          "early_pct": 31.0,
+          "median_s": -13
+        },
+        "autobus": {
+          "trips": 3256,
+          "late_pct": 19.0,
+          "early_pct": 38.8,
+          "median_s": -12
+        }
+      }
+    },
+    {
+      "key": "poznan",
+      "label": "Poznań",
+      "date": "2026-08-24",
+      "compute": {
+        "wall": "15m 59s",
+        "seconds": 959
+      },
+      "resolutions": {
+        "250": {
+          "net": 2.843,
+          "hex_comparable": 2709,
+          "hex_net_zero": 1010,
+          "dip": false,
+          "worst_ring_km": "8-9",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 19419.4,
+              "n_hex": 57,
+              "mean": 5.121041969414059
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 73773.3,
+              "n_hex": 161,
+              "mean": 6.653949557916061
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 82088.4,
+              "n_hex": 246,
+              "mean": 4.9162905576735305
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 105756.2,
+              "n_hex": 330,
+              "mean": 3.757630288391711
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 107878.0,
+              "n_hex": 420,
+              "mean": 1.3712902193876213
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 79847.9,
+              "n_hex": 415,
+              "mean": 0.1379534996027448
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 37964.9,
+              "n_hex": 398,
+              "mean": -0.21412927266707352
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 17591.9,
+              "n_hex": 286,
+              "mean": -0.1567813350356329
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 6355.0,
+              "n_hex": 167,
+              "mean": -0.4899992289547932
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 3137.2,
+              "n_hex": 95,
+              "mean": -0.11666321342619893
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 2768.8,
+              "n_hex": 76,
+              "mean": -0.019496021699166064
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 2345.0,
+              "n_hex": 26,
+              "mean": 0.0958584574971642
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 1255.9,
+              "n_hex": 32,
+              "mean": -0.22428537303925472
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": 1.066,
+              "mean_unweighted": 0.484,
+              "comparable": 2605,
+              "no_baseline": 328,
+              "gain": 776,
+              "loss": 440,
+              "unchanged": 1389
+            },
+            "pharmacy": {
+              "mean": 1.433,
+              "mean_unweighted": 0.646,
+              "comparable": 2641,
+              "no_baseline": 292,
+              "gain": 890,
+              "loss": 585,
+              "unchanged": 1166
+            },
+            "university": {
+              "mean": 0.144,
+              "mean_unweighted": 0.142,
+              "comparable": 1144,
+              "no_baseline": 1789,
+              "gain": 223,
+              "loss": 119,
+              "unchanged": 802
+            },
+            "mall": {
+              "mean": 0.286,
+              "mean_unweighted": 0.162,
+              "comparable": 1728,
+              "no_baseline": 1205,
+              "gain": 359,
+              "loss": 169,
+              "unchanged": 1200
+            }
+          },
+          "net_unweighted": 1.259,
+          "hex": {
+            "comparable": 2709,
+            "no_baseline": 224,
+            "gain": 1021,
+            "loss": 678,
+            "unchanged": 1010
+          }
+        },
+        "500": {
+          "net": 2.642,
+          "hex_comparable": 855,
+          "hex_net_zero": 359,
+          "dip": false,
+          "worst_ring_km": "6-7",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 20727.1,
+              "n_hex": 14,
+              "mean": 7.074492295356178
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 74065.5,
+              "n_hex": 45,
+              "mean": 6.503721705787444
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 83959.9,
+              "n_hex": 71,
+              "mean": 4.936505641383566
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 101702.1,
+              "n_hex": 97,
+              "mean": 2.2535164957262435
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 105040.4,
+              "n_hex": 116,
+              "mean": 1.6985917603481175
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 85169.1,
+              "n_hex": 133,
+              "mean": 0.14905152774358107
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 38294.2,
+              "n_hex": 128,
+              "mean": -0.7373036156678681
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 17304.1,
+              "n_hex": 101,
+              "mean": -0.10328632528766253
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 6401.7,
+              "n_hex": 62,
+              "mean": -0.6496785238967028
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 3025.9,
+              "n_hex": 34,
+              "mean": -0.012003040417726957
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 3058.4,
+              "n_hex": 28,
+              "mean": 1.0233719268760813
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 1928.9,
+              "n_hex": 10,
+              "mean": 0.21968137775865376
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 1230.4,
+              "n_hex": 14,
+              "mean": -0.09322984395318595
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 131.7,
+              "n_hex": 2,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": 0.966,
+              "mean_unweighted": 0.411,
+              "comparable": 811,
+              "no_baseline": 159,
+              "gain": 218,
+              "loss": 124,
+              "unchanged": 469
+            },
+            "pharmacy": {
+              "mean": 1.338,
+              "mean_unweighted": 0.587,
+              "comparable": 829,
+              "no_baseline": 141,
+              "gain": 258,
+              "loss": 160,
+              "unchanged": 411
+            },
+            "university": {
+              "mean": 0.124,
+              "mean_unweighted": 0.063,
+              "comparable": 318,
+              "no_baseline": 652,
+              "gain": 59,
+              "loss": 43,
+              "unchanged": 216
+            },
+            "mall": {
+              "mean": 0.299,
+              "mean_unweighted": 0.179,
+              "comparable": 513,
+              "no_baseline": 457,
+              "gain": 101,
+              "loss": 43,
+              "unchanged": 369
+            }
+          },
+          "net_unweighted": 1.09,
+          "hex": {
+            "comparable": 855,
+            "no_baseline": 115,
+            "gain": 295,
+            "loss": 201,
+            "unchanged": 359
+          }
+        }
+      },
+      "shift_peak": {
+        "tram": {
+          "trips": 274,
+          "late_pct": 4.7,
+          "early_pct": 43.4,
+          "median_s": -24
+        },
+        "autobus": {
+          "trips": 969,
+          "late_pct": 15.6,
+          "early_pct": 28.7,
+          "median_s": 0
+        }
+      }
+    },
+    {
+      "key": "szczecin",
+      "label": "Szczecin",
+      "date": "2026-08-24",
+      "compute": {
+        "wall": "8m 44s",
+        "seconds": 524
+      },
+      "resolutions": {
+        "250": {
+          "net": 2.448,
+          "hex_comparable": 1615,
+          "hex_net_zero": 658,
+          "dip": false,
+          "worst_ring_km": "6-7",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 12648.8,
+              "n_hex": 36,
+              "mean": 2.9772137207838822
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 69493.9,
+              "n_hex": 109,
+              "mean": 3.301186937855742
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 58352.7,
+              "n_hex": 124,
+              "mean": 3.375866240979424
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 58315.8,
+              "n_hex": 162,
+              "mean": 4.105072643325345
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 52816.4,
+              "n_hex": 210,
+              "mean": 2.3186878330520133
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 36448.6,
+              "n_hex": 184,
+              "mean": 0.7195241732458018
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 17106.8,
+              "n_hex": 152,
+              "mean": -0.07838655595799555
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 25522.4,
+              "n_hex": 159,
+              "mean": 0.9726750156626935
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 30805.4,
+              "n_hex": 135,
+              "mean": 1.6958464790136025
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 15378.9,
+              "n_hex": 86,
+              "mean": 1.4804586534953992
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 5330.3,
+              "n_hex": 68,
+              "mean": 2.4091349969138527
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 1954.5,
+              "n_hex": 30,
+              "mean": 0.04524942440521873
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 2248.8,
+              "n_hex": 12,
+              "mean": 0.0
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 1516.8,
+              "n_hex": 52,
+              "mean": 0.010106537274860895
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 4748.8,
+              "n_hex": 66,
+              "mean": 0.008275740078587947
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 625.8,
+              "n_hex": 15,
+              "mean": 0.0
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 262.6,
+              "n_hex": 11,
+              "mean": 0.0
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 111.3,
+              "n_hex": 4,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": 0.769,
+              "mean_unweighted": 0.503,
+              "comparable": 1466,
+              "no_baseline": 290,
+              "gain": 480,
+              "loss": 202,
+              "unchanged": 784
+            },
+            "pharmacy": {
+              "mean": 1.019,
+              "mean_unweighted": 0.575,
+              "comparable": 1535,
+              "no_baseline": 221,
+              "gain": 563,
+              "loss": 261,
+              "unchanged": 711
+            },
+            "university": {
+              "mean": 0.778,
+              "mean_unweighted": 0.597,
+              "comparable": 690,
+              "no_baseline": 1066,
+              "gain": 240,
+              "loss": 73,
+              "unchanged": 377
+            },
+            "mall": {
+              "mean": 0.161,
+              "mean_unweighted": 0.101,
+              "comparable": 1157,
+              "no_baseline": 599,
+              "gain": 204,
+              "loss": 111,
+              "unchanged": 842
+            }
+          },
+          "net_unweighted": 1.331,
+          "hex": {
+            "comparable": 1615,
+            "no_baseline": 141,
+            "gain": 678,
+            "loss": 279,
+            "unchanged": 658
+          }
+        },
+        "500": {
+          "net": 2.074,
+          "hex_comparable": 540,
+          "hex_net_zero": 245,
+          "dip": false,
+          "worst_ring_km": "14-15",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 12144.8,
+              "n_hex": 10,
+              "mean": 3.702412976800675
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 72648.5,
+              "n_hex": 35,
+              "mean": 2.1153150496899182
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 55770.2,
+              "n_hex": 40,
+              "mean": 3.3946242985278343
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 57206.3,
+              "n_hex": 52,
+              "mean": 3.259513200469179
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 52038.1,
+              "n_hex": 61,
+              "mean": 1.402222642000366
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 36439.1,
+              "n_hex": 58,
+              "mean": 1.4777526125089224
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 19166.0,
+              "n_hex": 52,
+              "mean": 0.07383315811030436
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 26457.1,
+              "n_hex": 56,
+              "mean": 0.8691088097746199
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 28553.5,
+              "n_hex": 51,
+              "mean": 1.6044155053658975
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 14830.8,
+              "n_hex": 33,
+              "mean": 1.9588410604957252
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 5444.1,
+              "n_hex": 24,
+              "mean": 2.5302281924068115
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 1830.5,
+              "n_hex": 10,
+              "mean": 0.24009833378858236
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 2674.2,
+              "n_hex": 6,
+              "mean": 0.0
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 1381.8,
+              "n_hex": 16,
+              "mean": 0.0
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 4659.7,
+              "n_hex": 27,
+              "mean": -0.23730272165780336
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 797.4,
+              "n_hex": 6,
+              "mean": 0.0
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 85.1,
+              "n_hex": 2,
+              "mean": 0.0
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 142.4,
+              "n_hex": 1,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": 0.67,
+              "mean_unweighted": 0.42,
+              "comparable": 486,
+              "no_baseline": 133,
+              "gain": 149,
+              "loss": 65,
+              "unchanged": 272
+            },
+            "pharmacy": {
+              "mean": 0.878,
+              "mean_unweighted": 0.56,
+              "comparable": 502,
+              "no_baseline": 117,
+              "gain": 167,
+              "loss": 67,
+              "unchanged": 268
+            },
+            "university": {
+              "mean": 0.568,
+              "mean_unweighted": 0.649,
+              "comparable": 205,
+              "no_baseline": 414,
+              "gain": 75,
+              "loss": 28,
+              "unchanged": 102
+            },
+            "mall": {
+              "mean": 0.176,
+              "mean_unweighted": 0.104,
+              "comparable": 356,
+              "no_baseline": 263,
+              "gain": 66,
+              "loss": 36,
+              "unchanged": 254
+            }
+          },
+          "net_unweighted": 1.213,
+          "hex": {
+            "comparable": 540,
+            "no_baseline": 79,
+            "gain": 201,
+            "loss": 94,
+            "unchanged": 245
+          }
+        }
+      },
+      "shift_peak": {
+        "tram": {
+          "trips": 169,
+          "late_pct": 2.4,
+          "early_pct": 41.4,
+          "median_s": -27
+        },
+        "autobus": {
+          "trips": 731,
+          "late_pct": 10.1,
+          "early_pct": 25.0,
+          "median_s": -3
+        }
+      }
+    },
+    {
+      "key": "gdansk",
+      "label": "Gdańsk",
+      "date": "2026-08-24",
+      "compute": {
+        "wall": "13m 03s",
+        "seconds": 783,
+        "note": "networks were cache-warm"
+      },
+      "resolutions": {
+        "250": {
+          "net": 0.155,
+          "hex_comparable": 2198,
+          "hex_net_zero": 913,
+          "dip": false,
+          "worst_ring_km": "6-7",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 7718.4,
+              "n_hex": 50,
+              "mean": 2.06331364013267
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 55236.7,
+              "n_hex": 149,
+              "mean": -0.4127167579827332
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 78298.7,
+              "n_hex": 258,
+              "mean": 1.80055579473935
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 75494.7,
+              "n_hex": 274,
+              "mean": 1.120142807300217
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 110918.9,
+              "n_hex": 328,
+              "mean": -0.36018994775643326
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 79165.4,
+              "n_hex": 354,
+              "mean": -0.8182759364222328
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 32954.5,
+              "n_hex": 254,
+              "mean": -0.9490581851439835
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 17319.7,
+              "n_hex": 150,
+              "mean": -0.7591719467934128
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 2728.3,
+              "n_hex": 100,
+              "mean": 0.1449217461422864
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 6336.9,
+              "n_hex": 60,
+              "mean": 0.329518107462809
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 8466.4,
+              "n_hex": 79,
+              "mean": 0.2574119898185168
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 3632.7,
+              "n_hex": 35,
+              "mean": 0.20474797052338337
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 476.9,
+              "n_hex": 13,
+              "mean": -0.0813219535722524
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 74.4,
+              "n_hex": 4,
+              "mean": 0.0
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 375.7,
+              "n_hex": 9,
+              "mean": -0.16510074259402197
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 442.1,
+              "n_hex": 16,
+              "mean": -0.05241369949780573
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 102.3,
+              "n_hex": 10,
+              "mean": -0.12014859712581875
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 90.1,
+              "n_hex": 4,
+              "mean": -0.7810453889690377
+            },
+            {
+              "lo": 18.0,
+              "hi": 19.0,
+              "pop": 46.2,
+              "n_hex": 2,
+              "mean": 0.0
+            },
+            {
+              "lo": 19.0,
+              "hi": 20.0,
+              "pop": 454.6,
+              "n_hex": 17,
+              "mean": 0.0
+            },
+            {
+              "lo": 20.0,
+              "hi": 21.0,
+              "pop": 290.8,
+              "n_hex": 13,
+              "mean": 0.0
+            },
+            {
+              "lo": 21.0,
+              "hi": 22.0,
+              "pop": 388.7,
+              "n_hex": 10,
+              "mean": 0.0
+            },
+            {
+              "lo": 22.0,
+              "hi": 23.0,
+              "pop": 227.1,
+              "n_hex": 9,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": -0.182,
+              "mean_unweighted": -0.123,
+              "comparable": 2153,
+              "no_baseline": 448,
+              "gain": 345,
+              "loss": 465,
+              "unchanged": 1343
+            },
+            "pharmacy": {
+              "mean": 0.071,
+              "mean_unweighted": 0.006,
+              "comparable": 1974,
+              "no_baseline": 627,
+              "gain": 493,
+              "loss": 495,
+              "unchanged": 986
+            },
+            "university": {
+              "mean": 0.447,
+              "mean_unweighted": 0.376,
+              "comparable": 735,
+              "no_baseline": 1866,
+              "gain": 183,
+              "loss": 118,
+              "unchanged": 434
+            },
+            "mall": {
+              "mean": 0.06,
+              "mean_unweighted": 0.063,
+              "comparable": 1488,
+              "no_baseline": 1113,
+              "gain": 260,
+              "loss": 203,
+              "unchanged": 1025
+            }
+          },
+          "net_unweighted": 0.054,
+          "hex": {
+            "comparable": 2198,
+            "no_baseline": 403,
+            "gain": 650,
+            "loss": 635,
+            "unchanged": 913
+          }
+        },
+        "500": {
+          "net": -0.017,
+          "hex_comparable": 674,
+          "hex_net_zero": 293,
+          "dip": false,
+          "worst_ring_km": "5-6",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 9125.4,
+              "n_hex": 15,
+              "mean": 0.39167798120198166
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 51054.5,
+              "n_hex": 42,
+              "mean": -0.9536323039825473
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 77879.8,
+              "n_hex": 71,
+              "mean": 1.7541523277984374
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 75790.2,
+              "n_hex": 79,
+              "mean": 0.8700251140715063
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 114190.2,
+              "n_hex": 97,
+              "mean": -0.2918840817807769
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 78222.9,
+              "n_hex": 109,
+              "mean": -1.3055350905418655
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 33628.1,
+              "n_hex": 83,
+              "mean": -1.1831298824494991
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 17547.5,
+              "n_hex": 51,
+              "mean": 0.08460060715166999
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 2331.5,
+              "n_hex": 31,
+              "mean": 0.20400941878868203
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 7060.9,
+              "n_hex": 24,
+              "mean": 0.4572815286479872
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 8422.7,
+              "n_hex": 23,
+              "mean": 0.5178921673386618
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 2602.7,
+              "n_hex": 10,
+              "mean": 0.03487188156777463
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 541.2,
+              "n_hex": 5,
+              "mean": 0.0
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 89.6,
+              "n_hex": 2,
+              "mean": 0.0
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 319.3,
+              "n_hex": 4,
+              "mean": 0.0
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 454.9,
+              "n_hex": 6,
+              "mean": 0.0
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 130.8,
+              "n_hex": 4,
+              "mean": -0.2187738877847424
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 74.5,
+              "n_hex": 1,
+              "mean": -2.0
+            },
+            {
+              "lo": 18.0,
+              "hi": 19.0,
+              "pop": 47.2,
+              "n_hex": 2,
+              "mean": -1.592804232804233
+            },
+            {
+              "lo": 19.0,
+              "hi": 20.0,
+              "pop": 395.1,
+              "n_hex": 5,
+              "mean": 0.0
+            },
+            {
+              "lo": 20.0,
+              "hi": 21.0,
+              "pop": 268.6,
+              "n_hex": 4,
+              "mean": 0.0
+            },
+            {
+              "lo": 21.0,
+              "hi": 22.0,
+              "pop": 335.6,
+              "n_hex": 3,
+              "mean": 0.0
+            },
+            {
+              "lo": 22.0,
+              "hi": 23.0,
+              "pop": 279.7,
+              "n_hex": 3,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": -0.249,
+              "mean_unweighted": -0.144,
+              "comparable": 652,
+              "no_baseline": 216,
+              "gain": 97,
+              "loss": 134,
+              "unchanged": 421
+            },
+            "pharmacy": {
+              "mean": 0.044,
+              "mean_unweighted": -0.026,
+              "comparable": 588,
+              "no_baseline": 280,
+              "gain": 141,
+              "loss": 147,
+              "unchanged": 300
+            },
+            "university": {
+              "mean": 0.394,
+              "mean_unweighted": 0.257,
+              "comparable": 191,
+              "no_baseline": 677,
+              "gain": 41,
+              "loss": 31,
+              "unchanged": 119
+            },
+            "mall": {
+              "mean": 0.011,
+              "mean_unweighted": 0.061,
+              "comparable": 424,
+              "no_baseline": 444,
+              "gain": 83,
+              "loss": 58,
+              "unchanged": 283
+            }
+          },
+          "net_unweighted": -0.05,
+          "hex": {
+            "comparable": 674,
+            "no_baseline": 194,
+            "gain": 189,
+            "loss": 192,
+            "unchanged": 293
+          }
+        }
+      },
+      "shift_peak": {
+        "tram": {
+          "trips": 186,
+          "late_pct": 21.5,
+          "early_pct": 30.1,
+          "median_s": -3
+        },
+        "autobus": {
+          "trips": 642,
+          "late_pct": 41.0,
+          "early_pct": 18.7,
+          "median_s": 14
+        }
+      }
+    },
+    {
+      "key": "krakow",
+      "label": "Kraków",
+      "date": "2026-08-24",
+      "compute": {
+        "wall": "21m 12s",
+        "seconds": 1272,
+        "note": "most origins + densest network"
+      },
+      "resolutions": {
+        "250": {
+          "net": -0.811,
+          "hex_comparable": 3850,
+          "hex_net_zero": 2424,
+          "dip": false,
+          "worst_ring_km": "0-1",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 20217.7,
+              "n_hex": 55,
+              "mean": -3.06848602956815
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 48452.0,
+              "n_hex": 159,
+              "mean": 0.38427817545649806
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 74236.7,
+              "n_hex": 252,
+              "mean": -0.8519433859304304
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 113014.8,
+              "n_hex": 345,
+              "mean": -0.9852654722628412
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 179552.2,
+              "n_hex": 449,
+              "mean": -0.908134271400578
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 175633.0,
+              "n_hex": 507,
+              "mean": -1.1020599087802512
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 78624.3,
+              "n_hex": 516,
+              "mean": -0.5513233887390272
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 48093.9,
+              "n_hex": 474,
+              "mean": -0.2988019486034932
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 29625.1,
+              "n_hex": 358,
+              "mean": -0.354562712615029
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 12035.0,
+              "n_hex": 244,
+              "mean": -0.038109743431231295
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 5472.8,
+              "n_hex": 151,
+              "mean": -0.059376850044949234
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 2686.3,
+              "n_hex": 91,
+              "mean": 0.0
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 3411.7,
+              "n_hex": 102,
+              "mean": 0.0
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 477.3,
+              "n_hex": 42,
+              "mean": 0.0
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 515.5,
+              "n_hex": 26,
+              "mean": 0.0
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 781.5,
+              "n_hex": 33,
+              "mean": 0.0
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 798.7,
+              "n_hex": 32,
+              "mean": 0.0
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 292.1,
+              "n_hex": 14,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": -0.195,
+              "mean_unweighted": -0.155,
+              "comparable": 3724,
+              "no_baseline": 562,
+              "gain": 346,
+              "loss": 595,
+              "unchanged": 2783
+            },
+            "pharmacy": {
+              "mean": -0.351,
+              "mean_unweighted": -0.255,
+              "comparable": 3409,
+              "no_baseline": 877,
+              "gain": 363,
+              "loss": 721,
+              "unchanged": 2325
+            },
+            "university": {
+              "mean": -0.295,
+              "mean_unweighted": -0.315,
+              "comparable": 1511,
+              "no_baseline": 2775,
+              "gain": 165,
+              "loss": 349,
+              "unchanged": 997
+            },
+            "mall": {
+              "mean": -0.081,
+              "mean_unweighted": -0.071,
+              "comparable": 2284,
+              "no_baseline": 2002,
+              "gain": 55,
+              "loss": 184,
+              "unchanged": 2045
+            }
+          },
+          "net_unweighted": -0.541,
+          "hex": {
+            "comparable": 3850,
+            "no_baseline": 436,
+            "gain": 463,
+            "loss": 963,
+            "unchanged": 2424
+          }
+        },
+        "500": {
+          "net": -0.947,
+          "hex_comparable": 1143,
+          "hex_net_zero": 774,
+          "dip": false,
+          "worst_ring_km": "5-6",
+          "rings": [
+            {
+              "lo": 0.0,
+              "hi": 1.0,
+              "pop": 21476.9,
+              "n_hex": 14,
+              "mean": -4.232718734154465
+            },
+            {
+              "lo": 1.0,
+              "hi": 2.0,
+              "pop": 44997.4,
+              "n_hex": 44,
+              "mean": 0.33319095476828564
+            },
+            {
+              "lo": 2.0,
+              "hi": 3.0,
+              "pop": 74406.2,
+              "n_hex": 72,
+              "mean": -0.42979699815418654
+            },
+            {
+              "lo": 3.0,
+              "hi": 4.0,
+              "pop": 114579.4,
+              "n_hex": 95,
+              "mean": -1.2286132984835492
+            },
+            {
+              "lo": 4.0,
+              "hi": 5.0,
+              "pop": 177782.8,
+              "n_hex": 122,
+              "mean": -1.1062415810209805
+            },
+            {
+              "lo": 5.0,
+              "hi": 6.0,
+              "pop": 179212.5,
+              "n_hex": 150,
+              "mean": -1.307287953080941
+            },
+            {
+              "lo": 6.0,
+              "hi": 7.0,
+              "pop": 78234.4,
+              "n_hex": 148,
+              "mean": -0.6124499229111293
+            },
+            {
+              "lo": 7.0,
+              "hi": 8.0,
+              "pop": 46952.9,
+              "n_hex": 140,
+              "mean": -0.19977948123354203
+            },
+            {
+              "lo": 8.0,
+              "hi": 9.0,
+              "pop": 28708.1,
+              "n_hex": 111,
+              "mean": -0.50107147609417
+            },
+            {
+              "lo": 9.0,
+              "hi": 10.0,
+              "pop": 12401.2,
+              "n_hex": 82,
+              "mean": -0.015599271684560068
+            },
+            {
+              "lo": 10.0,
+              "hi": 11.0,
+              "pop": 5759.9,
+              "n_hex": 54,
+              "mean": -0.009689370685703969
+            },
+            {
+              "lo": 11.0,
+              "hi": 12.0,
+              "pop": 2771.9,
+              "n_hex": 32,
+              "mean": 0.0
+            },
+            {
+              "lo": 12.0,
+              "hi": 13.0,
+              "pop": 3482.9,
+              "n_hex": 29,
+              "mean": 0.0
+            },
+            {
+              "lo": 13.0,
+              "hi": 14.0,
+              "pop": 580.9,
+              "n_hex": 18,
+              "mean": 0.0
+            },
+            {
+              "lo": 14.0,
+              "hi": 15.0,
+              "pop": 574.6,
+              "n_hex": 9,
+              "mean": 0.0
+            },
+            {
+              "lo": 15.0,
+              "hi": 16.0,
+              "pop": 664.3,
+              "n_hex": 8,
+              "mean": 0.0
+            },
+            {
+              "lo": 16.0,
+              "hi": 17.0,
+              "pop": 980.3,
+              "n_hex": 13,
+              "mean": 0.0
+            },
+            {
+              "lo": 17.0,
+              "hi": 18.0,
+              "pop": 106.4,
+              "n_hex": 2,
+              "mean": 0.0
+            }
+          ],
+          "categories": {
+            "school": {
+              "mean": -0.261,
+              "mean_unweighted": -0.13,
+              "comparable": 1094,
+              "no_baseline": 250,
+              "gain": 83,
+              "loss": 153,
+              "unchanged": 858
+            },
+            "pharmacy": {
+              "mean": -0.382,
+              "mean_unweighted": -0.241,
+              "comparable": 993,
+              "no_baseline": 351,
+              "gain": 102,
+              "loss": 194,
+              "unchanged": 697
+            },
+            "university": {
+              "mean": -0.329,
+              "mean_unweighted": -0.289,
+              "comparable": 409,
+              "no_baseline": 935,
+              "gain": 53,
+              "loss": 83,
+              "unchanged": 273
+            },
+            "mall": {
+              "mean": -0.102,
+              "mean_unweighted": -0.055,
+              "comparable": 631,
+              "no_baseline": 713,
+              "gain": 20,
+              "loss": 46,
+              "unchanged": 565
+            }
+          },
+          "net_unweighted": -0.467,
+          "hex": {
+            "comparable": 1143,
+            "no_baseline": 201,
+            "gain": 119,
+            "loss": 250,
+            "unchanged": 774
+          }
+        }
+      },
+      "shift_peak": {
+        "tram": {
+          "trips": 334,
+          "late_pct": 46.4,
+          "early_pct": 2.4,
+          "median_s": 25
+        },
+        "autobus": {
+          "trips": 1360,
+          "late_pct": 0.0,
+          "early_pct": 0.0,
+          "median_s": 0
+        }
+      }
+    }
+  ]
+}

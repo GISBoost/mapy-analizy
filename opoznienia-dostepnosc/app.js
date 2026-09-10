@@ -1,9 +1,10 @@
-// Ile kosztuja opoznienia? -- Lodz. Vanilla JS + Leaflet, no build step
+// Ile kosztuja opoznienia? -- 6 cities. Vanilla JS + Leaflet, no build step
 // (mirrors uczelnie-dostepnosc / gtfs-dashboard).
 //
-// Two independent switches: RESOLUTION (top tabs, reloads a GeoJSON file --
-// same role as uczelnie-dostepnosc's city tabs) and CATEGORY (left panel,
-// just restyles the already-loaded data -- same role as its mode switch).
+// Three independent switches: CITY (top select, reloads that city's boundary
+// + data + refits the map), RESOLUTION (top tabs, reloads a GeoJSON file --
+// per-city, Warszawa has 500 m only) and CATEGORY (left panel, just restyles
+// the already-loaded data).
 //
 // Classification mirrors tools/realtime_delay_lodz/style_delay_layers.py
 // EXACTLY: same half-integer class edges, same ColorBrewer RdBu-7 colours.
@@ -11,11 +12,11 @@
 // / net_delta = null) is filtered out of the layer entirely -- same as QGIS's
 // graduated renderer drawing no symbol for an unmatched (null) value.
 //
-// Two reference overlays sit above the choropleth (fill:false, so they never
-// hide colours): the city boundary (resolution-independent, loaded once) and
-// "siatka", the full hex grid outline per resolution -- it includes the
-// hexagons the data layer filters out as null, so the grid stays visible even
-// where there is nothing to colour.
+// Two reference overlays sit above the choropleth (fill:false): the city
+// boundary (per city, resolution-independent) and "siatka", the full hex grid
+// outline per city+resolution -- it includes the hexagons the data layer
+// filters out as null, so the grid stays visible even where there is nothing
+// to colour.
 (function () {
   "use strict";
 
@@ -42,6 +43,7 @@
     net: { titleKey: "catNetTitle", subKey: "catNetSub" },
   };
 
+  const cityselectEl = document.getElementById("cityselect");
   const restabsEl = document.getElementById("restabs");
   const modeswitchEl = document.getElementById("modeswitch");
   const legendEl = document.getElementById("legend");
@@ -58,6 +60,8 @@
   }).addTo(map);
 
   let manifest = null;
+  let cityByKey = {};
+  let currentCity = null;
   let currentRes = null;
   let currentMode = "net";
   let opacity = parseFloat(opacityInput.value);
@@ -66,9 +70,11 @@
   let boundaryLayer = null;
   let siatkaLayer = null;
 
-  const cache = {}; // resolution key -> parsed hex_<res>.geojson
-  const siatkaCache = {}; // resolution key -> parsed siatka_<res>.geojson
+  const cache = {};        // "<city>_<res>" -> parsed hex geojson
+  const siatkaCache = {};  // "<city>_<res>" -> parsed siatka geojson
+  const boundaryCache = {}; // city -> parsed boundary geojson
 
+  function key() { return currentCity + "_" + currentRes; }
   function fieldFor(mode) { return mode === "net" ? "net_delta" : "delta_" + mode; }
   function edgesFor(mode) { return mode === "net" ? NET_EDGES : CATEGORY_EDGES; }
   function legendKeysFor(mode) { return mode === "net" ? NET_LEGEND_KEYS : CATEGORY_LEGEND_KEYS; }
@@ -111,7 +117,7 @@
   }
 
   function buildLayerForMode(mode) {
-    const data = cache[currentRes];
+    const data = cache[key()];
     const field = fieldFor(mode);
     const edges = edgesFor(mode);
     return L.geoJSON(data, {
@@ -128,17 +134,17 @@
 
   function renderLegend(mode) {
     legendEl.innerHTML = "";
-    legendKeysFor(mode).forEach((key, i) => {
+    legendKeysFor(mode).forEach((k, i) => {
       const div = document.createElement("div");
       div.className = "legend-row";
-      div.innerHTML = '<span class="swatch" style="background:' + RDBU7[i] + '"></span>' + t(key);
+      div.innerHTML = '<span class="swatch" style="background:' + RDBU7[i] + '"></span>' + t(k);
       legendEl.appendChild(div);
     });
   }
 
   function updateStat(mode) {
     const field = fieldFor(mode);
-    const feats = cache[currentRes].features;
+    const feats = cache[key()].features;
     let weightedSum = 0, weightSum = 0, n = 0;
     feats.forEach((f) => {
       const v = f.properties[field];
@@ -162,9 +168,6 @@
     if (currentLayer) map.removeLayer(currentLayer);
     currentLayer = buildLayerForMode(mode);
     currentLayer.addTo(map);
-    // Grid outline + city boundary sit above the choropleth fill (both have
-    // fill:false, so they never hide the colours) so they stay crisp and
-    // cover the hexagons the data layer filters out as null.
     if (siatkaLayer) siatkaLayer.bringToFront();
     if (boundaryLayer) boundaryLayer.bringToFront();
     updateStat(mode);
@@ -174,24 +177,26 @@
     if (currentLayer) currentLayer.setStyle({ fillOpacity: opacity });
   }
 
-  async function fetchResolution(res) {
-    if (cache[res]) return cache[res];
-    const data = await fetch("data/hex_" + res + ".geojson").then((r) => r.json());
-    cache[res] = data;
-    return data;
+  async function fetchJSON(path) {
+    return fetch(path).then((r) => r.json());
   }
 
-  async function fetchSiatka(res) {
-    if (siatkaCache[res]) return siatkaCache[res];
-    const data = await fetch("data/siatka_" + res + ".geojson").then((r) => r.json());
-    siatkaCache[res] = data;
-    return data;
+  async function fetchResolution() {
+    const k = key();
+    if (!cache[k]) cache[k] = await fetchJSON("data/hex_" + k + ".geojson");
+    return cache[k];
+  }
+
+  async function fetchSiatka() {
+    const k = key();
+    if (!siatkaCache[k]) siatkaCache[k] = await fetchJSON("data/siatka_" + k + ".geojson");
+    return siatkaCache[k];
   }
 
   async function loadResolution(res) {
     currentRes = res;
     loadingEl.classList.add("visible");
-    const [, siatkaData] = await Promise.all([fetchResolution(res), fetchSiatka(res)]);
+    const [, siatkaData] = await Promise.all([fetchResolution(), fetchSiatka()]);
     loadingEl.classList.remove("visible");
 
     if (siatkaLayer) map.removeLayer(siatkaLayer);
@@ -203,17 +208,41 @@
     render(currentMode);
   }
 
-  async function loadBoundary() {
-    const data = await fetch("data/boundary.geojson").then((r) => r.json());
-    boundaryLayer = L.geoJSON(data, {
+  async function loadCity(cityKey, fit) {
+    currentCity = cityKey;
+    const city = cityByKey[cityKey];
+
+    if (!boundaryCache[cityKey]) {
+      boundaryCache[cityKey] = await fetchJSON("data/boundary_" + cityKey + ".geojson");
+    }
+    if (boundaryLayer) map.removeLayer(boundaryLayer);
+    boundaryLayer = L.geoJSON(boundaryCache[cityKey], {
       style: () => ({ color: "#232323", weight: 2, opacity: 0.9, fill: false }),
       interactive: false,
     }).addTo(map);
+
+    if (fit) map.fitBounds(city.bounds, { padding: [20, 20] });
+
+    currentRes = city.resolutions[0].key;
+    buildRestabs(city);
+    await loadResolution(currentRes);
   }
 
-  function buildRestabs() {
+  function buildCitySelect() {
+    cityselectEl.innerHTML = "";
+    manifest.cities.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c.key;
+      opt.textContent = c.label;
+      if (c.key === currentCity) opt.selected = true;
+      cityselectEl.appendChild(opt);
+    });
+    cityselectEl.addEventListener("change", () => loadCity(cityselectEl.value, true));
+  }
+
+  function buildRestabs(city) {
     restabsEl.innerHTML = "";
-    manifest.resolutions.forEach((r) => {
+    city.resolutions.forEach((r) => {
       const btn = document.createElement("button");
       btn.textContent = r.label;
       btn.dataset.res = r.key;
@@ -258,23 +287,17 @@
     if (currentRes) render(currentMode);
   });
 
-  // Rebuild everything language-dependent: mode buttons, legend, tooltips
-  // (baked in at layer-build time), stat line. loadResolution() re-fetches
-  // from its own cache, so this is cheap after the first load.
   setLangChangeHandler(() => {
     buildModeswitch();
     if (currentRes) render(currentMode);
   });
 
-  fetch("data/manifest.json")
-    .then((r) => r.json())
-    .then((m) => {
-      manifest = m;
-      currentRes = manifest.resolutions[0].key;
-      map.fitBounds(manifest.bounds, { padding: [20, 20] });
-      buildRestabs();
-      buildModeswitch();
-      loadBoundary();
-      loadResolution(currentRes);
-    });
+  fetchJSON("data/manifest.json").then((m) => {
+    manifest = m;
+    m.cities.forEach((c) => { cityByKey[c.key] = c; });
+    currentCity = m.cities[0].key;
+    buildCitySelect();
+    buildModeswitch();
+    loadCity(currentCity, true);
+  });
 })();

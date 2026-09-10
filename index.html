@@ -13,9 +13,17 @@
 </head>
 <body>
 
+<div class="topbar">
+  <a class="brand" href="./">GISBoost <span class="sub" data-i18n="brandSub">/ analizy mapowe</span></a>
+  <nav class="topnav">
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="badanie-opoznienia/" data-i18n="navReport">Badanie: opóźnienia</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
 <header>
   <div class="wrap">
-    <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
     <h1 data-i18n="h1">Analizy mapowe</h1>
     <p data-i18n-html="introHtml">
       Interaktywne mapy z analiz przestrzennych <a href="https://gisboost.github.io/">GISBoost</a> —
@@ -45,8 +53,17 @@
     </a>
     <a class="card" href="opoznienia-dostepnosc/">
       <h2 data-i18n="card4Title">Ile kosztują opóźnienia?</h2>
-      <p data-i18n="card4Desc">Gdzie opóźnienia najbardziej psują dostępność do szkół, aptek, uczelni i centrów handlowych — rozkład statyczny vs zrealizowany P50, siatka heksagonalna 250 m i 500 m, pilot: Łódź.</p>
-      <div class="tags"><span class="tag">Easy-R5</span><span class="tag">GTFS-RT</span><span class="tag">Łódź</span></div>
+      <p data-i18n="card4Desc">Gdzie rozkład zrealizowany P50 zmienia dostępność do szkół, aptek, uczelni i centrów handlowych — statyczny vs zrealizowany, siatka heksagonalna 250 m i 500 m, 6 miast.</p>
+      <div class="tags"><span class="tag">Easy-R5</span><span class="tag">GTFS-RT</span><span class="tag" data-i18n="tag6cities">6 miast</span></div>
+    </a>
+  </div>
+
+  <p class="eyebrow" data-i18n="eyebrowReport">Z tych danych</p>
+  <div class="cards">
+    <a class="card" href="badanie-opoznienia/">
+      <h2 data-i18n="reportCardTitle">Badanie: co „opóźnienia" robią z dostępnością</h2>
+      <p data-i18n="reportCardDesc">Krótki raport z analizy dla 6 miast — czy opóźnienia uderzają w pierścień przesiadkowy wokół centrum (hipoteza), dlaczego znak efektu zależy od tego, jak napięty jest rozkład, i ile heksagonów faktycznie się zmienia.</p>
+      <div class="tags"><span class="tag" data-i18n="tagReport">raport</span><span class="tag">Easy-R5</span><span class="tag" data-i18n="tag6cities">6 miast</span></div>
     </a>
   </div>
 </main>
