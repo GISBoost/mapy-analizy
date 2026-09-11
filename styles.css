@@ -1,19 +1,10 @@
 /* mapy-analizy — page-specific rules only. Tokens, .topbar/.brand/.topnav,
    .eyebrow/.cards/.card/.tag now come from the shared gisboost-1.css (linked
-   before this file in every page's <head>). */
-
-:root {
-  /* compatibility aliases: report.css (badanie-opoznienia) still reads the
-     pre-unification token names — keep it working without a full rewrite. */
-  --surface: var(--paper);
-  --surface-2: var(--paper-raised);
-  --border: var(--line);
-  --accent: var(--blue);
-}
+   before this file in every page's <head>) — same names/values this file always used. */
 
 * { box-sizing: border-box; }
 body {
-  margin: 0; background: var(--paper); color: var(--ink);
+  margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--sans);
 }
 
@@ -26,7 +17,7 @@ header .wrap { max-width: 900px; margin: 0 auto; position: relative; }
   color: #cfe0f0; position: absolute; top: 0; right: 0;
 }
 .lang-toggle:hover { background: rgba(255, 255, 255, 0.08); }
-.lang-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.lang-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 header h1 {
   font-family: var(--display); font-weight: 800; font-size: 1.9rem;
   margin: 0 0 10px; text-wrap: balance;
@@ -38,6 +29,6 @@ main.wrap { max-width: 900px; margin: 0 auto; padding: 32px 28px 48px; }
 
 footer.note {
   max-width: 900px; margin: 0 auto; padding: 20px 28px 40px; font-size: 0.78rem;
-  color: var(--ink-muted); border-top: 1px solid var(--line);
+  color: var(--ink-muted); border-top: 1px solid var(--border);
 }
 footer.note a { color: var(--ink-muted); }
