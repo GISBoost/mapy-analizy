@@ -6,16 +6,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Dostępność do uczelni w 6 polskich miastach — interaktywna mapa heksagonalna, dane r5r/OSM, GISBoost.">
 <link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Dojazd na uczelnię — GISBoost">
+<meta property="og:description" content="Dostępność do uczelni w 6 polskich miastach — interaktywna mapa heksagonalna, dane r5r/OSM, GISBoost.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/uczelnie-dostepnosc/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dojazd na uczelnię — GISBoost">
+<meta name="twitter:description" content="Dostępność do uczelni w 6 polskich miastach — interaktywna mapa heksagonalna.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--bg:#eef1f5;--ink:#1b2430;--border:#d2d9e1}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
 <link rel="stylesheet" href="styles.css">
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page">Dojazd na uczelnię</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
 <header>
-  <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
   <h1 data-i18n="h1">Dojazd na uczelnię — 6 miast</h1>
   <p data-i18n-html="introHtml">Siatka heksagonalna 500 m, dostępność 30 min (spacer + transit publiczny), dane r5r / OSM. Zakładka = miasto, panel po lewej = widok tego samego wyniku. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
   <div class="citytabs" id="citytabs"></div>
