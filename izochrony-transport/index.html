@@ -6,18 +6,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Interaktywna izochrona dojazdu transportem publicznym w Łodzi — najedź kursorem na dowolne miejsce, przypnij pinezkę kliknięciem, przesuwaj porę dnia suwakiem. Rozkład jazdy vs dane GTFS-RT, GISBoost.">
 <link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Dokąd dojadę? — Łódź — GISBoost">
+<meta property="og:description" content="Interaktywna izochrona dojazdu transportem publicznym w Łodzi — najedź kursorem na dowolne miejsce, przypnij pinezkę kliknięciem, przesuwaj porę dnia suwakiem.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/izochrony-transport/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dokąd dojadę? — Łódź — GISBoost">
+<meta name="twitter:description" content="Interaktywna izochrona dojazdu transportem publicznym — rozkład jazdy vs GTFS-RT.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
 <link rel="stylesheet" href="styles.css">
 <script src="vendor/pbf.js"></script>
 <script src="vendor/geobuf.js"></script>
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 
+<div class="topbar">
+  <a class="brand" href="https://gisboost.github.io/"><span class="mark">GISBoost</span> <span class="sub">/ analizy mapowe</span></a>
+  <nav class="topnav">
+    <a class="topnav-link" href="../">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page">Dokąd dojadę?</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
 <header>
-  <button class="lang-toggle" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
   <h1 data-i18n="h1">Dokąd dojadę transportem publicznym?</h1>
   <p data-i18n-html="introHtml">Najedź kursorem na mapę, aby zobaczyć zasięg dojazdu z tego miejsca. Kliknij, żeby przypiąć punkt, i przesuwaj porę dnia — zasięg zmienia się razem z częstotliwością kursowania. Jedna z <a href="../">analiz mapowych GISBoost</a>.</p>
   <div class="citytabs" id="citytabs"></div>

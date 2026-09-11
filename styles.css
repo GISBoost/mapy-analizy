@@ -1,68 +1,34 @@
+/* mapy-analizy — page-specific rules only. Tokens, .topbar/.brand/.topnav,
+   .eyebrow/.cards/.card/.tag now come from the shared gisboost-1.css (linked
+   before this file in every page's <head>). */
+
 :root {
-  --bg: #eef1f5;
-  --surface: #ffffff;
-  --surface-2: #e3e8ee;
-  --ink: #1b2430;
-  --ink-muted: #5c6b7a;
-  --border: #d2d9e1;
-  --chrome: #33465c;
-  --chrome-ink: #f3f6fa;
-  --accent: #2c5c94;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
-    --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
-    --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
-  --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
-  --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+  /* compatibility aliases: report.css (badanie-opoznienia) still reads the
+     pre-unification token names — keep it working without a full rewrite. */
+  --surface: var(--paper);
+  --surface-2: var(--paper-raised);
+  --border: var(--line);
+  --accent: var(--blue);
 }
 
 * { box-sizing: border-box; }
 body {
-  margin: 0; background: var(--bg); color: var(--ink);
-  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--sans);
 }
-
-/* Top belt — shared across the catalog and the research write-up, so the two
-   are one site you switch between (same idea as gtfs-dashboard's top nav). */
-.topbar {
-  background: var(--chrome); color: var(--chrome-ink);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-  padding: 10px 28px;
-}
-.topbar .brand {
-  font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 0.9rem;
-  letter-spacing: 0.01em; color: var(--chrome-ink); text-decoration: none; white-space: nowrap;
-}
-.topbar .brand .sub { color: #9fb3c8; font-weight: 600; }
-.topnav { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-wrap: wrap; }
-.topnav-link {
-  all: unset; cursor: pointer; font-size: 0.8rem; font-weight: 600;
-  color: #c7d4e2; padding: 6px 11px; border-radius: 7px; white-space: nowrap;
-}
-.topnav-link:hover { background: rgba(255, 255, 255, 0.08); color: var(--chrome-ink); }
-.topnav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.topnav-link[aria-current="page"] { background: rgba(255, 255, 255, 0.14); color: #fff; }
-.topnav-link.lang { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: #9fb3c8; }
 
 header { background: var(--chrome); color: var(--chrome-ink); padding: 32px 28px 32px; }
 header .wrap { max-width: 900px; margin: 0 auto; position: relative; }
 
 .lang-toggle {
-  all: unset; cursor: pointer; font-family: "IBM Plex Mono", monospace; font-weight: 600;
+  all: unset; cursor: pointer; font-family: var(--mono); font-weight: 600;
   font-size: 0.72rem; padding: 4px 9px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.25);
   color: #cfe0f0; position: absolute; top: 0; right: 0;
 }
 .lang-toggle:hover { background: rgba(255, 255, 255, 0.08); }
-.lang-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lang-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 header h1 {
-  font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.9rem;
+  font-family: var(--display); font-weight: 800; font-size: 1.9rem;
   margin: 0 0 10px; text-wrap: balance;
 }
 header p { margin: 0; color: #b9c4d1; font-size: 0.94rem; max-width: 62ch; line-height: 1.55; }
@@ -70,33 +36,8 @@ header a { color: #cfe0f0; }
 
 main.wrap { max-width: 900px; margin: 0 auto; padding: 32px 28px 48px; }
 
-.eyebrow {
-  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--ink-muted); margin: 0 0 16px;
-}
-
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-
-.card {
-  display: block; text-decoration: none; color: inherit; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 12px; padding: 20px;
-  transition: border-color 0.15s, transform 0.15s;
-}
-.card:hover { border-color: var(--accent); transform: translateY(-2px); }
-.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.card h2 {
-  font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.08rem;
-  margin: 0 0 8px; color: var(--ink);
-}
-.card p { margin: 0 0 14px; font-size: 0.86rem; color: var(--ink-muted); line-height: 1.5; }
-.card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.card .tag {
-  font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; padding: 2px 7px;
-  border-radius: 4px; background: var(--surface-2); color: var(--ink-muted);
-}
-
 footer.note {
   max-width: 900px; margin: 0 auto; padding: 20px 28px 40px; font-size: 0.78rem;
-  color: var(--ink-muted); border-top: 1px solid var(--border);
+  color: var(--ink-muted); border-top: 1px solid var(--line);
 }
 footer.note a { color: var(--ink-muted); }
