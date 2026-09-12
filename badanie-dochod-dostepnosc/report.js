@@ -202,13 +202,21 @@ function applyStaticI18n() {
 const CAT_ORDER = ["edu", "health", "culture", "shops", "total"];
 const CAT_KEY_LABEL = { edu: "catEdu", health: "catHealth", culture: "catCulture", shops: "catShops", total: "catTotal" };
 const ACCESS_LABEL = { edu: "catEdu", health: "catHealth", culture: "catCulture", shops: "catShops", any: "catAny" };
+// Short axis labels for the small-multiples chart -- hand-picked per language
+// instead of slicing the full translated word (which produced garbled
+// fragments like "eduk"/"heal"/"tota").
+const CAT_SHORT = {
+  pl: { edu: "edu", health: "zdr", culture: "kult", shops: "skl", total: "razem" },
+  en: { edu: "edu", health: "health", culture: "cult", shops: "shop", total: "total" },
+};
 
 function renderCharts() {
+  const short = CAT_SHORT[getLang()];
   smallMultiples(
     "corrGrid",
     [15, 30, 60].map((th) => ({
       title: `${th} min`,
-      bars: CAT_ORDER.map((c) => ({ label: t(CAT_KEY_LABEL[c]).slice(0, 4), value: CORR[th][c] })),
+      bars: CAT_ORDER.map((c) => ({ label: short[c], value: CORR[th][c] })),
     }))
   );
   barChartDiverging(

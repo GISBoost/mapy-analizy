@@ -34,11 +34,23 @@ function renderLegend(id, items) {
     .join("");
 }
 
+// Round a raw step (e.g. span/4) up to a "nice" 1/2/5 * 10^n value, so axis
+// ticks land on readable numbers instead of arbitrary fractions.
+function chNiceStep(rawStep) {
+  const step = rawStep || 1;
+  const exp = Math.floor(Math.log10(step));
+  const base = step / Math.pow(10, exp);
+  const niceBase = base <= 1 ? 1 : base <= 2 ? 2 : base <= 5 ? 5 : 10;
+  return niceBase * Math.pow(10, exp);
+}
+
 // Single-series horizontal diverging bar chart. rows = [{label, value}].
-// Positive values extend right of the zero line, negative left.
+// Positive values extend right of the zero line, negative left. Draws a full
+// gridline/tick scale (same idea as badanie-opoznienia's renderNet/renderShift)
+// so bar lengths can be read against an axis, not just the per-bar number.
 function barChartDiverging(id, rows, opts = {}) {
   const { posColor = CHART_COL.pos, negColor = CHART_COL.neg, unit = "", decimals = 2, labelWidth = 100 } = opts;
-  const W = 720, m = { t: 14, r: 60, b: 14, l: labelWidth };
+  const W = 720, m = { t: 14, r: 60, b: 24, l: labelWidth };
   const rowH = 34, H = m.t + m.b + rows.length * rowH;
   const vals = rows.map((r) => r.value);
   const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
@@ -46,7 +58,16 @@ function barChartDiverging(id, rows, opts = {}) {
   const iw = W - m.l - m.r;
   const xFor = (v) => m.l + (iw * (v - lo)) / span;
   const x0 = xFor(0);
-  let s = chLine(x0, m.t, x0, H - m.b, "axis");
+  const step = chNiceStep(span / 4);
+  const tickStart = Math.ceil(lo / step) * step;
+  let s = "";
+  for (let v = tickStart; v <= hi + step * 1e-6; v += step) {
+    const isZero = Math.abs(v) < step * 1e-6;
+    const vv = isZero ? 0 : v; // avoid "-0.00" from floating-point drift near zero
+    const x = xFor(vv);
+    s += chLine(x, m.t, x, H - m.b, isZero ? "axis" : "grid");
+    s += chText(x, H - m.b + 14, (vv > 0 ? "+" : "") + vv.toFixed(decimals) + unit, "val", "middle");
+  }
   rows.forEach((r, i) => {
     const cy = m.t + i * rowH;
     const bh = 16, by = cy + (rowH - bh) / 2;
@@ -89,21 +110,26 @@ function barChartGrouped(id, rows, opts = {}) {
   setSvg(id, s, `0 0 ${W} ${H}`);
 }
 
-// Small-multiples grid of mini diverging bar charts.
+// Small-multiples grid of mini diverging bar charts, each with its own
+// 0/+max/-max y-axis labels (same idea as badanie-opoznienia's ringCell) so a
+// bar's height means something without having to guess a scale.
 // cells = [{title, verdictLabel, verdictClass, bars:[{label, value}]}].
 function smallMultiples(containerId, cells, opts = {}) {
-  const { posColor = CHART_COL.pos, negColor = CHART_COL.neg } = opts;
+  const { posColor = CHART_COL.pos, negColor = CHART_COL.neg, decimals = 2 } = opts;
   const el = document.getElementById(containerId);
   if (!el) return;
   el.innerHTML = cells
     .map((cell) => {
-      const w = 224, h = 132, m = { t: 6, r: 6, b: 26, l: 6 };
+      const w = 224, h = 140, m = { t: 6, r: 6, b: 28, l: 30 };
       const iw = w - m.l - m.r, ih = h - m.t - m.b;
       const maxAbs = Math.max(0.05, ...cell.bars.map((b) => Math.abs(b.value)));
       const y0 = m.t + ih * 0.5;
       const yFor = (v) => m.t + ih * (1 - (v + maxAbs) / (2 * maxAbs));
       const bw = (iw / cell.bars.length) * 0.68;
       let s = chLine(m.l, y0, m.l + iw, y0, "axis");
+      s += chText(m.l - 3, y0 + 3, "0", "val", "end");
+      s += chText(m.l - 3, m.t + 7, "+" + maxAbs.toFixed(decimals), "val", "end");
+      s += chText(m.l - 3, m.t + ih, "−" + maxAbs.toFixed(decimals), "val", "end");
       cell.bars.forEach((b, i) => {
         const cx = m.l + (i + 0.5) * (iw / cell.bars.length);
         const yv = yFor(b.value);
