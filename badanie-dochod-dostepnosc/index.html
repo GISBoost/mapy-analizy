@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Czy bieda oznacza gorszy dojazd? Dochód a dostępność w Łodzi — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Raport: dostępność transportowa a dochód w Łodzi na zrealizowanym GTFS — korelacja słaba i zmienia znak, odległość od centrum tłumaczy dostępność wielokrotnie lepiej.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Czy bieda oznacza gorszy dojazd? Dochód a dostępność w Łodzi — GISBoost">
+<meta property="og:description" content="Raport: dostępność transportowa a dochód w Łodzi na zrealizowanym GTFS — korelacja słaba i zmienia znak, odległość od centrum tłumaczy dostępność wielokrotnie lepiej.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/badanie-dochod-dostepnosc/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Czy bieda oznacza gorszy dojazd? Dochód a dostępność w Łodzi — GISBoost">
+<meta name="twitter:description" content="Dostępność transportowa a dochód w Łodzi na zrealizowanym GTFS — korelacja słaba i zmienia znak.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="report.css">
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/" data-i18n="brandSub">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navReport">Badanie: dochód i dostępność</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
+<main class="report">
+
+  <div class="crumbs">
+    <a href="../" data-i18n="navCatalog">Analizy</a>
+    <span class="sep">/</span>
+    <span data-i18n="crumbHere">Badanie: dochód i dostępność</span>
+  </div>
+
+  <p class="kicker" data-i18n="kicker">r5r · dochód a dostępność · Łódź</p>
+  <h1 data-i18n="h1">Czy bieda oznacza gorszy dojazd? Dostępność transportowa a dochód w Łodzi</h1>
+
+  <div class="hero">
+    <div class="callout-exp">
+      <span class="h" data-i18n="expLabel">Eksperymentalne — praca w toku</span>
+      <span data-i18n-html="expHtml">Ten raport w całości wygenerowała AI (Claude) na podstawie kodu i danych Michała Kaczorowskiego — to wstępna, robocza wersja pomocna do rozeznania się w temacie, nie ostateczne wnioski badawcze. Liczby i interpretacje traktuj jako punkt wyjścia do dalszej weryfikacji.</span>
+    </div>
+    <p class="lede" data-i18n-html="lede1Html">Łącząc warstwę dochodu szacowanego metodą MRP (<a href="../badanie-dochod-obwody/">poprzedni raport</a>) z pomiarem dostępności czasowej transportu publicznego w Łodzi, sprawdzamy wprost: <b>czy biedniejsze obwody mają gorszy dostęp do szkół, przychodni, bibliotek i sklepów?</b> Dostępność liczona na <b>zrealizowanym</b> rozkładzie z easy-GTFS-RT (21.08.2026, wariant p50), nie na rozkładzie papierowym — to zmienia interpretację wszystkiego dalej.</p>
+    <p class="lede" data-i18n-html="lede2Html">Inspiracją jest artykuł Bragi, Loureiro i Pereiry (2026, <i>Journal of Transport Geography</i>) o Fortalezie w Brazylii, gdzie odpowiedź brzmiała: tak, wyraźnie. <b>W Łodzi wyszło inaczej.</b></p>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="stat-tile"><div class="stat-value">3854</div><div class="stat-label" data-i18n="tilePrecincts">obwodów spisowych</div></div>
+    <div class="stat-tile"><div class="stat-value">1328</div><div class="stat-label" data-i18n="tileServices">punktów usług publicznych</div></div>
+    <div class="stat-tile"><div class="stat-value">07:00–09:00</div><div class="stat-label" data-i18n="tilePeak">poranny szczyt</div></div>
+    <div class="stat-tile"><div class="stat-value">4</div><div class="stat-label" data-i18n="tileCats">kategorie usług</div></div>
+  </div>
+
+  <section class="section">
+    <h2 data-i18n="s1Heading">1. Dochód: korelacja słaba i zmienia znak</h2>
+    <p class="sub" data-i18n-html="s1SubHtml">Korelacja Pearsona <code>income_index_pln</code> z liczbą usług osiągalnych w danym progu, per kategoria (n=3854 obwodów). Przy krótkim progu (15 min) kierunek jest <b>odwrotny</b> do naiwnej hipotezy: biedniejsze obwody mają wtedy więcej usług w zasięgu, nie mniej.</p>
+    <div class="chart-card">
+      <div class="ring-grid" id="corrGrid"></div>
+      <p class="chart-caption" data-i18n-html="s1CaptionHtml">Przy dłuższym progu korelacja robi się dodatnia, ale nadal słaba (do +0,12 przy 60 min). Udział samotnych matek w obwodzie koreluje z dostępnością <b>dodatnio</b> (r=+0,38 przy 30 min) — tam, gdzie więcej gospodarstw jednorodzicielskich, dostępność jest zwykle lepsza, nie gorsza.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s2Heading">2. To, co naprawdę tłumaczy dostępność: odległość od centrum</h2>
+    <p class="sub" data-i18n-html="s2SubHtml">Korelacja odległości centroidu obwodu od centrum miasta z dostępnością (razem, próg 30 min), zestawiona z korelacją dochodu przy tym samym progu.</p>
+    <div class="chart-card">
+      <svg id="distChart" viewBox="0 0 720 110" width="100%" role="img" aria-labelledby="distChartTitle"></svg>
+      <span id="distChartTitle" hidden data-i18n="s2Heading"></span>
+      <p class="chart-caption" data-i18n-html="s2CaptionHtml">Odległość od centrum tłumaczy dostępność wielokrotnie silniej niż dochód. Dostępność maleje niemal promieniście od centrum; dochód nie ma takiego wzorca wcale — mapy pokazują to samo wizualnie. <b>Wniosek: w Łodzi deprywacja transportowa jest przede wszystkim geograficzna, nie ekonomiczna</b> — spójne z tym, że biedniejsze, gęściej zaludnione dzielnice leżą tu centralnie, właśnie tam gdzie sieć tramwajowa jest najgęstsza.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s3Heading">3. Efekt MAUP: ta sama analiza na heksagonach</h2>
+    <p class="sub" data-i18n-html="s3SubHtml">Obwody spisowe są mikroskopijne w centrum i ogromne na granicy miasta (modifiable areal unit problem). Kontrola: ta sama korelacja policzona na jednolitej siatce heksagonów 500 m (1479 komórek), przy progu 60 minut.</p>
+    <div class="chart-card">
+      <svg id="maupChart" viewBox="0 0 720 110" width="100%" role="img" aria-labelledby="maupChartTitle"></svg>
+      <span id="maupChartTitle" hidden data-i18n="s3Heading"></span>
+      <p class="chart-caption" data-i18n-html="s3CaptionHtml">Sygnał się <b>wzmacnia</b> na heksagonach (n=646 z dopasowanym dochodem) — MAUP faktycznie tłumił korelację w obwodach — ale nawet po korekcie związek zostaje słaby do umiarkowanego, nie silny. Główny wniosek się nie zmienia.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s4Heading">4. Ilu mieszkańców Łodzi ma dostęp do usług</h2>
+    <p class="sub" data-i18n-html="s4SubHtml">Osobna, prostsza metryka: nie „ile placówek widać z jednego miejsca", tylko „ilu mieszkańców ma dostęp do choć jednej placówki danej kategorii" — populacja obwodów z co najmniej jedną placówką w zasięgu, jako % populacji całego miasta.</p>
+    <div class="table-wrap">
+      <table class="datatable" id="accessTable"></table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s5Heading">Metoda i źródła</h2>
+    <p class="sub" data-i18n-html="s5SubHtml">Sieć drogowa i tramwajowa z OpenStreetMap; punkty usług z Overpass API (szkoły/przedszkola, szpitale/przychodnie/apteki, biblioteki/domy kultury, sklepy). Punkty startowe: centroidy 3854 obwodów spisowych. Silnik: <a href="https://ipeagit.github.io/r5r/" target="_blank" rel="noopener">r5r</a>, tryb pieszo + transport publiczny, zrealizowany rozkład easy-GTFS-RT (Family A, 21.08.2026, wariant p50).</p>
+    <p class="source-note" data-i18n-html="sourceNoteHtml">Pełny pipeline: <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/accessibility_lodz" target="_blank" rel="noopener">easy-R5 · tools/accessibility_lodz</a> (<code>HANDOFF.md</code>, <code>RESEARCH_LOG.md</code>, <code>COLUMNS.md</code>). Seria: <a href="../badanie-dochod-obwody/">jak oszacowano dochód</a> → ten raport → <a href="../badanie-uczelnie/">dostępność do uczelni</a>. Pierwotny wpis na portalu: <a href="https://gisboost.github.io/analizy/dostepnosc-dochod-lodz/">gisboost.github.io/analizy/dostepnosc-dochod-lodz</a>.</p>
+  </section>
+
+</main>
+
+<footer class="report-footer">
+  <a href="../" data-i18n="footerBack">← wszystkie analizy</a>
+  <a href="https://gisboost.github.io/" target="_blank" rel="noopener">Michał Kaczorowski — GISBoost</a>
+</footer>
+
+<script src="../charts.js"></script>
+<script src="report.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+/* Research write-up layer — builds on ../styles.css tokens (--surface, --ink,
+   --ink-muted, --border, --accent, --surface-2) plus the shared --amber/-ink/-soft
+   tokens from gisboost-1.css, so it follows the same light/dark switching as the
+   rest of mapy-analizy. Structure mirrors badanie-opoznienia/report.css (identical
+   file, copied per report folder — see mapy-analizy/README.md on when to share
+   this instead: once a 4th report needs a tweak, promote it to a single shared file). */
+
+.report { max-width: 900px; margin: 0 auto; padding: 40px 44px 80px; }
+
+.crumbs { font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 20px; }
+.crumbs a { color: var(--accent); text-decoration: none; }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs .sep { margin: 0 7px; opacity: 0.5; }
+
+.kicker {
+  font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--ink-muted); margin: 0 0 8px;
+}
+.report h1 {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 1.75rem;
+  line-height: 1.2; margin: 0 0 20px; text-wrap: balance;
+}
+
+.hero { margin-bottom: 26px; }
+.lede {
+  font-size: 0.98rem; line-height: 1.65; color: var(--ink); margin: 0 0 12px;
+  text-align: justify; text-align-last: left; hyphens: auto;
+}
+.hero .note {
+  font-size: 0.82rem; line-height: 1.6; color: var(--ink-muted);
+  background: var(--surface-2); border-radius: 8px; padding: 12px 14px; margin: 14px 0 0;
+}
+.hero .note code, .sub code, .chart-caption code, .source-note code {
+  font-family: "IBM Plex Mono", monospace; font-size: 0.88em;
+}
+
+/* Experimental / work-in-progress callout — amber, distinct from the plain gray
+   .note above so a skimming reader can tell "unverified draft" from "aside". */
+.callout-exp {
+  margin: 0 0 22px; padding: 12px 16px; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--amber) 42%, var(--border));
+  background: var(--amber-soft); font-size: 0.85rem; line-height: 1.55; color: var(--ink);
+}
+.callout-exp .h {
+  display: block; margin: 0 0 5px; font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--amber-ink);
+}
+
+.stat-tiles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;
+  margin: 0 0 44px;
+}
+.stat-tile {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px;
+}
+.stat-value {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.15rem;
+  color: var(--ink);
+}
+.stat-label { font-size: 0.75rem; color: var(--ink-muted); margin-top: 3px; line-height: 1.35; }
+
+.section { margin: 0 0 56px; }
+.section h2 {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 1.18rem;
+  margin: 0 0 10px; letter-spacing: -0.01em;
+}
+.section .sub {
+  font-size: 0.88rem; line-height: 1.6; color: var(--ink-muted); margin: 0 0 18px;
+  text-align: justify; text-align-last: left; hyphens: auto;
+}
+
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 24px 18px;
+}
+.chart-card svg { display: block; margin-top: 4px; }
+.chart-caption {
+  font-size: 0.8rem; line-height: 1.55; color: var(--ink-muted);
+  margin: 16px 0 0; padding-top: 14px; border-top: 1px dashed var(--border);
+}
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 12px; }
+.legend .item { display: flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+
+.ring-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ring-cell { border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px 8px; }
+.ring-cell .ring-title {
+  font-size: 0.82rem; font-weight: 600; color: var(--ink); display: flex;
+  justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 4px;
+}
+.ring-cell .ring-verdict { font-size: 0.72rem; font-weight: 600; }
+.ring-cell .ring-verdict.dip { color: #b2182b; }
+.ring-cell .ring-verdict.nodip { color: var(--ink-muted); }
+
+svg text { fill: var(--ink-muted); font-size: 11px; font-family: "IBM Plex Sans", sans-serif; }
+svg .axis { stroke: var(--border); stroke-width: 1; }
+svg .grid { stroke: var(--border); stroke-width: 1; opacity: 0.55; }
+svg .lbl { fill: var(--ink); font-size: 11px; }
+svg .val { fill: var(--ink-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+
+.table-wrap { overflow-x: auto; }
+table.datatable {
+  border-collapse: collapse; width: 100%; font-size: 0.83rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+}
+table.datatable th, table.datatable td {
+  text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+table.datatable th { font-weight: 600; color: var(--ink-muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em; }
+table.datatable td { color: var(--ink); font-variant-numeric: tabular-nums; }
+table.datatable tr:last-child td { border-bottom: none; }
+table.datatable td.num { text-align: right; }
+
+/* Hypothesis/verdict pills inside table cells — reuses the amber/red/muted role
+   colors instead of inventing a fourth palette. */
+.yes { color: #1a7f37; font-weight: 600; }
+.no { color: #b2182b; font-weight: 600; }
+.partial { color: var(--amber-ink); font-weight: 600; }
+
+.source-note {
+  font-size: 0.8rem; line-height: 1.6; color: var(--ink-muted);
+  border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 4px;
+}
+.section a, .source-note a, .chart-caption a { color: var(--accent); }
+
+.report-footer {
+  max-width: 900px; margin: 0 auto; padding: 20px 44px 48px;
+  border-top: 1px solid var(--border); display: flex; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px; font-size: 0.8rem;
+}
+.report-footer a { color: var(--ink-muted); text-decoration: none; }
+.report-footer a:hover { color: var(--accent); }
+
+@media (max-width: 560px) {
+  .report h1 { font-size: 1.45rem; }
+  .report { padding: 26px 20px 52px; }
+  .chart-card { padding: 16px 14px 14px; }
+  .report-footer { padding: 18px 20px 40px; }
+}

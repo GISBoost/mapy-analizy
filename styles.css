@@ -27,6 +27,10 @@ header a { color: #cfe0f0; }
 
 main.wrap { max-width: 900px; margin: 0 auto; padding: 32px 28px 48px; }
 
+/* Amber-tinted variant of the shared .tag, for the badanie-* reports that are still
+   AI-drafted / work-in-progress (see gisboost-1.css --amber tokens). */
+.tag--exp { background: var(--amber-soft); color: var(--amber-ink); }
+
 footer.note {
   max-width: 900px; margin: 0 auto; padding: 20px 28px 40px; font-size: 0.78rem;
   color: var(--ink-muted); border-top: 1px solid var(--border);

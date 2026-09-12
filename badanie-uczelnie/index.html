@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>61% obszaru bez dostępu do uczelni w 6 miastach — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Raport: dostępność do uczelni transportem publicznym w 6 polskich miastach — korekta metody (heksagony vs populacja), dochód jako słaby predyktor, źródła i metoda.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="61% obszaru bez dostępu do uczelni w 6 miastach — GISBoost">
+<meta property="og:description" content="Raport: dostępność do uczelni transportem publicznym w 6 polskich miastach — korekta metody, dochód jako słaby predyktor, źródła i metoda.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/badanie-uczelnie/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="61% obszaru bez dostępu do uczelni w 6 miastach — GISBoost">
+<meta name="twitter:description" content="Dostępność do uczelni transportem publicznym w 6 polskich miastach — korekta metody, dochód jako słaby predyktor.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="report.css">
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/" data-i18n="brandSub">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navReport">Badanie: uczelnie</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
+<main class="report">
+
+  <div class="crumbs">
+    <a href="../" data-i18n="navCatalog">Analizy</a>
+    <span class="sep">/</span>
+    <span data-i18n="crumbHere">Badanie: uczelnie</span>
+  </div>
+
+  <p class="kicker" data-i18n="kicker">Easy-R5 · dostępność do uczelni · 6 miast</p>
+  <h1 data-i18n="h1">61% obszaru zamieszkanego przez studentów bez dostępu do uczelni w pół godziny</h1>
+
+  <div class="hero">
+    <div class="callout-exp">
+      <span class="h" data-i18n="expLabel">Eksperymentalne — praca w toku</span>
+      <span data-i18n-html="expHtml">Ten raport w całości wygenerowała AI (Claude) na podstawie kodu i danych Michała Kaczorowskiego — to wstępna, robocza wersja pomocna do rozeznania się w temacie, nie ostateczne wnioski badawcze. Liczby i interpretacje traktuj jako punkt wyjścia do dalszej weryfikacji.</span>
+    </div>
+    <p class="lede" data-i18n-html="lede1Html">Dla studentów (mieszkańcy 20-29 lat, proxy z NSP2021) policzyliśmy dostępność do budynków uczelnianych transportem publicznym w progu 30 minut, siatka heksagonalna 500 m, na zrealizowanym rozkładzie GTFS (easy-GTFS-RT, wariant p50). Najpierw pilotaż w Łodzi, potem pięć kolejnych miast: Warszawa, Kraków, Gdańsk, Poznań, Szczecin.</p>
+    <p class="lede" data-i18n-html="lede2Html">W Łodzi <b>61% heksagonów z populacją studencką (390 z 640) nie ma dostępu do żadnej z trzech uczelni</b> w 30 minut — dla porównania, dostępność do jakiejkolwiek usługi publicznej dla całej populacji (poprzedni wpis) wynosiła 98,7% w tym samym progu. Dostęp do uczelni jest dużo bardziej przestrzennie ograniczony niż dostęp do usług ogółem.</p>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="stat-tile"><div class="stat-value">6</div><div class="stat-label" data-i18n="tileCities">miast</div></div>
+    <div class="stat-tile"><div class="stat-value">2–3</div><div class="stat-label" data-i18n="tileUnis">uczelnie na miasto</div></div>
+    <div class="stat-tile"><div class="stat-value">30 min</div><div class="stat-label" data-i18n="tileCutoff">próg dojazdu</div></div>
+    <div class="stat-tile"><div class="stat-value">500 m</div><div class="stat-label" data-i18n="tileGrid">siatka heksagonalna</div></div>
+  </div>
+
+  <section class="section">
+    <h2 data-i18n="s1Heading">1. Korekta metody: heksagony bez dostępu vs studenci bez dostępu</h2>
+    <p class="sub" data-i18n-html="s1SubHtml">Pierwsza wersja liczyła <b>% heksagonów</b> bez dostępu do żadnej uczelni — ale to traktuje jednakowo heksagon na peryferiach z jednym studentem i gęsty heksagon centrum z pięciuset. Po zamianie na metrykę <b>ważoną liczbą mieszkańców 20-29 lat</b>, obraz jest wyraźnie mniej dramatyczny — i kolejność miast się zmienia.</p>
+    <div class="chart-card">
+      <div class="legend" id="uczLegend"></div>
+      <svg id="uczChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="uczChartTitle"></svg>
+      <span id="uczChartTitle" hidden data-i18n="s1Heading"></span>
+      <p class="chart-caption" data-i18n-html="s1CaptionHtml">Realny obraz to 21–54% studentów bez dostępu, nie 53–70% heksagonów. Po ważeniu populacją to <b>Gdańsk</b>, nie Warszawa, wypada najgorzej — głównie dlatego że ma najmniej budynków uczelni ze wszystkich sześciu miast (37), w połączeniu z konkretnym rozkładem gęstości zaludnienia.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s2Heading">2. Dochód nie tłumaczy dostępności do uczelni</h2>
+    <p class="sub" data-i18n-html="s2SubHtml">Korelacja Pearsona dochodu (heksagony, próg 30 min) z dostępnością do uczelni, per miasto — ta sama analiza co dla usług publicznych ogółem w poprzednim wpisie, teraz powtórzona dla studentów.</p>
+    <div class="chart-card">
+      <svg id="incChart" viewBox="0 0 720 250" width="100%" role="img" aria-labelledby="incChartTitle"></svg>
+      <span id="incChartTitle" hidden data-i18n="s2Heading"></span>
+      <p class="chart-caption" data-i18n-html="s2CaptionHtml">Wszystkie korelacje dodatnie, słabe do umiarkowanych — żadne miasto nie pokazuje wzorca „biedny = gorszy dostęp". Wniosek z poprzedniego wpisu (odległość od centrum tłumaczy dostępność lepiej niż dochód) uogólnia się na wszystkie sześć miast.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s3Heading">3. Uczelnie objęte analizą</h2>
+    <p class="sub" data-i18n-html="s3SubHtml">Lista uczelni jest dopasowana do lokalnych realiów — nie każde miasto ma osobną politechnikę czy uczelnię medyczną. We wszystkich miastach poza Poznaniem uczelnia medyczna ma najsłabszą przestrzenną dostępność: mniejsze, rozproszone kampusy przy szpitalach klinicznych, nie jeden zwarty kampus.</p>
+    <div class="table-wrap">
+      <table class="datatable">
+        <thead><tr><th data-i18n="thCity">Miasto</th><th data-i18n="thUni1">Uczelnia 1</th><th data-i18n="thUni2">Uczelnia 2</th><th data-i18n="thUni3">Uczelnia 3</th></tr></thead>
+        <tbody>
+          <tr><td>Łódź</td><td>Politechnika Łódzka</td><td>Uniwersytet Łódzki</td><td>Uniwersytet Medyczny</td></tr>
+          <tr><td>Warszawa</td><td>Politechnika Warszawska</td><td>Uniwersytet Warszawski</td><td>Warszawski UM</td></tr>
+          <tr><td>Kraków</td><td>Politechnika Krakowska</td><td>Uniwersytet Jagielloński</td><td data-i18n="ujCmNote"><i>Collegium Medicum UJ: 0 trafień w OSM</i></td></tr>
+          <tr><td>Gdańsk</td><td>Politechnika Gdańska</td><td>Uniwersytet Gdański</td><td>Gdański UM</td></tr>
+          <tr><td>Poznań</td><td>Politechnika Poznańska</td><td>UAM</td><td>UM im. Marcinkowskiego</td></tr>
+          <tr><td>Szczecin</td><td>ZUT</td><td>Uniwersytet Szczeciński</td><td>Pomorski UM</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s4Heading">Metoda i źródła</h2>
+    <p class="sub" data-i18n-html="s4SubHtml">Budynki uczelni: Overpass API (<code>amenity=university/college</code>, <code>building=university</code>). Sieć: wyciągi Geofabrik przycięte <code>osmosis</code> (flaga <code>completeWays=yes</code>). Silnik: <a href="https://ipeagit.github.io/r5r/" target="_blank" rel="noopener">r5r</a> na zrealizowanym GTFS p50 z easy-GTFS-RT. <b>Ciekawostka z procesu:</b> pierwsza wersja wyniku okazała się zawyżona, bo skrypt liczący miał zahardkodowaną datę, która dla pięciu z sześciu miast wypadła w sobotę zamiast dnia powszedniego — błąd znaleziony przez niezależny audyt zlecony świeżemu agentowi, bez wcześniejszego kontekstu analizy.</p>
+    <p class="sub" data-i18n-html="s4LinksHtml">Pełny opis: <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/accessibility_lodz" target="_blank" rel="noopener">easy-R5 · tools/accessibility_lodz</a> (Łódź) i <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/accessibility_cities" target="_blank" rel="noopener">tools/accessibility_cities</a> (6 miast). Pierwotny wpis na portalu: <a href="https://gisboost.github.io/analizy/dostepnosc-uczelnie/">gisboost.github.io/analizy/dostepnosc-uczelnie</a>.</p>
+    <p class="source-note" data-i18n-html="sourceNoteHtml">Interaktywna mapa (wszystkie 6 miast, przełącznik dominującej uczelni / liczby dostępnych / włączania każdej z osobna): <a href="../uczelnie-dostepnosc/">Dojazd na uczelnię</a>.</p>
+  </section>
+
+</main>
+
+<footer class="report-footer">
+  <a href="../" data-i18n="footerBack">← wszystkie analizy</a>
+  <a href="https://gisboost.github.io/" target="_blank" rel="noopener">Michał Kaczorowski — GISBoost</a>
+</footer>
+
+<script src="../charts.js"></script>
+<script src="report.js"></script>
+</body>
+</html>

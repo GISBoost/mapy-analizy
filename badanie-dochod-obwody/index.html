@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Ile zarabia Twój obwód? Szacowanie dochodu — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Raport: jak oszacować dochód mieszkańców na poziomie obwodu spisowego w Polsce metodą MRP, skoro spis go nie mierzy. Walidacja, ograniczenia, 6 miast.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Ile zarabia Twój obwód? Szacowanie dochodu — GISBoost">
+<meta property="og:description" content="Raport: jak oszacować dochód mieszkańców na poziomie obwodu spisowego w Polsce metodą MRP, skoro spis go nie mierzy. Walidacja, ograniczenia, 6 miast.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/badanie-dochod-obwody/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ile zarabia Twój obwód? Szacowanie dochodu — GISBoost">
+<meta name="twitter:description" content="Jak oszacować dochód mieszkańców na poziomie obwodu spisowego w Polsce metodą MRP, skoro spis go nie mierzy.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="report.css">
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/" data-i18n="brandSub">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navReport">Badanie: dochód</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
+<main class="report">
+
+  <div class="crumbs">
+    <a href="../" data-i18n="navCatalog">Analizy</a>
+    <span class="sep">/</span>
+    <span data-i18n="crumbHere">Badanie: dochód</span>
+  </div>
+
+  <p class="kicker" data-i18n="kicker">MRP · dochód per obwód spisowy · 6 miast</p>
+  <h1 data-i18n="h1">Ile zarabia Twój obwód? Szacowanie dochodu tam, gdzie spis go nie mierzy</h1>
+
+  <div class="hero">
+    <div class="callout-exp">
+      <span class="h" data-i18n="expLabel">Eksperymentalne — praca w toku</span>
+      <span data-i18n-html="expHtml">Ten raport w całości wygenerowała AI (Claude) na podstawie kodu i danych Michała Kaczorowskiego — to wstępna, robocza wersja pomocna do rozeznania się w temacie, nie ostateczne wnioski badawcze. Liczby i interpretacje traktuj jako punkt wyjścia do dalszej weryfikacji.</span>
+    </div>
+    <p class="lede" data-i18n-html="lede1Html">Polski spis powszechny (NSP 2021) nie pyta o dochód, na żadnym poziomie drobniejszym niż gmina. Ten raport szacuje dochód na poziomie obwodu spisowego metodą <b>MRP</b> (Multilevel Regression + Poststratification) z predyktorem obszarowym — wynikiem wyborczym — dla sześciu miast: Łodzi, Krakowa, Warszawy, Poznania, Gdańska i Szczecina.</p>
+    <p class="lede" data-i18n-html="lede2Html"><b>To nie jest zmierzony dochód, to estymacja.</b> Zakłada, że skład polityczny obwodu głosowania koreluje z jego profilem dochodowym tak, jak wynika z ogólnopolskiej ankiety CBOS — założenie z realnymi ograniczeniami, opisanymi na końcu.</p>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="stat-tile"><div class="stat-value">6</div><div class="stat-label" data-i18n="tileCities">miast</div></div>
+    <div class="stat-tile"><div class="stat-value">N=1604</div><div class="stat-label" data-i18n="tileSurvey">próba ankiety CBOS</div></div>
+    <div class="stat-tile"><div class="stat-value">0</div><div class="stat-label" data-i18n="tileValid">rozbieżności głosów w 4 miastach</div></div>
+    <div class="stat-tile"><div class="stat-value">99,9%</div><div class="stat-label" data-i18n="tileLodz">zgodność populacji, Łódź</div></div>
+  </div>
+
+  <section class="section">
+    <h2 data-i18n="s1Heading">1. Dochód szacowany per elektorat</h2>
+    <p class="sub" data-i18n-html="s1SubHtml">Krok 1 metody MRP: dochód deklarowany per capita przez wyborców każdej partii (CBOS 98/2023, VI–VII 2023). Każdy obwód głosowania dostaje ważoną średnią tych wartości, proporcjonalnie do udziału głosów. Górny, otwarty przedział ankiety domknięto arbitralnie na 4500 zł — jedyne miejsce w całej metodzie, gdzie trzeba było coś założyć zamiast policzyć.</p>
+    <div class="chart-card">
+      <svg id="incomeChart" viewBox="0 0 720 220" width="100%" role="img" aria-labelledby="incomeChartTitle"></svg>
+      <span id="incomeChartTitle" hidden data-i18n="s1Heading"></span>
+      <p class="chart-caption" data-i18n-html="s1CaptionHtml">Rozstęp deklarowanego dochodu między elektoratami jest wąski (2594–3344 zł) — różnice partyjne w tej ankiecie są dużo mniejsze niż stereotypy sugerują. Każdy obwód spisowy dziedziczy dokładnie <code>income_index_pln</code> swojego obwodu głosowania (brak zróżnicowania wewnątrz obwodu głosowania — to nie błąd, po prostu głosuje się per obwód, nie per budynek).</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s2Heading">2. Jedyna zależność, która się potwierdza: dochód i samotne rodzicielstwo</h2>
+    <p class="sub" data-i18n-html="s2SubHtml">Z pięciu sprawdzonych hipotez o związku dochodu, głosowania i struktury rodzinnej (korelacja Pearsona, per miasto) tylko jedna powtarza się spójnie we wszystkich sześciu miastach: niższy dochód wiąże się z większym udziałem samotnych matek.</p>
+    <div class="chart-card">
+      <svg id="momChart" viewBox="0 0 720 130" width="100%" role="img" aria-labelledby="momChartTitle"></svg>
+      <span id="momChartTitle" hidden data-i18n="s2Heading"></span>
+      <p class="chart-caption" data-i18n-html="s2CaptionHtml">Zakres korelacji: od r=−0,11 w Łodzi (najsłabsza) do r=−0,34 w Gdańsku (najsilniejsza) — pozostałe cztery miasta leżą pomiędzy, dokładne wartości w kodzie źródłowym. Kierunek jest ujemny i spójny wszędzie, co w tej analizie zdarza się rzadko.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s3Heading">3. Pięć hipotez, jedna się potwierdza</h2>
+    <p class="sub" data-i18n-html="s3SubHtml">Pozostałe cztery sprawdzone hipotezy o dochodzie i strukturze gospodarstw domowych nie potwierdzają się spójnie — znak korelacji albo jest bliski zeru, albo zmienia się między miastami.</p>
+    <div class="table-wrap">
+      <table class="datatable" id="hypTable"></table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s4Heading">Metoda i źródła</h2>
+    <p class="sub" data-i18n-html="s4SubHtml">Walidacja: po naprawie dwóch realnych błędów (zły kod TERYT dla Łodzi w pierwszej próbie; przestawione pola przy złączeniu tabel w QGIS), wynik zgadza się z oficjalną populacją GUS dokładnie w 5 z 6 miast, 99,9% w Łodzi. Zero rozbieżności głosów względem oficjalnego CSV PKW w Warszawie (805 obwodów), Gdańsku (202), Poznaniu (258) i Szczecinie (207). Przestrzennie sklastrowane (I Morana, k-NN k=8): <code>income_index_pln</code> i udział głosów na PiS bardzo silnie (0,71–0,84), struktura rodzinna słabiej (0,19–0,32) — dochód jest z konstrukcji jednolity w obrębie obwodu głosowania, więc zmienia się tylko na jego granicach.</p>
+    <p class="source-note" data-i18n-html="sourceNoteHtml">Sześć plików GPKG (warstwy <code>obwody_spisowe</code> i <code>obwody_glosowania</code>) razem ze skryptami: <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/ses_income_lodz" target="_blank" rel="noopener">easy-R5 · tools/ses_income_lodz</a> (<code>METHODOLOGY.md</code>, <code>HANDOFF.md</code>). Pierwotny wpis na portalu: <a href="https://gisboost.github.io/analizy/dochod-obwody-spisowe/">gisboost.github.io/analizy/dochod-obwody-spisowe</a>.</p>
+  </section>
+
+</main>
+
+<footer class="report-footer">
+  <a href="../" data-i18n="footerBack">← wszystkie analizy</a>
+  <a href="https://gisboost.github.io/" target="_blank" rel="noopener">Michał Kaczorowski — GISBoost</a>
+</footer>
+
+<script src="../charts.js"></script>
+<script src="report.js"></script>
+</body>
+</html>

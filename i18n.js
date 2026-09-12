@@ -44,6 +44,16 @@ const STRINGS = {
     tagReport: "raport",
     tag6cities: "6 miast",
     tag4cities: "4 miasta",
+    tagExperimental: "eksperymentalne",
+    reportUczelnieTitle: "61% obszaru bez dostępu do uczelni",
+    reportUczelnieDesc:
+      "Dostępność do uczelni w 6 miastach — korekta metody (heksagony vs populacja), dochód jako słaby predyktor.",
+    reportDochodTitle: "Ile zarabia Twój obwód?",
+    reportDochodDesc:
+      "Szacowanie dochodu na poziomie obwodu spisowego metodą MRP, tam gdzie polski spis go nie mierzy — metoda, walidacja, 6 miast.",
+    reportDochodDostepnoscTitle: "Czy bieda oznacza gorszy dojazd?",
+    reportDochodDostepnoscDesc:
+      "Dochód a dostępność transportowa w Łodzi na zrealizowanym GTFS — korelacja słaba i zmienia znak, odległość od centrum tłumaczy więcej.",
     footerHtml:
       'Kod: <a href="https://github.com/GISBoost/mapy-analizy">github.com/GISBoost/mapy-analizy</a> (MIT) ' +
       "· dane pochodne z OpenStreetMap i GTFS poszczególnych operatorów",
@@ -84,6 +94,16 @@ const STRINGS = {
     tagReport: "write-up",
     tag6cities: "6 cities",
     tag4cities: "4 cities",
+    tagExperimental: "experimental",
+    reportUczelnieTitle: "61% of the area without university access",
+    reportUczelnieDesc:
+      "University accessibility in 6 cities — correcting the method (hexagons vs. population), income as a weak predictor.",
+    reportDochodTitle: "How much does your precinct earn?",
+    reportDochodDesc:
+      "Estimating income at the census-precinct level with MRP, where the Polish census doesn't measure it — method, validation, 6 cities.",
+    reportDochodDostepnoscTitle: "Does poverty mean a worse commute?",
+    reportDochodDostepnoscDesc:
+      "Income and transit accessibility in Łódź on realized GTFS — a weak correlation that flips sign, distance from the centre explains more.",
     footerHtml:
       'Code: <a href="https://github.com/GISBoost/mapy-analizy">github.com/GISBoost/mapy-analizy</a> (MIT) ' +
       "· data derived from OpenStreetMap and each operator's GTFS",
