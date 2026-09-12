@@ -48,9 +48,9 @@
   <h1 data-i18n="h1">Co „opóźnienia" robią z dostępnością — i gdzie</h1>
 
   <div class="hero">
-    <p class="lede" data-i18n-html="lede1Html"></p>
-    <p class="lede" data-i18n-html="lede2Html"></p>
-    <p class="note" data-i18n-html="glossaryHtml"></p>
+    <p class="lede" data-i18n-html="lede1Html">Dla każdego heksagonu w sześciu miastach policzyliśmy, ile <b>szkół, aptek, uczelni i centrów handlowych</b> da się dojechać w 30 minut transportem publicznym w porannym szczycie (7:00–9:00) — najpierw według <b>rozkładu zaplanowanego</b>, potem według <b>rozkładu faktycznie zrealizowanego</b> (mediana tego, co pojazdy naprawdę zrobiły danego dnia, z danych GTFS-RT). Różnica między jednym a drugim to „koszt” rozjazdu rozkładu z rzeczywistością. Silnik: Easy-R5 (Conveyal R5) w QGIS.</p>
+    <p class="lede" data-i18n-html="lede2Html">Chcieliśmy sprawdzić jedną hipotezę: że opóźnienia najmocniej biją w <b>pierścień przesiadkowy</b> wokół centrum — obszar, w którym dojazd wymaga przesiadki, a spóźniony pojazd kaskaduje na kolejny. Łódź w pilotażu pokazała wyraźny dołek 2–3 km od centrum. Pytanie brzmiało: czy to prawidłowość, czy cecha akurat łódzkiej sieci.</p>
+    <p class="note" data-i18n-html="glossaryHtml"><b>net_delta</b> — suma zmian liczby celów w zasięgu po czterech kategoriach; dodatnia = rozkład zrealizowany daje więcej celów w zasięgu niż zaplanowany. Średnie miejskie są <b>ważone liczbą mieszkańców</b> heksagonu. Heksagon, który w rozkładzie statycznym nie miał w zasięgu żadnego celu danej kategorii, jest z niej wykluczony — nie ma czego zyskać ani stracić. Ludność (GUS, obwody spisowe) jest rozłożona na heksagony <b>po footprintcie budynków OSM</b>, nie po powierzchni obwodu — więc pola, tory i port nie „dostają” mieszkańców. Heksagony bez budynków (poniżej 0,5 osoby) są poza analizą.</p>
   </div>
 
   <div class="stat-tiles">
@@ -62,49 +62,49 @@
 
   <section class="section">
     <h2 data-i18n="s1Heading">1. Hipoteza pierścienia przesiadkowego — nie potwierdza się</h2>
-    <p class="sub" data-i18n-html="s1SubHtml"></p>
+    <p class="sub" data-i18n-html="s1SubHtml">Dla każdego miasta: <b>net_delta w 1-kilometrowych pierścieniach</b> od środka ciężkości ludności. Hipoteza „potwierdza się”, jeśli najgorszy pierścień leży 1–4 km od centrum, jest gorszy niż samo centrum i wyraźnie odstaje od pozostałych. Niebieski = rozkład zrealizowany daje więcej celów w zasięgu, czerwony = mniej.</p>
     <div class="chart-card">
       <div class="ring-grid" id="ringGrid"></div>
-      <p class="chart-caption" data-i18n-html="s1CaptionHtml"></p>
+      <p class="chart-caption" data-i18n-html="s1CaptionHtml">Tylko <b>Łódź</b> (obie rozdzielczości) ma dołek w pasie 2–3 km. Pozostałe pięć miast pokazuje <b>gradient promienisty</b> — najlepiej w gęstym centrum, coraz słabiej na zewnątrz — czyli odwrotność hipotezy. Dołek łódzki wygląda na cechę tamtejszej sieci, nie na prawo ogólne, i zasługuje na osobne przyjrzenie się (które linie i przesiadki go tworzą).</p>
     </div>
   </section>
 
   <section class="section">
     <h2 data-i18n="s2Heading">2. Znak efektu mówi o rozkładzie, nie o opóźnieniach</h2>
-    <p class="sub" data-i18n-html="s2SubHtml"></p>
+    <p class="sub" data-i18n-html="s2SubHtml">net_delta dla całego miasta, ważony populacją, obie rozdzielczości. Wartość dodatnia = w rozkładzie zrealizowanym w zasięgu jest średnio <i>więcej</i> celów niż w zaplanowanym.</p>
     <div class="chart-card">
       <div class="legend" id="netLegend"></div>
       <svg id="netChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="netChartTitle"></svg>
       <span id="netChartTitle" hidden data-i18n="s2Heading"></span>
-      <p class="chart-caption" data-i18n-html="s2CaptionHtml"></p>
+      <p class="chart-caption" data-i18n-html="s2CaptionHtml">W Poznaniu, Szczecinie i Warszawie rozkład zrealizowany P50 <b>wygrywa</b> z zaplanowanym: mediana rzeczywistych czasów przejazdu jest w szczycie krótsza niż rozkład, bo rozkład ma wpisany zapas na godziny szczytu. W Krakowie rozkład jest napięty, więc rzeczywistość przegrywa. Gdańsk i Łódź są blisko zera. „Statyczny vs zrealizowany P50” to nie jest czysty pomiar opóźnień — to <i>rzeczywisty medianowy czas jazdy</i> kontra <i>czas rozkładowy</i>, a czy to kara czy premia, zależy od tego, jak zachowawczo operator pisze rozkład.</p>
     </div>
   </section>
 
   <section class="section">
     <h2 data-i18n="s3Heading">3. Które kursy się przesunęły — szczyt, tramwaj vs autobus</h2>
-    <p class="sub" data-i18n-html="s3SubHtml"></p>
+    <p class="sub" data-i18n-html="s3SubHtml">Udział kursów, które w oknie 7:00–9:00 jechały średnio <b>wcześniej</b> (przed rozkładem) lub <b>później</b> niż rozkład, próg ±30 s. Reszta — „bez zmian” — nie jest pokazana.</p>
     <div class="chart-card">
       <div class="legend" id="shiftLegend"></div>
       <svg id="shiftChart" viewBox="0 0 720 430" width="100%" role="img" aria-labelledby="shiftChartTitle"></svg>
       <span id="shiftChartTitle" hidden data-i18n="s3Heading"></span>
-      <p class="chart-caption" data-i18n-html="s3CaptionHtml"></p>
+      <p class="chart-caption" data-i18n-html="s3CaptionHtml">Bilans „wcześniej vs później” w szczycie przewiduje znak net_delta każdego miasta dokładnie. Tam, gdzie w szczycie więcej kursów jedzie przed rozkładem (bo rozkład ma zapas), dostępność w rozkładzie zrealizowanym rośnie. <i>Uwaga: w Krakowie feed zrealizowany zostawia autobusy szczytowe na czasach rozkładowych — cały minus niosą tramwaje.</i></p>
     </div>
   </section>
 
   <section class="section">
     <h2 data-i18n="s4Heading">4. Ile heksagonów faktycznie się zmienia</h2>
-    <p class="sub" data-i18n-html="s4SubHtml"></p>
+    <p class="sub" data-i18n-html="s4SubHtml">Rozbicie <b>porównywalnych</b> heksagonów (rozdzielczość 250 m; Warszawa — 500 m): zysk / strata / bez zmian. Nagłówkowa liczba z sekcji 2 jest ważona populacją; tu widać ją obok zwykłej średniej per heksagon.</p>
     <div class="chart-card">
       <div class="legend" id="hexLegend"></div>
       <svg id="hexChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="hexChartTitle"></svg>
       <span id="hexChartTitle" hidden data-i18n="s4Heading"></span>
-      <p class="chart-caption" data-i18n-html="s4CaptionHtml"></p>
+      <p class="chart-caption" data-i18n-html="s4CaptionHtml">Nawet w mocno dodatnich miastach to nie lawina — od jednej trzeciej do dwóch trzecich porównywalnych heksagonów bez zmian, stosunek zysk:strata ~1,5–2:1. Nagłówkowa liczba jest <b>ważona populacją</b>; zwykła średnia per heksagon jest ~1,5–2× mniejsza, bo zyski koncentrują się w gęsto zaludnionym centrum. Gdańsk to niemal idealny remis.</p>
     </div>
   </section>
 
   <section class="section">
     <h2 data-i18n="s5Heading">5. Czas liczenia</h2>
-    <p class="sub" data-i18n-html="s5SubHtml"></p>
+    <p class="sub" data-i18n-html="s5SubHtml">Jeden proces QGIS/R5, na zimno, 2026-09-09. Koszt R5 na źródło rośnie ze <b>złożonością sieci</b>, nie z liczbą źródeł — dlatego Kraków (najwięcej heksagonów, najgęstsza sieć) i Warszawa (pół-gigabajtowy graf) trwają najdłużej, a Szczecin jest szybki mimo 5946 źródeł.</p>
     <div class="table-wrap">
       <table class="datatable" id="computeTable"></table>
     </div>
@@ -112,8 +112,8 @@
 
   <section class="section">
     <h2 data-i18n="s6Heading">Metoda i źródła</h2>
-    <p class="sub" data-i18n-html="s6SubHtml"></p>
-    <p class="source-note" data-i18n-html="sourceNoteHtml"></p>
+    <p class="sub" data-i18n-html="s6SubHtml">Pełna interaktywna mapa: <a href="../opoznienia-dostepnosc/">Ile kosztują opóźnienia?</a> — wszystkie kategorie, obie rozdzielczości, sześć miast, warstwa po warstwie. Metoda liczenia (kod, gaty walidacji GTFS, dobór parametrów): <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/realtime_delay_cities" target="_blank" rel="noopener">easy-R5 · tools/realtime_delay_cities</a>, pełny opis wyników w <code>FINDINGS.md</code> tego katalogu.</p>
+    <p class="source-note" data-i18n-html="sourceNoteHtml">Dane: sieć drogowa i cele z OpenStreetMap; rozkłady statyczne i zrealizowane P50 z GTFS operatorów poszczególnych miast (nagrania GTFS-RT, rekonstrukcja easy-GTFS-RT / easy-OTP); populacja z Narodowego Spisu Powszechnego (GUS), obwody spisowe. Dzień analizy: 2026-08-21 dla Łodzi, 2026-08-24 dla pozostałych (poniedziałek, dzień roboczy — bez efektu weekendu).</p>
   </section>
 
 </main>
