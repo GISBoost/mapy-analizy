@@ -70,7 +70,7 @@ header h1 {
   margin: 0 0 4px;
   text-wrap: balance;
 }
-header p { margin: 0 0 12px; color: #b9c4d1; font-size: 0.86rem; max-width: 68ch; }
+header p { margin: 0 0 12px; color: #b9c4d1; font-size: 0.86rem; max-width: 900px; }
 header a { color: #cfe0f0; }
 
 .citytabs { display: flex; gap: 2px; overflow-x: auto; }

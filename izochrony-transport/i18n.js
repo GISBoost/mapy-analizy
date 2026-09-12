@@ -14,12 +14,10 @@ const STRINGS = {
     title: "Dokąd dojadę? — 8 miast — GISBoost",
     h1: "Dokąd dojadę transportem publicznym?",
     introHtml:
-      "Najedź kursorem na dowolne miejsce w mieście, żeby zobaczyć zasięg dojazdu transportem publicznym " +
-      "z tego punktu (spacer + transit). Kliknij, żeby przypiąć pinezkę, i przesuwaj suwak pory dnia " +
-      "(6:00–22:00) — kształt zasięgu zmienia się razem z częstotliwością kursowania. Trzy przełączalne " +
-      "progi czasu dojazdu (15/30/45 min) i przełącznik rozkład jazdy / rozkład zrealizowany (mediana " +
-      "obserwacji GTFS-RT). Policzone dla ośmiu miast (Łódź, Warszawa, Kraków, Gdańsk, Poznań, Szczecin, " +
-      "GZM, Kielce) silnikiem Conveyal R5; zaczęte jako pilot na Łódź, inspirowane " +
+      "Najedź na dowolne miejsce w mieście, żeby zobaczyć zasięg dojazdu transportem publicznym stamtąd " +
+      "(spacer + transit); kliknij, by przypiąć pinezkę, i przesuwaj suwak pory dnia (6:00–22:00). Trzy " +
+      "progi czasu (15/30/45 min), przełącznik rozkład / zrealizowany (GTFS-RT), osiem miast (Łódź, " +
+      "Warszawa, Kraków, Gdańsk, Poznań, Szczecin, GZM, Kielce), silnik Conveyal R5 — inspirowane " +
       '<a href="https://www.chronotrains.com/pl/about" target="_blank" rel="noopener">chronotrains.com</a>. ' +
       'Jedna z <a href="../">analiz mapowych GISBoost</a>.',
     eyebrowData: "Dane",
@@ -49,13 +47,11 @@ const STRINGS = {
     title: "Where can I get to? — 8 cities — GISBoost",
     h1: "Where can I get to by public transit?",
     introHtml:
-      "Hover any spot in the city to see the transit accessibility area from that point (walk + " +
-      "transit). Click to pin it, and drag the time-of-day slider (6:00–22:00) — the shape changes " +
-      "with service frequency. Three switchable travel-time cutoffs (15/30/45 min) and a scheduled " +
-      "vs. realized (GTFS-RT median) toggle. Computed for eight cities (Łódź, Warsaw, Kraków, Gdańsk, " +
-      "Poznań, Szczecin, the Upper Silesian metro area (GZM), and Kielce) with Conveyal R5; started as " +
-      "a Łódź pilot, inspired by " +
-      '<a href="https://www.chronotrains.com/en/about" target="_blank" rel="noopener">chronotrains.com</a>. ' +
+      "Hover anywhere in the city to see the transit accessibility area from there (walk + transit); " +
+      "click to pin it, and drag the time-of-day slider (6:00–22:00). Three travel-time cutoffs " +
+      "(15/30/45 min), scheduled / realized (GTFS-RT) toggle, eight cities (Łódź, Warsaw, Kraków, " +
+      "Gdańsk, Poznań, Szczecin, the Upper Silesian metro area (GZM), and Kielce), Conveyal R5 — " +
+      'inspired by <a href="https://www.chronotrains.com/en/about" target="_blank" rel="noopener">chronotrains.com</a>. ' +
       'One of <a href="../">GISBoost\'s map analyses</a>.',
     eyebrowData: "Data",
     eyebrowTime: "Time of day",

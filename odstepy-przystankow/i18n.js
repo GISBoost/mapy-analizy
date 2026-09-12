@@ -14,12 +14,10 @@ const STRINGS = {
     h1: "Jak długo trzeba czekać na przystanku?",
     introHtml:
       "Dla każdego przystanku w czterech miastach (Warszawa, Kraków, Łódź, Gdańsk) liczymy medianę odstępu " +
-      "między kolejnymi przyjazdami dowolnej linii, uśrednioną do siatki heksagonalnej 500 m — z nagrań " +
-      "GTFS-RT, nie z rozkładu papierowego. Zakładka u góry przełącza miasto, okno czasowe niżej przelicza " +
-      "medianę tylko z obserwacji z danego przedziału (cały dzień albo jeden z czterech czterogodzinnych " +
-      "bloków). Przy krótszych oknach część przystanków o niskim ruchu spada poniżej progu obserwacji i " +
-      "znika z mapy — to normalne, najbardziej widoczne w Krakowie rano (6:00–10:00), gdzie feed GTFS-RT " +
-      'tego miasta ma wyraźnie mniej obserwacji niż po południu. Jedna z <a href="../">analiz mapowych GISBoost</a>.',
+      "między przyjazdami dowolnej linii, na siatce heksagonalnej 500 m — z nagrań GTFS-RT, nie z rozkładu. " +
+      "Zakładka u góry zmienia miasto, okno czasowe niżej zawęża zakres godzin; przy krótszych oknach mało " +
+      "obciążone przystanki znikają z mapy (najmocniej widać to w Krakowie rano, 6:00–10:00). Jedna z " +
+      '<a href="../">analiz mapowych GISBoost</a>.',
     eyebrowWindow: "Okno czasowe",
     eyebrowLegend: "Legenda",
     eyebrowOpacity: "Przezroczystość warstwy",
@@ -56,13 +54,10 @@ const STRINGS = {
     h1: "How long do you have to wait at the stop?",
     introHtml:
       "For every stop in four cities (Warsaw, Kraków, Łódź, Gdańsk) we compute the median headway " +
-      "between consecutive arrivals of any line, averaged into a 500 m hex grid — from GTFS-RT " +
-      "recordings, not the printed timetable. The tab up top switches city, the time window below " +
-      "recomputes the median from only the observations in that range (all day, or one of four " +
-      "four-hour blocks). With shorter windows, low-traffic stops fall below the observation " +
-      "threshold and drop off the map — expected, most visible in Kraków's morning window " +
-      "(6:00–10:00), where that city's GTFS-RT feed simply has far fewer observations than in the " +
-      'afternoon. One of <a href="../">GISBoost\'s map analyses</a>.',
+      "between arrivals of any line, on a 500 m hex grid — from GTFS-RT recordings, not the timetable. " +
+      "The tab up top switches city, the time window narrows the hour range; with shorter windows " +
+      "low-traffic stops drop off the map (most visible in Kraków mornings, 6:00–10:00). One of " +
+      '<a href="../">GISBoost\'s map analyses</a>.',
     eyebrowWindow: "Time window",
     eyebrowLegend: "Legend",
     eyebrowOpacity: "Layer opacity",
