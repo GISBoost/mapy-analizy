@@ -14,6 +14,7 @@ const STRINGS = {
     brandSub: "/ analizy mapowe",
     navCatalog: "Analizy",
     navReport: "Badanie: opóźnienia",
+    navReportLodz: "Badanie: Łódzkie",
     h1: "Analizy mapowe",
     introHtml:
       'Interaktywne mapy z analiz przestrzennych <a href="https://gisboost.github.io/">GISBoost</a> — ' +
@@ -36,6 +37,11 @@ const STRINGS = {
     card4Desc:
       "Gdzie rozkład zrealizowany P50 zmienia dostępność do szkół, aptek, uczelni i centrów handlowych — " +
       "statyczny vs zrealizowany, siatka heksagonalna 250 m i 500 m, 6 miast.",
+    card5Title: "Dostępność w Łódzkiem",
+    card5Desc:
+      "Dostępność transportowa całego województwa łódzkiego na statycznym GTFS (10 kategorii, 177 gmin), " +
+      "plus zmiana dostępności Łodzi między rozkładem a realizacją, trzy warianty dnia.",
+    tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
     reportCardTitle: "Badanie: co „opóźnienia” robią z dostępnością",
     reportCardDesc:
@@ -54,6 +60,10 @@ const STRINGS = {
     reportDochodDostepnoscTitle: "Czy bieda oznacza gorszy dojazd?",
     reportDochodDostepnoscDesc:
       "Dochód a dostępność transportowa w Łodzi na zrealizowanym GTFS — korelacja słaba i zmienia znak, odległość od centrum tłumaczy więcej.",
+    reportLodzTitle: "Jak zmierzyliśmy dostępność w całym województwie",
+    reportLodzDesc:
+      "Metoda, 8 feedów GTFS, próg przycięcia kategorii POI, wzrost dostępności 30→60 min zamiast delty RT, " +
+      "i czy jednorodna ujemna delta Łodzi to efekt powrotu do szkoły.",
     footerHtml:
       'Kod: <a href="https://github.com/GISBoost/mapy-analizy">github.com/GISBoost/mapy-analizy</a> (MIT) ' +
       "· dane pochodne z OpenStreetMap i GTFS poszczególnych operatorów",
@@ -64,6 +74,7 @@ const STRINGS = {
     brandSub: "/ map analyses",
     navCatalog: "Analyses",
     navReport: "Study: delays",
+    navReportLodz: "Study: Łódzkie",
     h1: "Map analyses",
     introHtml:
       'Interactive maps from <a href="https://gisboost.github.io/">GISBoost</a>\'s spatial analyses — ' +
@@ -86,6 +97,11 @@ const STRINGS = {
     card4Desc:
       "Where the realized P50 schedule shifts reachability of schools, pharmacies, universities and malls — " +
       "scheduled vs. realized, 250 m and 500 m hex grid, 6 cities.",
+    card5Title: "Accessibility in Łódzkie",
+    card5Desc:
+      "Transport accessibility across the whole Łódzkie voivodeship on static GTFS (10 categories, 177 " +
+      "communes), plus the Łódź accessibility change between schedule and realized, three day variants.",
+    tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",
     reportCardTitle: "Study: what “delays” do to accessibility",
     reportCardDesc:
@@ -104,6 +120,10 @@ const STRINGS = {
     reportDochodDostepnoscTitle: "Does poverty mean a worse commute?",
     reportDochodDostepnoscDesc:
       "Income and transit accessibility in Łódź on realized GTFS — a weak correlation that flips sign, distance from the centre explains more.",
+    reportLodzTitle: "How we measured accessibility across the whole voivodeship",
+    reportLodzDesc:
+      "Method, 8 GTFS feeds, the POI category coverage threshold, 30→60 min accessibility growth instead " +
+      "of an RT delta, and whether Łódź's uniform negative delta is a back-to-school effect.",
     footerHtml:
       'Code: <a href="https://github.com/GISBoost/mapy-analizy">github.com/GISBoost/mapy-analizy</a> (MIT) ' +
       "· data derived from OpenStreetMap and each operator's GTFS",

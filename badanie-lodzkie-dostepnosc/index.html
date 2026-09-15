@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Dostępność w Łódzkiem: metoda i wyniki — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Raport: dostępność transportowa całego województwa łódzkiego na statycznym GTFS (10 kategorii POI, 177 gmin) i zmiana dostępności Łodzi między rozkładem a realizacją — metoda, feedy, ograniczenia.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Dostępność w Łódzkiem: metoda i wyniki — GISBoost">
+<meta property="og:description" content="Dostępność transportowa całego województwa łódzkiego na statycznym GTFS i zmiana dostępności Łodzi między rozkładem a realizacją — metoda, feedy, ograniczenia.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/badanie-lodzkie-dostepnosc/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Dostępność w Łódzkiem: metoda i wyniki — GISBoost">
+<meta name="twitter:description" content="Dostępność transportowa całego województwa łódzkiego, plus zmiana dostępności Łodzi między rozkładem a realizacją.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="report.css">
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/" data-i18n="brandSub">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navReport">Badanie: dostępność w Łódzkiem</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
+<main class="report">
+
+  <div class="crumbs">
+    <a href="../" data-i18n="navCatalog">Analizy</a>
+    <span class="sep">/</span>
+    <span data-i18n="crumbHere">Badanie: dostępność w Łódzkiem</span>
+  </div>
+
+  <p class="kicker" data-i18n="kicker">Easy-R5 · dostępność transportowa · województwo łódzkie</p>
+  <h1 data-i18n="h1">Jak zmierzyliśmy dostępność w całym województwie łódzkim</h1>
+
+  <div class="hero">
+    <p class="lede" data-i18n-html="lede1Html">Dla każdego z <b>16 864 heksagonów</b> (siatka 1000 m) pokrywających całe województwo łódzkie policzyliśmy, ile z <b>10 kategorii usług</b> da się dojechać w 30 minut transportem publicznym w porannym szczycie (7:00–9:00), na statycznym rozkładzie GTFS z <b>8 przewoźników</b> (2026-09-10). Dla Łodzi — jedynego miasta w regionie z nagrywanym GTFS-RT — dodatkowo policzyliśmy to samo na <b>rozkładzie faktycznie zrealizowanym</b> (mediana P50), na siatce 250 m i 21 kategoriach, w trzech niezależnych wariantach dnia.</p>
+    <p class="lede" data-i18n-html="lede2Html">To jest raport metodologiczny do <a href="../lodzkie-dostepnosc/">interaktywnej mapy</a> — pełna lista feedów, próg przycięcia kategorii, wyniki i, co równie ważne, <b>ograniczenia wprost</b>.</p>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="stat-tile"><div class="stat-value">177</div><div class="stat-label" data-i18n="tileGminy">gmin objętych analizą</div></div>
+    <div class="stat-tile"><div class="stat-value">16 864 / 4 260</div><div class="stat-label" data-i18n="tileHex">heksagonów: woj. / Łódź</div></div>
+    <div class="stat-tile"><div class="stat-value">10 / 21</div><div class="stat-label" data-i18n="tileCats">kategorii POI: woj. / Łódź</div></div>
+    <div class="stat-tile"><div class="stat-value">30 min</div><div class="stat-label" data-i18n="tileCutoff">próg, okno 7:00–9:00</div></div>
+  </div>
+
+  <section class="section">
+    <h2 data-i18n="s1Heading">1. Siatka, dasymetria i próg przycięcia kategorii</h2>
+    <p class="sub" data-i18n-html="s1SubHtml">Ludność (NSP 2021, obwody spisowe GUS) rozłożona na heksagony <b>po footprintcie budynków OSM</b> (dasymetria), nie po powierzchni obwodu — pola, lasy i tereny przemysłowe nie „dostają” mieszkańców. Kategoria POI wchodzi do warstwy <b>wojewódzkiej</b>, jeśli ma ≥5 obiektów w ≥18 z 24 powiatów — inaczej mapa mierzyłaby kompletność OSM, nie realną rzadkość usługi. Z 21 kandydujących kategorii przeszło <b>10</b>; pozostałe 11 (m.in. uczelnia, szpital) zostały użyte tylko w warstwie łódzkiej, gdzie jednego dużego miasta wystarczy na sensowną próbkę bez testu pokrycia międzygminnego.</p>
+    <div class="chart-card">
+      <div class="table-wrap">
+        <table class="datatable" id="borderlineTable"></table>
+      </div>
+      <p class="chart-caption" data-i18n-html="s1CaptionHtml">Cztery kategorie na granicy progu — odrzucone z warstwy wojewódzkiej, ale zachowane w warstwie łódzkiej. Odrzucone kategorie nie znikają z dokumentacji: to materiał o realnej rzadkości usługi w części gmin, nie porażka metody.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s2Heading">2. Osiem przewoźników w województwie, dwa w Łodzi</h2>
+    <p class="sub" data-i18n-html="s2SubHtml">GTFS statyczny na 2026-09-10, zweryfikowany bramką (komplet plików, kursy aktywne &gt; 0, spójne <code>trip_id</code> między wariantami) przed jakimkolwiek routingiem.</p>
+    <div class="chart-card">
+      <div class="table-wrap">
+        <table class="datatable" id="feedsTable"></table>
+      </div>
+      <p class="chart-caption" data-i18n-html="s2CaptionHtml">Dwa kandydaci odrzuceni świadomie: <code>polish_trains.zip</code> (granica edycji rozkładu akurat na 2026-09-10 — tylko 96 kursów tego dnia zamiast typowych 350–475) i <code>aleksandrow_lodzki</code> (feed pokrywa tylko przyszłe ~2 tygodnie od dnia pobrania, nie sięga wstecz do daty analizy). 13 gmin (m.in. Piotrków Trybunalski, Sieradz, Bełchatów) sprawdzonych i potwierdzonych jako bez publikowanego GTFS.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s3Heading">3. Poziom dostępności wojewódzki</h2>
+    <p class="sub" data-i18n-html="s3SubHtml">Średnia liczba osiągalnych obiektów per kategoria w 30 min, ważona populacją heksagonu, po wszystkich 16 864 heksagonach województwa (zera wliczone).</p>
+    <div class="chart-card">
+      <svg id="levelChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="levelChartTitle"></svg>
+      <span id="levelChartTitle" hidden data-i18n="s3Heading"></span>
+      <p class="chart-caption" data-i18n-html="s3CaptionHtml">Suma po 10 kategoriach: <b>151,6</b> obiektu osiągalnego w 30 min, średnio na mieszkańca województwa. Najwięcej ważą boiska sportowe i place zabaw (obiekty częste i rozproszone), najmniej poczta i urząd gminy (po jednym na gminę).</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s4Heading">4. „Delta" wojewódzka bez danych RT: wzrost 30→60 min</h2>
+    <p class="sub" data-i18n-html="s4SubHtml">Poza Łodzią nie ma nagrywanego GTFS-RT, więc delta statyczny-vs-zrealizowany nie istnieje dla reszty województwa. Zamiast niej: o ile rośnie dostępność, gdy budżet czasu podwaja się z 30 do 60 minut — krotność sum ważonych populacją, per kategoria.</p>
+    <div class="chart-card">
+      <svg id="growthChart" viewBox="0 0 720 340" width="100%" role="img" aria-labelledby="growthChartTitle"></svg>
+      <span id="growthChartTitle" hidden data-i18n="s4Heading"></span>
+      <p class="chart-caption" data-i18n-html="s4CaptionHtml">Dostępność <b>nie podwaja się</b> przy podwojeniu czasu — rośnie 4,2–6,2× per kategoria (5,6× łącznie), silnie nieliniowo, zgodnie z siecią typu hub-and-spoke. Przy progu 30 min <b>65% heksagonów województwa</b> (10 934 z 16 864) nie ma dostępu do żadnej z 10 kategorii; 41,7 punktu procentowego z tego „odblokowuje się" dopiero przy 60 min, 23,1 pp zostaje bez dostępu nawet wtedy.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s5Heading">5. Delta Łodzi: rozkład vs realizacja, trzy niezależne dni</h2>
+    <p class="sub" data-i18n-html="s5SubHtml">Zmiana sumy 21 kategorii osiągalnych w 30 min, zrealizowany P50 minus rozkład statyczny, ważona populacją, tylko heksagony z niezerową bazą statyczną. Trzy niezależne przebiegi: jeden dzień referencyjny, średnia z 3 dni września (robustness), średnia z 4 dni sierpnia (wakacje).</p>
+    <div class="chart-card">
+      <svg id="deltaLodzChart" viewBox="0 0 720 130" width="100%" role="img" aria-labelledby="deltaLodzChartTitle"></svg>
+      <span id="deltaLodzChartTitle" hidden data-i18n="s5Heading"></span>
+      <p class="chart-caption" data-i18n-html="s5CaptionHtml">Jednorodna ujemna delta (98% kategorii×dni ujemnych we wrześniu) jest robustna na 3 niezależne dni — to nie szum jednego pomiaru.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s6Heading">6. Czy to Łódź, czy powrót do szkoły? Wakacje kontra wrzesień</h2>
+    <p class="sub" data-i18n-html="s6SubHtml">Ta sama metoda, zastosowana do 4 dni sierpniowych (wakacje) zamiast 3 wrześniowych (rok szkolny) — <a href="../lodzkie-dostepnosc/">warstwa na mapie</a>. Dwie różne bazy statyczne (08-13/14 i 08-17/18 mają różny aktywny <code>service_id</code>, potwierdzone niezależnie), każdy dzień policzony osobno.</p>
+    <div class="chart-card">
+      <svg id="vacationChart" viewBox="0 0 720 170" width="100%" role="img" aria-labelledby="vacationChartTitle"></svg>
+      <span id="vacationChartTitle" hidden data-i18n="s6Heading"></span>
+      <p class="chart-caption" data-i18n-html="s6CaptionHtml">Efekt sierpniowy jest ~8,4× słabszy i dużo mniej jednorodny niż wrześniowy (73% ujemnych kategorii×dni vs 98%; jeden dzień, 08-13, wyszedł wręcz dodatni). Potwierdzone niezależnie surowymi danymi opóźnień GTFS-RT poniżej — ten sam kierunek, ta sama skala.</p>
+    </div>
+    <div class="table-wrap" style="margin-top:18px">
+      <table class="datatable" id="rtDelayTable"></table>
+    </div>
+    <p class="chart-caption" data-i18n-html="s6Caption2Html">Niezależna, nie-routingowa miara (surowe opóźnienia per kurs z GTFS-RT) zgadza się kierunkiem i rzędem wielkości z wynikiem z R5: <b>wniosek to głównie efekt powrotu do szkoły/pracy, nie stała cecha sieci łódzkiej</b>. Zastrzeżenie: liczba wierszy danych RT jest ~2× mniejsza we wrześniu niż w sierpniu mimo podobnej liczby aktywnych kursów — możliwa różnica w gęstości próbkowania GTFS-RT między oknami, nie tylko realny efekt na drodze.</p>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s7Heading">Ograniczenia — wprost</h2>
+    <ul class="limits-list" id="limitsList"></ul>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="s8Heading">Metoda i źródła</h2>
+    <p class="sub" data-i18n-html="s8SubHtml">Pełna interaktywna mapa: <a href="../lodzkie-dostepnosc/">Dostępność w Łódzkiem</a>. Silnik: <a href="https://gisboost.github.io/easy-R5/" target="_blank" rel="noopener">Easy-R5</a> (Conveyal R5) w QGIS. Kod, dane wejściowe, pełna dokumentacja metody i historii decyzji: <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/lodzkie_na_mapach_2026" target="_blank" rel="noopener">easy-R5 · tools/lodzkie_na_mapach_2026</a> (<code>HANDOFF.md</code>, <code>MULTIDAY_LODZ_NOTES.md</code>).</p>
+    <p class="source-note" data-i18n-html="sourceNoteHtml">Dane: sieć drogowa, budynki i granice z OpenStreetMap; rozkłady statyczne i zrealizowane P50 z GTFS operatorów (nagrania GTFS-RT, rekonstrukcja easy-GTFS-RT dla Łodzi); ludność z Narodowego Spisu Powszechnego 2021 (GUS), obwody spisowe; granice administracyjne PRG (dane.gov.pl). Analiza przygotowana na konkurs „Łódzkie na mapach 2026".</p>
+  </section>
+
+</main>
+
+<footer class="report-footer">
+  <a href="../" data-i18n="footerBack">← wszystkie analizy</a>
+  <a href="https://gisboost.github.io/" target="_blank" rel="noopener">Michał Kaczorowski — GISBoost</a>
+</footer>
+
+<script src="../charts.js"></script>
+<script src="report.js"></script>
+</body>
+</html>

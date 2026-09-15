@@ -21,6 +21,8 @@ Wdrożenie: GitHub Pages z brancha `main`, `index.html` w korzeniu = strona-spis
 - **[badanie-uczelnie](badanie-uczelnie/)** — raport towarzyszący `uczelnie-dostepnosc`: korekta metody (heksagony vs populacja), dochód jako słaby predyktor. Eksperymentalne — treść w całości wygenerowana przez AI z kodu/danych, oznaczone tagiem na stronie-spisie.
 - **[badanie-dochod-obwody](badanie-dochod-obwody/)** — jak oszacowano dochód na poziomie obwodu spisowego metodą MRP, skoro polski spis go nie mierzy. Eksperymentalne.
 - **[badanie-dochod-dostepnosc](badanie-dochod-dostepnosc/)** — dochód a dostępność transportowa w Łodzi na zrealizowanym GTFS. Eksperymentalne.
+- **[lodzkie-dostepnosc](lodzkie-dostepnosc/)** — dostępność transportowa całego województwa łódzkiego na statycznym GTFS (10 kategorii, siatka 1000 m), plus zmiana dostępności Łodzi między rozkładem a realizacją (21 kategorii, siatka 250 m, trzy warianty dnia).
+- **[badanie-lodzkie-dostepnosc](badanie-lodzkie-dostepnosc/)** — raport z tej analizy: metoda, 8 feedów GTFS, próg przycięcia kategorii POI, wzrost dostępności 30→60 min jako zamiennik delty RT poza Łodzią, i czy jednorodna ujemna delta Łodzi to efekt powrotu do szkoły czy cecha sieci.
 
 ## Dodawanie nowej analizy
 

@@ -31,6 +31,7 @@
   <nav class="topnav">
     <a class="topnav-link" href="./" aria-current="page" data-i18n="navCatalog">Analizy</a>
     <a class="topnav-link" href="badanie-opoznienia/" data-i18n="navReport">Badanie: opóźnienia</a>
+    <a class="topnav-link" href="badanie-lodzkie-dostepnosc/" data-i18n="navReportLodz">Badanie: Łódzkie</a>
     <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
   </nav>
 </div>
@@ -69,6 +70,11 @@
       <p data-i18n="card4Desc">Gdzie rozkład zrealizowany P50 zmienia dostępność do szkół, aptek, uczelni i centrów handlowych — statyczny vs zrealizowany, siatka heksagonalna 250 m i 500 m, 6 miast.</p>
       <div class="tags"><span class="tag">Easy-R5</span><span class="tag">GTFS-RT</span><span class="tag" data-i18n="tag6cities">6 miast</span></div>
     </a>
+    <a class="card" href="lodzkie-dostepnosc/">
+      <h2 data-i18n="card5Title">Dostępność w Łódzkiem</h2>
+      <p data-i18n="card5Desc">Dostępność transportowa całego województwa łódzkiego na statycznym GTFS (10 kategorii, 177 gmin), plus zmiana dostępności Łodzi między rozkładem a realizacją, trzy warianty dnia.</p>
+      <div class="tags"><span class="tag">Easy-R5</span><span class="tag">GTFS-RT</span><span class="tag" data-i18n="tagWoj">Województwo łódzkie</span></div>
+    </a>
   </div>
 
   <p class="eyebrow" data-i18n="eyebrowReport">Z tych danych</p>
@@ -92,6 +98,11 @@
       <h2 data-i18n="reportDochodDostepnoscTitle">Czy bieda oznacza gorszy dojazd?</h2>
       <p data-i18n="reportDochodDostepnoscDesc">Dochód a dostępność transportowa w Łodzi na zrealizowanym GTFS — korelacja słaba i zmienia znak, odległość od centrum tłumaczy więcej.</p>
       <div class="tags"><span class="tag tag--exp" data-i18n="tagExperimental">eksperymentalne</span><span class="tag">Łódź</span></div>
+    </a>
+    <a class="card" href="badanie-lodzkie-dostepnosc/">
+      <h2 data-i18n="reportLodzTitle">Jak zmierzyliśmy dostępność w całym województwie</h2>
+      <p data-i18n="reportLodzDesc">Metoda, 8 feedów GTFS, próg przycięcia kategorii POI, wzrost dostępności 30→60 min zamiast delty RT, i czy jednorodna ujemna delta Łodzi to efekt powrotu do szkoły.</p>
+      <div class="tags"><span class="tag" data-i18n="tagReport">raport</span><span class="tag">Easy-R5</span><span class="tag" data-i18n="tagWoj">Województwo łódzkie</span></div>
     </a>
   </div>
 </main>
