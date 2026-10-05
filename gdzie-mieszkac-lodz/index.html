@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Gdzie mieszkać w Łodzi? — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Ustaw wymagania (dojazdy do celów, przystanki, zieleń, hałas), a mapa heksagonów 250 m pokaże w Łodzi miejsca, które je spełniają. Czasy dojazdu z rozkładu oraz ze zrekonstruowanego GTFS-RT.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Gdzie mieszkać w Łodzi? — GISBoost">
+<meta property="og:description" content="Mapa heksagonów 250 m: dojazdy do 5 celów, przystanki, zieleń, hałas. Czasy z rozkładu i ze zrekonstruowanego GTFS-RT.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/gdzie-mieszkac-lodz/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="styles.css">
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../" data-i18n="navCatalog">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page" data-i18n="navThis">Gdzie mieszkać w Łodzi?</a>
+    <button class="topnav-link lang" id="langToggleBtn" type="button" data-i18n-aria-label="langToggleAriaLabel" aria-label="Przełącz język">EN</button>
+  </nav>
+</div>
+
+<div class="app">
+  <aside id="panel">
+    <p class="intro" data-i18n-html="introHtml"></p>
+
+    <section>
+      <h2 data-i18n="secScenario">Scenariusz</h2>
+      <label class="field"><span data-i18n="fWindow">Pora dnia</span>
+        <select id="win"></select></label>
+      <label class="field"><span data-i18n="fTtype">Czas przejazdu transportem publicznym</span>
+        <select id="ttype"></select></label>
+      <p class="hint" id="ttypeHint"></p>
+      <label class="field"><span data-i18n="fRides">Przesiadki</span>
+        <select id="rides"></select></label>
+      <label class="toggle"><input type="checkbox" id="lka"><span data-i18n="fLka">Łódzka Kolej Aglomeracyjna (ŁKA) włączona</span></label>
+      <label class="field"><span data-i18n="fDir">Kierunek dojazdu</span>
+        <select id="dir"></select></label>
+      <p class="hint" id="dirHint"></p>
+    </section>
+
+    <section>
+      <h2 data-i18n="secTargets">Cele dojazdu (do 5)</h2>
+      <div id="targets"></div>
+      <button type="button" class="btn" id="addTarget" data-i18n="addTarget">+ Dodaj cel (kliknij na mapie)</button>
+      <p class="hint" data-i18n="targetHint">Cel przypina się do najbliższego heksa (błąd do ok. 145 m). Czas dla wielu trybów = najkrótszy z wybranych.</p>
+    </section>
+
+    <section>
+      <h2 data-i18n="secCriteria">Kryteria miękkie (waga 0–5)</h2>
+      <div id="weights"></div>
+      <label class="toggle"><input type="checkbox" id="bedroom"><span data-i18n="fBedroom">Hałas: tryb „sypialnia" (wskaźnik nocny Ln)</span></label>
+      <p class="hint" data-i18n="priceHint">Cena: brak danych w tej wersji (pusty slot).</p>
+    </section>
+
+    <section>
+      <h2 data-i18n="secHard">Wymagania twarde</h2>
+      <div id="hardNoise"></div>
+      <p class="hint" data-i18n="hardHint">Dla celu: pole „Twardy" w liście celów. Heks niespełniający wymagań znika.</p>
+    </section>
+
+    <section>
+      <h2 data-i18n="secMin">Minimalny wynik</h2>
+      <div class="rowline"><input type="range" id="minScore" min="0" max="95" step="5" value="0"><span id="minScoreVal" class="mono">0</span></div>
+      <label class="toggle"><input type="checkbox" id="showRejected"><span data-i18n="fShowRejected">Pokaż odrzucone jako blade</span></label>
+      <div class="statline" id="statline"></div>
+    </section>
+
+    <section>
+      <h2 data-i18n="secLegend">Legenda</h2>
+      <div class="ramp" id="ramp"></div>
+      <div class="ramp-labels"><span>0</span><span>50</span><span>100</span></div>
+    </section>
+  </aside>
+
+  <main>
+    <div id="map"></div>
+    <div class="map-loading" id="maploading" data-i18n="loadingText">wczytywanie danych…</div>
+    <div class="card" id="hexCard" hidden></div>
+  </main>
+</div>
+
+<footer class="note">
+  <span data-i18n-html="disclaimerHtml"></span>
+  · <a href="../" data-i18n-html="footerBackLink">&larr; wszystkie analizy</a>
+  · <span data-i18n="footerData">Dane i kod:</span> <a href="https://github.com/GISBoost/mapy-analizy/tree/main/gdzie-mieszkac-lodz">mapy-analizy</a>,
+  <a href="https://github.com/GISBoost/easy-R5/tree/main/tools/apartment_finder">easy-R5/tools/apartment_finder</a>
+  · <span data-i18n="footerMethod">wersja metody:</span> <span class="badge" id="methodVersion">–</span>
+  · <span id="attrib"></span>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="i18n.js"></script>
+<script src="score.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

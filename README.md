@@ -22,6 +22,7 @@ Wdrożenie: GitHub Pages z brancha `main`, `index.html` w korzeniu = strona-spis
 - **[badanie-dochod-obwody](badanie-dochod-obwody/)** — jak oszacowano dochód na poziomie obwodu spisowego metodą MRP, skoro polski spis go nie mierzy. Eksperymentalne.
 - **[badanie-dochod-dostepnosc](badanie-dochod-dostepnosc/)** — dochód a dostępność transportowa w Łodzi na zrealizowanym GTFS. Eksperymentalne.
 - **[lodzkie-dostepnosc](lodzkie-dostepnosc/)** — dostępność transportowa całego województwa łódzkiego na statycznym GTFS (10 kategorii, siatka 1000 m), plus zmiana dostępności Łodzi między rozkładem a realizacją (21 kategorii, siatka 250 m, trzy warianty dnia).
+- **[gdzie-mieszkac-lodz](gdzie-mieszkac-lodz/)** — narzędzie wyboru lokalizacji mieszkania w Łodzi: hexy 250 m, do 5 celów dojazdu, przystanki, zieleń, hałas; czasy z rozkładu i ze zrekonstruowanego GTFS-RT (P50/P85). Dane (macierze czasów, odczyt po zakresach bajtów) w osobnym repo [gdzie-mieszkac-lodz-data](https://github.com/GISBoost/gdzie-mieszkac-lodz-data), metoda i pipeline: [easy-R5/tools/apartment_finder](https://github.com/GISBoost/easy-R5/tree/main/tools/apartment_finder).
 - **[badanie-lodzkie-dostepnosc](badanie-lodzkie-dostepnosc/)** — raport z tej analizy: metoda, 8 feedów GTFS, próg przycięcia kategorii POI, wzrost dostępności 30→60 min jako zamiennik delty RT poza Łodzią, i czy jednorodna ujemna delta Łodzi to efekt powrotu do szkoły czy cecha sieci.
 
 ## Dodawanie nowej analizy

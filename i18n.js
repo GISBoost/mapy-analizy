@@ -41,6 +41,11 @@ const STRINGS = {
     card5Desc:
       "Dostępność transportowa całego województwa łódzkiego na statycznym GTFS (10 kategorii, 177 gmin), " +
       "plus zmiana dostępności Łodzi między rozkładem a realizacją, trzy warianty dnia.",
+    card6Title: "Gdzie mieszkać w Łodzi?",
+    card6Desc:
+      "Ustaw wymagania (do 5 celów dojazdu, przystanki, zieleń, hałas), a mapa heksagonów 250 m pokaże miejsca, które je spełniają. " +
+      "Czasy z rozkładu i ze zrekonstruowanego GTFS-RT (P50/P85).",
+    tagTool: "narzędzie",
     tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
     reportCardTitle: "Badanie: co „opóźnienia” robią z dostępnością",
@@ -101,6 +106,11 @@ const STRINGS = {
     card5Desc:
       "Transport accessibility across the whole Łódzkie voivodeship on static GTFS (10 categories, 177 " +
       "communes), plus the Łódź accessibility change between schedule and realized, three day variants.",
+    card6Title: "Where to live in Łódź?",
+    card6Desc:
+      "Set your requirements (up to 5 commute destinations, stops, green space, noise) and the 250 m hex map shows the places that meet them. " +
+      "Times from the timetable and from reconstructed GTFS-RT (P50/P85).",
+    tagTool: "tool",
     tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",
     reportCardTitle: "Study: what “delays” do to accessibility",
