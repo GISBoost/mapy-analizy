@@ -36,4 +36,35 @@ assert.ok(Number.isNaN(r.score[1]) && r.status[1] === 0 || r.status[1] === 0); /
 assert.ok(Math.abs(r.score[1] - 50) < 1e-4, r.score[1]);
 // hex2: target 0.5*4 + bus 0 + green 0 = 2/8 = 25 < 50 -> filtered, status 2
 assert.ok(Number.isNaN(r.score[2]) && r.status[2] === 2);
+// noise penalty: shares at L, L+5, L+10. all 0 -> 0; 1,1,1 -> 1; 1,0,0 -> 1/3; NaN steps take the next higher share; all NaN -> NaN
+assert.strictEqual(S.noisePenalty([0, 0, 0]), 0);
+assert.strictEqual(S.noisePenalty([1, 1, 1]), 1);
+assert.ok(Math.abs(S.noisePenalty([1, 0, 0]) - 1 / 3) < 1e-9);
+assert.ok(Math.abs(S.noisePenalty([NaN, 0.6, 0.3]) - (0.6 + 0.6 + 0.3) / 3) < 1e-9);
+assert.ok(Number.isNaN(S.noisePenalty([NaN, NaN, NaN])));
+// custom hard share: 0.10 rejects a hex with 0.2 share that the config default (0.25) would keep
+const rh = S.compute({ n: 1, curves, minScore: 0, weights: { tram_stop: 0, bus_stop: 1, frequency: 0, green: 0, noise_road: 0, noise_rail: 0, noise_industry: 0, price: 0 },
+  targets: [], hardNoise: { road: true, rail: false, industry: false }, hardShare: { road: 0.1, rail: 0.25, industry: 0.25 },
+  layers: { tram_m: L([0]), bus_m: L([100]), green_m: L([0]), freq: L([0]), noise_road: L([0]), noise_rail: L([0]), noise_industry: L([0]),
+            hard_road: L([0.2]), hard_rail: L([0]), hard_industry: L([0]) } });
+assert.ok(Number.isNaN(rh.score[0]) && rh.status[0] === 1);
+// services: at least X within Y min -> min(1, n / X); NaN = no data; hard requirement count >= X
+assert.strictEqual(S.serviceScore(0, 3), 0);
+assert.ok(Math.abs(S.serviceScore(1, 3) - 1 / 3) < 1e-9);
+assert.strictEqual(S.serviceScore(5, 3), 1);
+assert.ok(Number.isNaN(S.serviceScore(NaN, 3)));
+const rs = S.compute({ n: 3, curves, minScore: 0, weights: { tram_stop: 0, bus_stop: 0, frequency: 0, green: 0, noise_road: 0, noise_rail: 0, noise_industry: 0, price: 0, svc_pharmacy: 2 },
+  targets: [], hardNoise: { road: false, rail: false, industry: false },
+  svc: { pharmacy: { x: 2, hard: true, count: [0, 1, 4] } },
+  layers: { tram_m: L([0, 0, 0]), bus_m: L([0, 0, 0]), green_m: L([0, 0, 0]), freq: L([0, 0, 0]), noise_road: L([0, 0, 0]), noise_rail: L([0, 0, 0]),
+            noise_industry: L([0, 0, 0]), hard_road: L([0, 0, 0]), hard_rail: L([0, 0, 0]), hard_industry: L([0, 0, 0]) } });
+assert.ok(Number.isNaN(rs.score[0]) && rs.status[0] === 1);            // 0 < X=2 fails the requirement
+assert.ok(Number.isNaN(rs.score[1]) && rs.status[1] === 1);            // 1 < 2 fails too
+assert.ok(Math.abs(rs.score[2] - 100) < 1e-6 && rs.status[2] === 0);   // 4 >= 2 passes, score 100
+// hard requirement with no data (NaN) must not reject the hex
+const rn = S.compute({ n: 1, curves, minScore: 0, weights: { tram_stop: 0, bus_stop: 1, frequency: 0, green: 0, noise_road: 0, noise_rail: 0, noise_industry: 0, price: 0 },
+  targets: [], hardNoise: { road: false, rail: false, industry: false }, svc: { pharmacy: { x: 2, hard: true, count: [NaN] } },
+  layers: { tram_m: L([0]), bus_m: L([100]), green_m: L([0]), freq: L([0]), noise_road: L([0]), noise_rail: L([0]), noise_industry: L([0]),
+            hard_road: L([0]), hard_rail: L([0]), hard_industry: L([0]) } });
+assert.strictEqual(rn.status[0], 0);
 console.log("score.js OK");

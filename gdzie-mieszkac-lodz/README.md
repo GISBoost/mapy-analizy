@@ -38,6 +38,12 @@ plik, strona działa, tylko wolniej); GitHub Pages obsługuje `Range`.
   60 min, kwantyzacja 2 min. Scenariusze tranzytowe poza bazą okna zapisane jako różnica względem
   `<pora>_static_unlimited_nolka` (patrz `manifest.json` → `matrix.base`). Format: nagłówek w `export_web.py`.
 
+- `services/index.json` i `services/<scenariusz>.json` — liczba miejsc z 4 metakategorii (edukacja, zdrowie, handel i usługi,
+  kultura i rekreacja; 21 typów OSM, skład w `index.json` → `composition`) osiągalnych z środka heksa w ≤ Y min, osobno dla
+  pieszo, roweru, auta (per pora) i transportu publicznego (pora × rozkład/P50/P85 × ŁKA, mediana z 5 dni, przesiadki bez
+  limitu). Liczone dokładnie przez R5 do współrzędnych placówek (OSM, także do 1,2 km za granicą miasta). Kryterium: „co najmniej
+  X w ≤ Y min”, jeden tryb na kryterium; parki nie są liczone (osobne kryterium zieleni).
+
 Metoda, wersje i ograniczenia: [easy-R5/tools/apartment_finder](https://github.com/GISBoost/easy-R5/tree/main/tools/apartment_finder).
 
 ## Zastrzeżenia

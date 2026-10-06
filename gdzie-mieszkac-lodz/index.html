@@ -43,6 +43,7 @@
       <label class="field"><span data-i18n="fTtype">Czas przejazdu transportem publicznym</span>
         <select id="ttype"></select></label>
       <p class="hint" id="ttypeHint"></p>
+      <p class="hint warn" id="noNoteTargets" data-i18n="noNoteTargets" hidden></p>
       <label class="field"><span data-i18n="fRides">Przesiadki</span>
         <select id="rides"></select></label>
       <label class="toggle"><input type="checkbox" id="lka"><span data-i18n="fLka">Łódzka Kolej Aglomeracyjna (ŁKA) włączona</span></label>
@@ -60,14 +61,19 @@
 
     <section>
       <h2 data-i18n="secCriteria">Kryteria miękkie (waga 0–5)</h2>
+      <p class="hint" data-i18n="weightsHint"></p>
       <div id="weights"></div>
+      <h3 class="subsec" data-i18n="secNoise">Hałas</h3>
+      <div id="noiseBlocks"></div>
+      <h3 class="subsec" data-i18n="secServices">Usługi w zasięgu</h3>
+      <p class="hint" data-i18n="servicesHint"></p>
+      <div id="svcBlocks"></div>
       <label class="toggle"><input type="checkbox" id="bedroom"><span data-i18n="fBedroom">Hałas: tryb „sypialnia" (wskaźnik nocny Ln)</span></label>
       <p class="hint" data-i18n="priceHint">Cena: brak danych w tej wersji (pusty slot).</p>
     </section>
 
     <section>
       <h2 data-i18n="secHard">Wymagania twarde</h2>
-      <div id="hardNoise"></div>
       <p class="hint" data-i18n="hardHint">Dla celu: pole „Twardy" w liście celów. Heks niespełniający wymagań znika.</p>
     </section>
 

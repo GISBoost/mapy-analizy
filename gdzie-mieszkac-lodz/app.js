@@ -14,6 +14,9 @@
   const MODES = ["transit", "walk", "bike", "car"];
   const TARGET_COLORS = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00"];
   const WEIGHT_KEYS = ["tram_stop", "bus_stop", "frequency", "green", "noise_road", "noise_rail", "noise_industry"];
+  const NOISE = ["road", "rail", "industry"];
+  let SVC = [], SVC_KEYS = [];   // daily-service meta-categories, set from services/index.json (see init)
+  const SOFT_DB = [55, 60, 65];          // comfort limit options (Lden); the penalty grows over L, L+5, L+10 (see score.js noisePenalty)
   const NOISE_SRC = { road: "road", rail: "rail_all", industry: "industry" };
   const RAMP = [[0, "#440154"], [0.25, "#3b528b"], [0.5, "#21918c"], [0.75, "#5ec962"], [1, "#fde725"]];
 
@@ -27,7 +30,7 @@
 
   const state = {
     win: "morning", ttype: "static", rides: "unlimited", lka: false, dir: "auto", bedroom: false,
-    weights: {}, hardNoise: { road: false, rail: false, industry: false }, minScore: 0, showRejected: false, targets: [],
+    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, svc: {}, minScore: 0, showRejected: false, targets: [],
   };
 
   // ---------- helpers ----------
@@ -47,7 +50,8 @@
   // ---------- URL state ----------
   function saveHash() {
     const s = { w: state.win, t: state.ttype, r: state.rides, l: state.lka ? 1 : 0, d: state.dir, b: state.bedroom ? 1 : 0,
-      wt: state.weights, hn: state.hardNoise, ms: state.minScore, sr: state.showRejected ? 1 : 0,
+      wt: state.weights, hn: state.hardNoise, nc: state.noiseCfg,
+      sv: Object.fromEntries(Object.entries(state.svc).map(([k, c]) => [k, { m: c.mode, y: c.y, x: c.x, h: c.hard ? 1 : 0 }])), ms: state.minScore, sr: state.showRejected ? 1 : 0,
       tg: state.targets.map((x) => ({ h: x.hex, n: x.name, m: MODES.filter((k) => x.modes[k]).join(","), x: x.maxMin, i: x.idealMin, w: x.weight, k: x.hard ? 1 : 0 })) };
     try { history.replaceState(null, "", "#s=" + encodeURIComponent(JSON.stringify(s))); } catch (e) { /* ignore */ }
   }
@@ -61,8 +65,20 @@
       state.ttype = ok(s.t, ["static", "p50", "p85"], state.ttype);
       state.rides = ok(s.r, ["unlimited", "max1transfer"], state.rides);
       state.lka = !!s.l; state.dir = ok(s.d, ["auto", "to", "from"], "auto"); state.bedroom = !!s.b;
-      WEIGHT_KEYS.forEach((k) => { if (s.wt && Number.isFinite(+s.wt[k])) state.weights[k] = Math.max(0, Math.min(5, +s.wt[k])); });
+      WEIGHT_KEYS.concat(SVC_KEYS).forEach((k) => { if (s.wt && Number.isFinite(+s.wt[k])) state.weights[k] = Math.max(0, Math.min(5, +s.wt[k])); });
+      if (s.sv && SVX) SVC.forEach((k) => {
+        const c = s.sv[k]; if (!c || !state.svc[k]) return;
+        if (SVX.levels[c.m]) { state.svc[k].mode = c.m; state.svc[k].y = SVX.levels[c.m].includes(+c.y) ? +c.y : SVX.levels[c.m][0]; }
+        if (Number.isFinite(+c.x)) state.svc[k].x = Math.max(1, Math.min(50, Math.round(+c.x)));
+        state.svc[k].hard = !!c.h;
+      });
       if (s.hn) Object.keys(state.hardNoise).forEach((k) => { state.hardNoise[k] = !!s.hn[k]; });
+      if (s.nc) NOISE.forEach((k) => {
+        const c = s.nc[k]; if (!c) return;
+        if (SOFT_DB.includes(+c.soft)) state.noiseCfg[k].soft = +c.soft;
+        if (M.noise_steps.lden.includes(+c.hard)) state.noiseCfg[k].hard = +c.hard;
+        if (Number.isFinite(+c.share)) state.noiseCfg[k].share = Math.max(0, Math.min(100, +c.share));
+      });
       state.minScore = Math.max(0, Math.min(95, +s.ms || 0)); state.showRejected = !!s.sr;
       (s.tg || []).slice(0, M.curves.max_targets).forEach((x, k) => {
         if (!(x.h >= 0 && x.h < N)) return;
@@ -134,6 +150,7 @@
       maxMin: maxMin || M.curves.travel.default_max_min, idealMin: idealMin || M.curves.travel.default_ideal_min,
       weight: weight == null ? 3 : weight, hard: !!hard, times: null, modeTimes: {}, loading: false, error: null, token: 0 };
   }
+  const modeVec = (vecs, active, m) => vecs[active.indexOf(m)];
   async function refreshTarget(tg) {
     const tok = ++tg.token; tg.loading = true; tg.error = null; renderTargets();
     const active = MODES.filter((m) => tg.modes[m]);
@@ -144,6 +161,15 @@
       const out = new Uint8Array(N).fill(255);
       vecs.forEach((v) => { for (let i = 0; i < N; i++) if (v[i] < out[i]) out[i] = v[i]; });
       tg.times = active.length ? out : null;
+      tg.lkaN = null;
+      if (tg.modes.transit) {   // how much does ŁKA matter for this destination? (compare with the same scenario without/with ŁKA)
+        const flip = state.win + "_" + state.ttype + "_" + state.rides + "_" + (state.lka ? "nolka" : "lka");
+        const other = await readVector(flip, effDir(), tg.hex);
+        if (tok !== tg.token) return;
+        const cur = modeVec(vecs, active, "transit"); let n = 0;
+        for (let i = 0; i < N; i++) if (cur[i] !== other[i] && Math.abs((cur[i] === 255 ? 99 : cur[i]) - (other[i] === 255 ? 99 : other[i])) >= 2) n++;
+        tg.lkaN = n;
+      }
     } catch (e) {
       if (tok !== tg.token) return;
       tg.times = null; tg.modeTimes = {}; tg.error = String(e.message || e);
@@ -167,26 +193,58 @@
     const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m") };
     const ft = col("freq_tram_" + state.win), fb = col("freq_bus_" + state.win);
     L.freq = new Float32Array(N); for (let i = 0; i < N; i++) L.freq[i] = (ft[i] || 0) + (fb[i] || 0);
-    ["road", "rail", "industry"].forEach((s) => {
-      const c = M.curves.noise[s];
-      L["noise_" + s] = col(noiseCol(s, c.soft_db).name);
-      L["hard_" + s] = col(noiseCol(s, c.hard_db).name);
+    NOISE.forEach((s) => {
+      const c = state.noiseCfg[s];
+      const sh = [0, 5, 10].map((d) => col(noiseCol(s, c.soft + d).name));   // share of area at/above L, L+5, L+10
+      L["noiseShare_" + s] = sh[0];
+      L["noise_" + s] = new Float32Array(N);                                  // graded penalty 0..1 (NaN = no data)
+      for (let i = 0; i < N; i++) L["noise_" + s][i] = Score.noisePenalty([sh[0][i], sh[1][i], sh[2][i]]);
+      L["hard_" + s] = col(noiseCol(s, c.hard).name);
     });
     return L;
   }
 
+  // ---------- daily services (exact R5 counts; one JSON per scenario, see export_services.py) ----------
+  let SVX = null;                    // services/index.json (null = services unavailable, section hidden)
+  const svcFiles = {}, svcState = {}; // name -> loaded JSON / "loading" | "failed"
+  function svcScenario(mode) {
+    return mode === "transit" ? "transit_" + state.win + "_" + state.ttype + "_" + (state.lka ? "lka" : "nolka")
+      : mode === "car" ? "car_" + state.win : mode;
+  }
+  function loadSvc(name) {
+    if (svcState[name]) return;
+    svcState[name] = "loading";
+    fetch(DATA + "services/" + name + ".json").then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then((j) => { svcFiles[name] = j; svcState[name] = "ok"; }).catch(() => { svcState[name] = "failed"; })
+      .then(() => recompute());
+  }
+  function svcInput() {
+    const out = {};
+    SVC.forEach((k) => {
+      const c = state.svc[k]; if (!c || !(state.weights["svc_" + k] > 0 || c.hard)) return;
+      const name = svcScenario(c.mode), f = svcFiles[name];
+      if (!f) { loadSvc(name); out[k] = { x: c.x, hard: false, count: NAN_COL() }; return; }   // not loaded yet: skipped until it arrives
+      const li = f.levels.indexOf(c.y), arr = li >= 0 && f.c[k] ? f.c[k][li] : null;
+      out[k] = { x: c.x, hard: arr ? c.hard : false, count: arr ? Float32Array.from(arr) : NAN_COL() };   // no data: skipped, never a hard reject
+    });
+    return out;
+  }
+
   // ---------- compute + draw ----------
-  let result = null, layersNow = null;
+  let result = null, layersNow = null, svcNow = {};
   function recompute() {
     layersNow = buildLayers();
     const ready = state.targets.filter((tg) => tg.times && MODES.some((m) => tg.modes[m]));
     result = Score.compute({
       n: N, curves: M.curves, weights: Object.assign({ price: 0 }, state.weights), minScore: state.minScore,
-      hardNoise: state.hardNoise, layers: layersNow,
+      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
       targets: ready.map((tg) => ({ times: tg.times, idealMin: tg.idealMin, maxMin: tg.maxMin, weight: tg.weight, hard: tg.hard })),
     });
     result.ready = ready;
     draw(); stats(); if (selected != null) renderCard(selected); saveHash();
+    document.querySelectorAll("[data-svcnote]").forEach((el) => {   // a scenario without service data (e.g. not exported) is skipped; say so
+      const c = state.svc[el.dataset.svcnote]; el.textContent = c && svcState[svcScenario(c.mode)] === "failed" ? t("svcMissing") : "";
+    });
   }
   function draw() {
     const { score, status } = result;
@@ -210,9 +268,13 @@
       return Number.isNaN(v) ? t("cardFar") : fmt(v) + " " + t("unitM");
     }
     if (key === "frequency") return fmt(L.freq[i], 1) + " " + t("unitPerH");
+    if (key.startsWith("svc_")) {
+      const k = key.slice(4), c = state.svc[k], sv = svcNow[k];
+      return sv ? t("svcCard", { n: fmt(sv.count[i]), y: c.y, mode: t("mode_" + c.mode + "_short") }) : "";
+    }
     if (key.startsWith("noise_")) {
-      const s = key.slice(6), c = noiseCol(s, M.curves.noise[s].soft_db);
-      return t("cardNoiseShare", { p: fmt(100 * L["noise_" + s][i]), db: c.db });
+      const s = key.slice(6), c = noiseCol(s, state.noiseCfg[s].soft);
+      return t("cardNoiseShare", { p: fmt(100 * L["noiseShare_" + s][i]), db: c.db, pen: fmt(100 * L["noise_" + s][i]) });
     }
     return "";
   }
@@ -260,21 +322,66 @@
     $("attrib").innerHTML = t("dataSources") + " " + M.basemap.attribution;
     $("methodVersion").textContent = M.method_version;
     const w = $("weights"); w.innerHTML = "";
-    WEIGHT_KEYS.forEach((k) => {
+    const sliderRow = (k, label) => {
       const row = document.createElement("div"); row.className = "wrow" + (state.weights[k] ? "" : " off");
-      row.innerHTML = "<label for='w_" + k + "'>" + t("w_" + k) + "</label><input type='range' id='w_" + k + "' min='0' max='5' step='1' value='" + (state.weights[k] || 0) + "'><span class='mono'>" + (state.weights[k] || 0) + "</span>";
+      row.innerHTML = "<label for='w_" + k + "'>" + label + "</label><input type='range' id='w_" + k + "' min='0' max='5' step='1' value='" + (state.weights[k] || 0) + "'><span class='mono'>" + (state.weights[k] || 0) + "</span>";
       row.querySelector("input").oninput = (e) => { state.weights[k] = +e.target.value; row.querySelector("span").textContent = e.target.value; row.className = "wrow" + (+e.target.value ? "" : " off"); recompute(); };
-      w.appendChild(row);
-    });
-    const h = $("hardNoise"); h.innerHTML = "";
-    ["road", "rail", "industry"].forEach((s) => {
-      const c = M.curves.noise[s], col = noiseCol(s, c.hard_db);
-      const lab = document.createElement("label"); lab.className = "toggle";
-      lab.innerHTML = "<input type='checkbox'" + (state.hardNoise[s] ? " checked" : "") + "><span>" + t("hard_noise", { src: t("w_noise_" + s), db: col.db, share: Math.round(c.hard_max_share * 100) }) + "</span>";
-      lab.querySelector("input").onchange = (e) => { state.hardNoise[s] = e.target.checked; recompute(); };
-      h.appendChild(lab);
-    });
+      return row;
+    };
+    WEIGHT_KEYS.filter((k) => !k.startsWith("noise_")).forEach((k) => w.appendChild(sliderRow(k, t("w_" + k))));
+    // noise: one block per source = importance of quiet + comfort limit (soft) + optional requirement (hard, typed %)
+    const nb = $("noiseBlocks"); nb.innerHTML = "";
+    const ind = state.bedroom ? "Ln" : "Lden", shift = state.bedroom ? M.curves.noise.bedroom_db_shift : 0;
+    const dbOpts = (list, cur) => list.map((v) => "<option value='" + v + "'" + (v === cur ? " selected" : "") + ">" + (v + shift) + " dB " + ind + "</option>").join("");
+    const mk = (s, parent) => {
+      const c = state.noiseCfg[s], box = document.createElement("div"); box.className = "nblock";
+      box.appendChild(sliderRow("noise_" + s, t("wq_noise_" + s)));
+      const comfort = document.createElement("div"); comfort.className = "nrow";
+      comfort.innerHTML = "<label>" + t("noiseComfort") + " <select data-k='soft'>" + dbOpts(SOFT_DB, c.soft) + "</select></label>";
+      const hard = document.createElement("div"); hard.className = "nrow";
+      hard.innerHTML = "<label class='toggle'><input type='checkbox' data-k='on'" + (state.hardNoise[s] ? " checked" : "") + "><span>" + t("noiseRequire") + "</span></label> " +
+        "<select data-k='hard'>" + dbOpts(M.noise_steps.lden, c.hard) + "</select> <span>" + t("noiseMaxShare") + "</span> " +
+        "<input type='number' data-k='share' min='0' max='100' step='1' value='" + c.share + "'> %";
+      comfort.querySelector("select").onchange = (e) => { c.soft = +e.target.value; recompute(); };
+      hard.querySelector("[data-k=on]").onchange = (e) => { state.hardNoise[s] = e.target.checked; recompute(); };
+      hard.querySelector("[data-k=hard]").onchange = (e) => { c.hard = +e.target.value; recompute(); };
+      hard.querySelector("[data-k=share]").onchange = (e) => { c.share = Math.max(0, Math.min(100, +e.target.value || 0)); e.target.value = c.share; recompute(); };
+      box.appendChild(comfort); box.appendChild(hard); parent.appendChild(box);
+    };
+    mk("road", nb);
+    const more = document.createElement("details"); more.className = "nmore"; more.open = !!(state.weights.noise_rail || state.weights.noise_industry || state.hardNoise.rail || state.hardNoise.industry);
+    more.innerHTML = "<summary>" + t("noiseMore") + "</summary>"; mk("rail", more); mk("industry", more); nb.appendChild(more);
+    renderSvc(sliderRow);
+    $("noNoteTargets").hidden = state.targets.length > 0;
     renderTargets();
+  }
+  // services: one block per criterion = importance + mode + "at least X within Y min" + optional requirement
+  function renderSvc(sliderRow) {
+    const box = $("svcBlocks"); box.innerHTML = "";
+    if (!SVX) { document.querySelectorAll("[data-i18n=secServices],[data-i18n=servicesHint]").forEach((e) => { e.hidden = true; }); return; }
+    document.querySelectorAll("[data-i18n=secServices],[data-i18n=servicesHint]").forEach((e) => { e.hidden = false; });
+    SVC.forEach((k) => {
+      const c = state.svc[k], b = document.createElement("div"); b.className = "nblock";
+      b.appendChild(sliderRow("svc_" + k, t("w_svc_" + k)));
+      const comp = document.createElement("div"); comp.className = "hint"; comp.textContent = SVX.composition[k].map((x) => t("svcType_" + x)).join(", ");
+      b.appendChild(comp);
+      const row = document.createElement("div"); row.className = "nrow";
+      const modes = Object.keys(SVX.levels).map((m) => "<option value='" + m + "'" + (m === c.mode ? " selected" : "") + ">" + t("mode_" + m) + "</option>").join("");
+      const lv = (m) => SVX.levels[m].map((y) => "<option value='" + y + "'" + (y === c.y ? " selected" : "") + ">" + y + " " + t("unitMin") + "</option>").join("");
+      row.innerHTML = "<span>" + t("svcAtLeast") + "</span> <input type='number' data-k='x' min='1' max='50' step='1' value='" + c.x + "'> " +
+        "<span>" + t("svcWithin") + "</span> <select data-k='y'>" + lv(c.mode) + "</select> <select data-k='mode'>" + modes + "</select>";
+      const req = document.createElement("div"); req.className = "nrow";
+      req.innerHTML = "<label class='toggle'><input type='checkbox' data-k='hard'" + (c.hard ? " checked" : "") + "><span>" + t("svcRequire") + "</span></label>";
+      row.querySelector("[data-k=x]").onchange = (e) => { c.x = Math.max(1, Math.min(50, Math.round(+e.target.value) || 1)); e.target.value = c.x; recompute(); };
+      row.querySelector("[data-k=y]").onchange = (e) => { c.y = +e.target.value; recompute(); };
+      row.querySelector("[data-k=mode]").onchange = (e) => {
+        c.mode = e.target.value; const L = SVX.levels[c.mode]; if (!L.includes(c.y)) c.y = L.reduce((a, q) => (Math.abs(q - c.y) < Math.abs(a - c.y) ? q : a));
+        renderSvc(sliderRow); recompute();
+      };
+      req.querySelector("input").onchange = (e) => { c.hard = e.target.checked; recompute(); };
+      const note = document.createElement("div"); note.className = "tmsg"; note.dataset.svcnote = k;
+      b.appendChild(row); b.appendChild(req); b.appendChild(note); box.appendChild(b);
+    });
   }
   function renderTargets() {
     const box = $("targets"); box.innerHTML = "";
@@ -287,7 +394,7 @@
         "<label>" + t("tIdealMin") + "<input type='number' data-f='idealMin' min='0' max='" + M.matrix.cap + "' step='5' value='" + tg.idealMin + "'></label>" +
         "<label>" + t("tWeight") + "<input type='number' data-f='weight' min='0' max='5' step='1' value='" + tg.weight + "'></label></div>" +
         "<label class='toggle'><input type='checkbox' data-f='hard'" + (tg.hard ? " checked" : "") + ">" + t("tHard") + "</label>" +
-        "<div class='tmsg'>" + (tg.loading ? t("tLoading") : tg.error ? t("tFail", { msg: escapeHtml(tg.error) }) : !MODES.some((m) => tg.modes[m]) ? t("tNoMode") : "") + "</div>";
+        "<div class='tmsg'>" + (tg.lkaN != null && !tg.loading ? t("lkaEffect", { n: tg.lkaN, total: N }) + " " : "") + (tg.loading ? t("tLoading") : tg.error ? t("tFail", { msg: escapeHtml(tg.error) }) : !MODES.some((m) => tg.modes[m]) ? t("tNoMode") : "") + "</div>";
       d.querySelector("input[type=text]").onchange = (e) => { tg.name = e.target.value.slice(0, 40); markerFor(k); saveHash(); if (selected != null) renderCard(selected); };
       d.querySelector(".del").onclick = () => { state.targets.splice(k, 1); drawMarkers(); renderTargets(); recompute(); };
       d.querySelectorAll("[data-m]").forEach((c) => { c.onchange = () => { tg.modes[c.dataset.m] = c.checked; refreshTarget(tg); }; });
@@ -297,6 +404,7 @@
       box.appendChild(d);
     });
     $("addTarget").disabled = state.targets.length >= M.curves.max_targets;
+    $("noNoteTargets").hidden = state.targets.length > 0;
   }
 
   // ---------- map ----------
@@ -367,12 +475,16 @@
       N = M.n;
       Object.keys(layers).forEach((k) => { LAY[k] = Float32Array.from(layers[k], (v) => (v == null ? NaN : v)); });
       WEIGHT_KEYS.forEach((k) => { state.weights[k] = M.curves.defaults.weights[k] || 0; });
+      try { SVX = await fetch(DATA + "services/index.json").then((r) => (r.ok ? r.json() : null)); } catch (e) { SVX = null; }
+      if (SVX) { SVC = SVX.criteria; SVC_KEYS = SVC.map((k) => "svc_" + k); }
+      if (SVX) SVC.forEach((k) => { const d = SVX.defaults[k]; state.svc[k] = { mode: d.mode, y: d.y, x: d.x, hard: false }; state.weights["svc_" + k] = 0; });
+      NOISE.forEach((k) => { const c = M.curves.noise[k]; state.noiseCfg[k] = { soft: c.soft_db, hard: c.hard_db, share: Math.round(c.hard_max_share * 100) }; });
       loadHash();
       initMap(); renderStatic(); drawMarkers(); drawContext();
       $("win").onchange = (e) => { state.win = e.target.value; renderStatic(); refreshAllTargets(); recompute(); };
-      $("ttype").onchange = (e) => { state.ttype = e.target.value; $("ttypeHint").textContent = t("ttypeHint_" + state.ttype); refreshAllTargets(); };
+      $("ttype").onchange = (e) => { state.ttype = e.target.value; $("ttypeHint").textContent = t("ttypeHint_" + state.ttype); refreshAllTargets(); recompute(); };
       $("rides").onchange = (e) => { state.rides = e.target.value; refreshAllTargets(); };
-      $("lka").onchange = (e) => { state.lka = e.target.checked; refreshAllTargets(); };
+      $("lka").onchange = (e) => { state.lka = e.target.checked; refreshAllTargets(); recompute(); };
       $("dir").onchange = (e) => { state.dir = e.target.value; $("dirHint").textContent = t("dirHint_" + effDir()); refreshAllTargets(); };
       $("bedroom").onchange = (e) => { state.bedroom = e.target.checked; renderStatic(); recompute(); };
       $("showRejected").onchange = (e) => { state.showRejected = e.target.checked; recompute(); };

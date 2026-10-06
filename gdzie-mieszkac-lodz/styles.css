@@ -84,3 +84,9 @@ footer.note a { color: var(--accent); }
 .place span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 11px; font-weight: 600; color: #333; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
 .place-city span { font-size: 14px; font-weight: 700; }
 :root[data-theme="dark"] .place span { color: #ddd; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+.subsec { font-size: 0.82rem; margin: 12px 0 4px; color: var(--muted, #666); text-transform: uppercase; letter-spacing: .04em; }
+.nblock { border-left: 3px solid var(--accent); padding-left: 8px; margin: 8px 0; }
+.nrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.8rem; margin: 4px 0; }
+.nrow input[type="number"] { width: 5ch; }
+.nmore summary { cursor: pointer; font-size: 0.8rem; margin: 6px 0; }
+.hint.warn { color: #8a5a00; }
