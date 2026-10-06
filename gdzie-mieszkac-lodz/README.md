@@ -32,7 +32,8 @@ plik, strona działa, tylko wolniej); GitHub Pages obsługuje `Range`.
 - `manifest.json` — wersja metody, okna czasowe, krzywe punktacji, parametry macierzy, lista scenariuszy.
 - `hex.json` — środki i obrysy heksagonów (indeks = `hex_id`).
 - `layers.json` — warstwy per heks: odległość pieszo do przystanku tramwajowego/autobusowego i do zieleni
-  (rozdzielczość 20 m, brak wartości > 2 km), częstotliwość per pora dnia, udział powierzchni z hałasem ≥ N dB.
+  (rozdzielczość 20 m, brak wartości > 2 km), częstotliwość per pora dnia, udział powierzchni z hałasem ≥ N dB,
+  `canopy` — udział powierzchni heksa pod koronami drzew (0–1; LiDAR GUGiK, nalot IV 2021).
 - `m/<scenariusz>.r.bin` (wiersz: z heksa) i `.c.bin` (kolumna: do heksa) — macierze czasów O–D. Jeden blok DEFLATE
   na wiersz/kolumnę za tablicą offsetów, więc przeglądarka pobiera jeden wiersz zapytaniem `Range`. Czasy obcięte do
   60 min, kwantyzacja 2 min. Scenariusze tranzytowe poza bazą okna zapisane jako różnica względem
@@ -44,6 +45,9 @@ plik, strona działa, tylko wolniej); GitHub Pages obsługuje `Range`.
   limitu). Liczone dokładnie przez R5 do współrzędnych placówek (OSM, także do 1,2 km za granicą miasta). Kryterium: „co najmniej
   X w ≤ Y min”, jeden tryb na kryterium; parki nie są liczone (osobne kryterium zieleni).
 
+- `canopy.webp` i `canopy_overlay.json` — podgląd maski koron (Web Mercator, ok. 8 m na piksel, ok. 2,7 MB), ładowany dopiero po
+  włączeniu przełącznika w panelu; granice w `manifest.json` → `canopy.overlay`.
+
 Metoda, wersje i ograniczenia: [easy-R5/tools/apartment_finder](https://github.com/GISBoost/easy-R5/tree/main/tools/apartment_finder).
 
 ## Zastrzeżenia
@@ -54,7 +58,9 @@ Metoda, wersje i ograniczenia: [easy-R5/tools/apartment_finder](https://github.c
 - **Podkład OSM** ładowany wprost z `tile.openstreetmap.org`, jak na pozostałych stronach tego repo (decyzja
   autora). Polityka kafli OSM zabrania intensywnego użycia; przy większym ruchu zmienić dostawcę.
 - **Dane hałasu** (mapa akustyczna Łodzi, UMŁ): informacja publiczna wg autora (2026-10-05).
+- **Korony drzew:** stan z kwietnia 2021 (LiDAR GUGiK, NMPT−NMT ≥ 3 m, bez budynków BDOT10k); maska ma pojedyncze fałszywe
+  trafienia i nie obejmuje trawników ani niskiej zieleni. Dane GUGiK są otwarte (art. 40a ust. 2 Prawa geodezyjnego i kartograficznego).
 
 ## Licencja
 
-MIT (kod). Dane pochodne: OpenStreetMap (ODbL), GTFS operatorów, mapa akustyczna Łodzi — patrz zastrzeżenia wyżej.
+MIT (kod). Dane pochodne: OpenStreetMap (ODbL), GTFS operatorów, mapa akustyczna Łodzi, GUGiK (NMPT/NMT/BDOT10k) — patrz zastrzeżenia wyżej.

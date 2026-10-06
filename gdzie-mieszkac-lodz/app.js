@@ -66,6 +66,7 @@
       state.rides = ok(s.r, ["unlimited", "max1transfer"], state.rides);
       state.lka = !!s.l; state.dir = ok(s.d, ["auto", "to", "from"], "auto"); state.bedroom = !!s.b;
       WEIGHT_KEYS.concat(SVC_KEYS).forEach((k) => { if (s.wt && Number.isFinite(+s.wt[k])) state.weights[k] = Math.max(0, Math.min(5, +s.wt[k])); });
+      if (!s.wt || s.wt.canopy == null) state.weights.canopy = 0;   // links made before the canopy criterion existed keep their scores
       if (s.sv && SVX) SVC.forEach((k) => {
         const c = s.sv[k]; if (!c || !state.svc[k]) return;
         if (SVX.levels[c.m]) { state.svc[k].mode = c.m; state.svc[k].y = SVX.levels[c.m].includes(+c.y) ? +c.y : SVX.levels[c.m][0]; }
@@ -79,7 +80,7 @@
         if (M.noise_steps.lden.includes(+c.hard)) state.noiseCfg[k].hard = +c.hard;
         if (Number.isFinite(+c.share)) state.noiseCfg[k].share = Math.max(0, Math.min(100, +c.share));
       });
-      if (s.cn) { state.canopy.hard = !!s.cn.h; if (Number.isFinite(+s.cn.m)) state.canopy.min = Math.max(0, Math.min(100, +s.cn.m)); }
+      if (s.cn) { state.canopy.hard = !!s.cn.h; if (s.cn.m != null && Number.isFinite(+s.cn.m)) state.canopy.min = Math.max(0, Math.min(100, +s.cn.m)); }
       state.canopyOverlay = !!s.co;
       state.minScore = Math.max(0, Math.min(95, +s.ms || 0)); state.showRejected = !!s.sr;
       (s.tg || []).slice(0, M.curves.max_targets).forEach((x, k) => {
@@ -270,7 +271,7 @@
       return Number.isNaN(v) ? t("cardFar") : fmt(v) + " " + t("unitM");
     }
     if (key === "frequency") return fmt(L.freq[i], 1) + " " + t("unitPerH");
-    if (key === "canopy") return t("canopyRaw", { p: fmt(100 * L.canopy[i]) });
+    if (key === "canopy") return t("canopyRaw", { p: fmt(100 * L.canopy[i], 1) });
     if (key.startsWith("svc_")) {
       const k = key.slice(4), c = state.svc[k], sv = svcNow[k];
       return sv ? t("svcCard", { n: fmt(sv.count[i]), y: c.y, mode: t("mode_" + c.mode + "_short") }) : "";
@@ -362,8 +363,10 @@
   // tree canopy: importance + optional requirement "at least X % of the hex under canopy" + map preview toggle
   function renderCanopy(sliderRow) {
     const has = !!(M.canopy && LAY.canopy), box = $("canopyBlock"); box.innerHTML = "";
-    document.querySelectorAll("[data-i18n=secCanopy],[data-i18n=canopyHint]").forEach((e) => { e.hidden = !has; });
+    document.querySelectorAll("[data-i18n=secCanopy]").forEach((e) => { e.hidden = !has; });
+    $("canopyHintP").hidden = !has;
     if (!has) return;
+    $("canopyHintP").textContent = t("canopyHint", { full: Math.round(100 * M.curves.canopy.full_share) });
     box.className = "nblock";
     box.appendChild(sliderRow("canopy", t("w_canopy")));
     const hard = document.createElement("div"); hard.className = "nrow";
@@ -507,6 +510,7 @@
       const layers = await get(DATA + "layers.json");
       N = M.n;
       Object.keys(layers).forEach((k) => { LAY[k] = Float32Array.from(layers[k], (v) => (v == null ? NaN : v)); });
+      if (!M.canopy) delete LAY.canopy;   // a layer without its method block (year, version) is not used
       WEIGHT_KEYS.forEach((k) => { state.weights[k] = M.curves.defaults.weights[k] || 0; });
       if (M.curves.canopy) state.canopy.min = Math.round(M.curves.canopy.default_hard_min * 100);
       try { SVX = await fetch(DATA + "services/index.json").then((r) => (r.ok ? r.json() : null)); } catch (e) { SVX = null; }
