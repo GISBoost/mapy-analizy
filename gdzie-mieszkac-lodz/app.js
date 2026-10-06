@@ -25,7 +25,7 @@
   let HEX = null;        // hex.json
   let LAY = {};          // layer arrays (Float32Array, NaN = null)
   let N = 0;
-  let map, polys = [], markers = [], pickMode = false, selected = null;
+  let map, hexRenderer, polys = [], markers = [], pickMode = false, selected = null;
   const colors = RAMP.map(([p, h]) => [p, [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))]);
 
   const state = {
@@ -418,7 +418,7 @@
     markers.forEach((m) => m.remove()); markers = [];
     state.targets.forEach((tg, k) => {
       const [lon, lat] = HEX.c[tg.hex];
-      markers.push(L.circleMarker([lat, lon], { radius: 9, color: "#fff", weight: 2, fillColor: TARGET_COLORS[k % 5], fillOpacity: 1, interactive: true })
+      markers.push(L.circleMarker([lat, lon], { renderer: hexRenderer, radius: 9, color: "#fff", weight: 2, fillColor: TARGET_COLORS[k % 5], fillOpacity: 1, interactive: true })
         .bindTooltip(tg.name, { permanent: false }).addTo(map));
     });
   }
@@ -435,7 +435,7 @@
     if (M.basemap.url) L.tileLayer(M.basemap.url, { attribution: M.basemap.attribution, maxZoom: 19, subdomains: M.basemap.subdomains || "abc" }).addTo(map);
     else map.attributionControl.addAttribution(M.basemap.attribution); // own vector context (drawContext), no third-party tiles
     map.fitBounds(M.bounds);
-    const renderer = L.canvas({ padding: 0.3 });
+    const renderer = hexRenderer = L.canvas({ padding: 0.3 });   // markers must share it: a second canvas on top would swallow the hex clicks
     polys = HEX.p.map((flat, i) => {
       const ring = []; for (let k = 0; k < flat.length; k += 2) ring.push([flat[k + 1], flat[k]]);
       const p = L.polygon(ring, { renderer, stroke: false, fillOpacity: 0 });

@@ -90,3 +90,5 @@ footer.note a { color: var(--accent); }
 .nrow input[type="number"] { width: 5ch; }
 .nmore summary { cursor: pointer; font-size: 0.8rem; margin: 6px 0; }
 .hint.warn { color: #8a5a00; }
+
+.howto{margin:6px 0 10px;font-size:13px}.howto summary{cursor:pointer;font-weight:600}.howto ul{padding-left:18px;margin:6px 0}.howto li{margin-bottom:4px}
