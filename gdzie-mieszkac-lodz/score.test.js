@@ -67,4 +67,19 @@ const rn = S.compute({ n: 1, curves, minScore: 0, weights: { tram_stop: 0, bus_s
   layers: { tram_m: L([0]), bus_m: L([100]), green_m: L([0]), freq: L([0]), noise_road: L([0]), noise_rail: L([0]), noise_industry: L([0]),
             hard_road: L([0]), hard_rail: L([0]), hard_industry: L([0]) } });
 assert.strictEqual(rn.status[0], 0);
+// canopy: soft = min(1, share / full_share); hard = share >= min, NaN passes (no data)
+const cc = Object.assign({}, curves, { canopy: { full_share: 0.4 } });
+assert.strictEqual(S.canopyScore(0, cc.canopy), 0);
+assert.ok(Math.abs(S.canopyScore(0.1, cc.canopy) - 0.25) < 1e-9);
+assert.strictEqual(S.canopyScore(0.7, cc.canopy), 1);
+assert.ok(Number.isNaN(S.canopyScore(NaN, cc.canopy)));
+const base = { tram_m: L([0, 0, 0, 0]), bus_m: L([0, 0, 0, 0]), green_m: L([0, 0, 0, 0]), freq: L([0, 0, 0, 0]), noise_road: L([0, 0, 0, 0]), noise_rail: L([0, 0, 0, 0]),
+  noise_industry: L([0, 0, 0, 0]), hard_road: L([0, 0, 0, 0]), hard_rail: L([0, 0, 0, 0]), hard_industry: L([0, 0, 0, 0]), canopy: L([0.05, 0.2, 0.5, NaN]) };
+const wz = { tram_stop: 0, bus_stop: 0, frequency: 0, green: 0, noise_road: 0, noise_rail: 0, noise_industry: 0, price: 0 };
+const rc = S.compute({ n: 4, curves: cc, minScore: 0, weights: Object.assign({}, wz, { canopy: 3 }), targets: [], hardNoise: { road: false, rail: false, industry: false },
+  canopyHard: { on: true, min: 0.15 }, layers: base });
+assert.ok(Number.isNaN(rc.score[0]) && rc.status[0] === 1);              // 5 % < 15 %: fails the requirement
+assert.ok(Math.abs(rc.score[1] - 50) < 1e-4 && rc.status[1] === 0);        // 20 % / 40 % = 0.5
+assert.ok(Math.abs(rc.score[2] - 100) < 1e-4);                             // saturated
+assert.ok(Number.isNaN(rc.score[3]) && rc.status[3] === 3);                // no data: not rejected by the requirement, criterion skipped -> no criteria left
 console.log("score.js OK");

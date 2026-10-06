@@ -13,7 +13,7 @@
   const DATA = "../../gdzie-mieszkac-lodz-data/";
   const MODES = ["transit", "walk", "bike", "car"];
   const TARGET_COLORS = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00"];
-  const WEIGHT_KEYS = ["tram_stop", "bus_stop", "frequency", "green", "noise_road", "noise_rail", "noise_industry"];
+  const WEIGHT_KEYS = ["tram_stop", "bus_stop", "frequency", "green", "canopy", "noise_road", "noise_rail", "noise_industry"];
   const NOISE = ["road", "rail", "industry"];
   let SVC = [], SVC_KEYS = [];   // daily-service meta-categories, set from services/index.json (see init)
   const SOFT_DB = [55, 60, 65];          // comfort limit options (Lden); the penalty grows over L, L+5, L+10 (see score.js noisePenalty)
@@ -30,7 +30,7 @@
 
   const state = {
     win: "morning", ttype: "static", rides: "unlimited", lka: false, dir: "auto", bedroom: false,
-    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, svc: {}, minScore: 0, showRejected: false, targets: [],
+    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, canopy: { hard: false, min: 15 }, canopyOverlay: false, svc: {}, minScore: 0, showRejected: false, targets: [],
   };
 
   // ---------- helpers ----------
@@ -50,7 +50,7 @@
   // ---------- URL state ----------
   function saveHash() {
     const s = { w: state.win, t: state.ttype, r: state.rides, l: state.lka ? 1 : 0, d: state.dir, b: state.bedroom ? 1 : 0,
-      wt: state.weights, hn: state.hardNoise, nc: state.noiseCfg,
+      wt: state.weights, hn: state.hardNoise, nc: state.noiseCfg, cn: { h: state.canopy.hard ? 1 : 0, m: state.canopy.min }, co: state.canopyOverlay ? 1 : 0,
       sv: Object.fromEntries(Object.entries(state.svc).map(([k, c]) => [k, { m: c.mode, y: c.y, x: c.x, h: c.hard ? 1 : 0 }])), ms: state.minScore, sr: state.showRejected ? 1 : 0,
       tg: state.targets.map((x) => ({ h: x.hex, n: x.name, m: MODES.filter((k) => x.modes[k]).join(","), x: x.maxMin, i: x.idealMin, w: x.weight, k: x.hard ? 1 : 0 })) };
     try { history.replaceState(null, "", "#s=" + encodeURIComponent(JSON.stringify(s))); } catch (e) { /* ignore */ }
@@ -79,6 +79,8 @@
         if (M.noise_steps.lden.includes(+c.hard)) state.noiseCfg[k].hard = +c.hard;
         if (Number.isFinite(+c.share)) state.noiseCfg[k].share = Math.max(0, Math.min(100, +c.share));
       });
+      if (s.cn) { state.canopy.hard = !!s.cn.h; if (Number.isFinite(+s.cn.m)) state.canopy.min = Math.max(0, Math.min(100, +s.cn.m)); }
+      state.canopyOverlay = !!s.co;
       state.minScore = Math.max(0, Math.min(95, +s.ms || 0)); state.showRejected = !!s.sr;
       (s.tg || []).slice(0, M.curves.max_targets).forEach((x, k) => {
         if (!(x.h >= 0 && x.h < N)) return;
@@ -190,7 +192,7 @@
   const NAN_COL = () => new Float32Array(N).fill(NaN); // missing layer => criterion skipped (O9), never a crash
   const col = (name) => LAY[name] || NAN_COL();
   function buildLayers() {
-    const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m") };
+    const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m"), canopy: col("canopy") };
     const ft = col("freq_tram_" + state.win), fb = col("freq_bus_" + state.win);
     L.freq = new Float32Array(N); for (let i = 0; i < N; i++) L.freq[i] = (ft[i] || 0) + (fb[i] || 0);
     NOISE.forEach((s) => {
@@ -237,7 +239,7 @@
     const ready = state.targets.filter((tg) => tg.times && MODES.some((m) => tg.modes[m]));
     result = Score.compute({
       n: N, curves: M.curves, weights: Object.assign({ price: 0 }, state.weights), minScore: state.minScore,
-      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
+      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, canopyHard: { on: state.canopy.hard, min: state.canopy.min / 100 }, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
       targets: ready.map((tg) => ({ times: tg.times, idealMin: tg.idealMin, maxMin: tg.maxMin, weight: tg.weight, hard: tg.hard })),
     });
     result.ready = ready;
@@ -268,6 +270,7 @@
       return Number.isNaN(v) ? t("cardFar") : fmt(v) + " " + t("unitM");
     }
     if (key === "frequency") return fmt(L.freq[i], 1) + " " + t("unitPerH");
+    if (key === "canopy") return t("canopyRaw", { p: fmt(100 * L.canopy[i]) });
     if (key.startsWith("svc_")) {
       const k = key.slice(4), c = state.svc[k], sv = svcNow[k];
       return sv ? t("svcCard", { n: fmt(sv.count[i]), y: c.y, mode: t("mode_" + c.mode + "_short") }) : "";
@@ -328,7 +331,7 @@
       row.querySelector("input").oninput = (e) => { state.weights[k] = +e.target.value; row.querySelector("span").textContent = e.target.value; row.className = "wrow" + (+e.target.value ? "" : " off"); recompute(); };
       return row;
     };
-    WEIGHT_KEYS.filter((k) => !k.startsWith("noise_")).forEach((k) => w.appendChild(sliderRow(k, t("w_" + k))));
+    WEIGHT_KEYS.filter((k) => !k.startsWith("noise_") && k !== "canopy").forEach((k) => w.appendChild(sliderRow(k, t("w_" + k))));
     // noise: one block per source = importance of quiet + comfort limit (soft) + optional requirement (hard, typed %)
     const nb = $("noiseBlocks"); nb.innerHTML = "";
     const ind = state.bedroom ? "Ln" : "Lden", shift = state.bedroom ? M.curves.noise.bedroom_db_shift : 0;
@@ -351,9 +354,39 @@
     mk("road", nb);
     const more = document.createElement("details"); more.className = "nmore"; more.open = !!(state.weights.noise_rail || state.weights.noise_industry || state.hardNoise.rail || state.hardNoise.industry);
     more.innerHTML = "<summary>" + t("noiseMore") + "</summary>"; mk("rail", more); mk("industry", more); nb.appendChild(more);
+    renderCanopy(sliderRow);
     renderSvc(sliderRow);
     $("noNoteTargets").hidden = state.targets.length > 0;
     renderTargets();
+  }
+  // tree canopy: importance + optional requirement "at least X % of the hex under canopy" + map preview toggle
+  function renderCanopy(sliderRow) {
+    const has = !!(M.canopy && LAY.canopy), box = $("canopyBlock"); box.innerHTML = "";
+    document.querySelectorAll("[data-i18n=secCanopy],[data-i18n=canopyHint]").forEach((e) => { e.hidden = !has; });
+    if (!has) return;
+    box.className = "nblock";
+    box.appendChild(sliderRow("canopy", t("w_canopy")));
+    const hard = document.createElement("div"); hard.className = "nrow";
+    hard.innerHTML = "<label class='toggle'><input type='checkbox' data-k='on'" + (state.canopy.hard ? " checked" : "") + "><span>" + t("canopyRequire") + "</span></label> " +
+      "<input type='number' data-k='min' min='0' max='100' step='1' value='" + state.canopy.min + "'> %";
+    hard.querySelector("[data-k=on]").onchange = (e) => { state.canopy.hard = e.target.checked; recompute(); };
+    hard.querySelector("[data-k=min]").onchange = (e) => { state.canopy.min = Math.max(0, Math.min(100, +e.target.value || 0)); e.target.value = state.canopy.min; recompute(); };
+    box.appendChild(hard);
+    const ov = M.canopy.overlay;
+    if (ov) {
+      const pv = document.createElement("div"); pv.className = "nrow";
+      pv.innerHTML = "<label class='toggle'><input type='checkbox' data-k='ov'" + (state.canopyOverlay ? " checked" : "") + "><span>" + t("canopyOverlay") + "</span></label>";
+      pv.querySelector("input").onchange = (e) => { state.canopyOverlay = e.target.checked; applyCanopyOverlay(); saveHash(); };
+      box.appendChild(pv);
+    }
+    const note = document.createElement("p"); note.className = "hint"; note.textContent = t("canopyNote", { year: M.canopy.year, h: M.canopy.height_m }); box.appendChild(note);
+  }
+  let canopyLayer = null;
+  function applyCanopyOverlay() {
+    const ov = M.canopy && M.canopy.overlay; if (!map || !ov) return;
+    if (!map.getPane("canopyPane")) { map.createPane("canopyPane").style.zIndex = 405; map.getPane("canopyPane").style.pointerEvents = "none"; }
+    if (!canopyLayer) canopyLayer = L.imageOverlay(DATA + ov.url, ov.bounds, { pane: "canopyPane", opacity: 0.85, interactive: false });
+    if (state.canopyOverlay) canopyLayer.addTo(map); else map.removeLayer(canopyLayer);
   }
   // services: one block per criterion = importance + mode + "at least X within Y min" + optional requirement
   function renderSvc(sliderRow) {
@@ -475,12 +508,13 @@
       N = M.n;
       Object.keys(layers).forEach((k) => { LAY[k] = Float32Array.from(layers[k], (v) => (v == null ? NaN : v)); });
       WEIGHT_KEYS.forEach((k) => { state.weights[k] = M.curves.defaults.weights[k] || 0; });
+      if (M.curves.canopy) state.canopy.min = Math.round(M.curves.canopy.default_hard_min * 100);
       try { SVX = await fetch(DATA + "services/index.json").then((r) => (r.ok ? r.json() : null)); } catch (e) { SVX = null; }
       if (SVX) { SVC = SVX.criteria; SVC_KEYS = SVC.map((k) => "svc_" + k); }
       if (SVX) SVC.forEach((k) => { const d = SVX.defaults[k]; state.svc[k] = { mode: d.mode, y: d.y, x: d.x, hard: false }; state.weights["svc_" + k] = 0; });
       NOISE.forEach((k) => { const c = M.curves.noise[k]; state.noiseCfg[k] = { soft: c.soft_db, hard: c.hard_db, share: Math.round(c.hard_max_share * 100) }; });
       loadHash();
-      initMap(); renderStatic(); drawMarkers(); drawContext();
+      initMap(); renderStatic(); drawMarkers(); drawContext(); applyCanopyOverlay();
       $("win").onchange = (e) => { state.win = e.target.value; renderStatic(); refreshAllTargets(); recompute(); };
       $("ttype").onchange = (e) => { state.ttype = e.target.value; $("ttypeHint").textContent = t("ttypeHint_" + state.ttype); refreshAllTargets(); recompute(); };
       $("rides").onchange = (e) => { state.rides = e.target.value; refreshAllTargets(); };
