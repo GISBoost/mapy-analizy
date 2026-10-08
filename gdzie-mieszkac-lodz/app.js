@@ -13,7 +13,7 @@
   const DATA = "../../gdzie-mieszkac-lodz-data/";
   const MODES = ["transit", "walk", "bike", "car"];
   const TARGET_COLORS = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00"];
-  const WEIGHT_KEYS = ["tram_stop", "bus_stop", "frequency", "green", "canopy", "noise_road", "noise_rail", "noise_industry"];
+  const WEIGHT_KEYS = ["tram_stop", "bus_stop", "frequency", "green", "canopy", "price", "noise_road", "noise_rail", "noise_industry"];
   const NOISE = ["road", "rail", "industry"];
   let SVC = [], SVC_KEYS = [];   // daily-service meta-categories, set from services/index.json (see init)
   const SOFT_DB = [55, 60, 65];          // comfort limit options (Lden); the penalty grows over L, L+5, L+10 (see score.js noisePenalty)
@@ -30,7 +30,7 @@
 
   const state = {
     win: "morning", ttype: "static", rides: "unlimited", lka: false, dir: "auto", bedroom: false,
-    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, canopy: { hard: false, min: 15 }, canopyOverlay: false, svc: {}, minScore: 0, showRejected: false, targets: [],
+    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, canopy: { hard: false, min: 15 }, canopyOverlay: false, price: { hard: false, max: 10000 }, priceOverlay: false, svc: {}, minScore: 0, showRejected: false, targets: [],
   };
 
   // ---------- helpers ----------
@@ -51,6 +51,7 @@
   function saveHash() {
     const s = { w: state.win, t: state.ttype, r: state.rides, l: state.lka ? 1 : 0, d: state.dir, b: state.bedroom ? 1 : 0,
       wt: state.weights, hn: state.hardNoise, nc: state.noiseCfg, cn: { h: state.canopy.hard ? 1 : 0, m: state.canopy.min }, co: state.canopyOverlay ? 1 : 0,
+      pr: { h: state.price.hard ? 1 : 0, m: state.price.max }, po: state.priceOverlay ? 1 : 0,
       sv: Object.fromEntries(Object.entries(state.svc).map(([k, c]) => [k, { m: c.mode, y: c.y, x: c.x, h: c.hard ? 1 : 0 }])), ms: state.minScore, sr: state.showRejected ? 1 : 0,
       tg: state.targets.map((x) => ({ h: x.hex, n: x.name, m: MODES.filter((k) => x.modes[k]).join(","), x: x.maxMin, i: x.idealMin, w: x.weight, k: x.hard ? 1 : 0 })) };
     try { history.replaceState(null, "", "#s=" + encodeURIComponent(JSON.stringify(s))); } catch (e) { /* ignore */ }
@@ -82,6 +83,8 @@
       });
       if (s.cn) { state.canopy.hard = !!s.cn.h; if (s.cn.m != null && Number.isFinite(+s.cn.m)) state.canopy.min = Math.max(0, Math.min(100, +s.cn.m)); }
       state.canopyOverlay = !!s.co;
+      if (s.pr) { state.price.hard = !!s.pr.h; if (s.pr.m != null && Number.isFinite(+s.pr.m)) state.price.max = Math.max(0, Math.min(50000, +s.pr.m)); }
+      state.priceOverlay = !!s.po;
       state.minScore = Math.max(0, Math.min(95, +s.ms || 0)); state.showRejected = !!s.sr;
       (s.tg || []).slice(0, M.curves.max_targets).forEach((x, k) => {
         if (!(x.h >= 0 && x.h < N)) return;
@@ -193,7 +196,7 @@
   const NAN_COL = () => new Float32Array(N).fill(NaN); // missing layer => criterion skipped (O9), never a crash
   const col = (name) => LAY[name] || NAN_COL();
   function buildLayers() {
-    const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m"), canopy: col("canopy") };
+    const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m"), canopy: col("canopy"), price_m2: col("price_m2"), price_r: col("price_r"), price_n: col("price_n") };
     const ft = col("freq_tram_" + state.win), fb = col("freq_bus_" + state.win);
     L.freq = new Float32Array(N); for (let i = 0; i < N; i++) L.freq[i] = (ft[i] || 0) + (fb[i] || 0);
     NOISE.forEach((s) => {
@@ -239,8 +242,8 @@
     layersNow = buildLayers();
     const ready = state.targets.filter((tg) => tg.times && MODES.some((m) => tg.modes[m]));
     result = Score.compute({
-      n: N, curves: M.curves, weights: Object.assign({ price: 0 }, state.weights), minScore: state.minScore,
-      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, canopyHard: { on: state.canopy.hard, min: state.canopy.min / 100 }, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
+      n: N, curves: M.curves, weights: state.weights, minScore: state.minScore,
+      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, canopyHard: { on: state.canopy.hard, min: state.canopy.min / 100 }, priceHard: { on: state.price.hard, max: state.price.max }, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
       targets: ready.map((tg) => ({ times: tg.times, idealMin: tg.idealMin, maxMin: tg.maxMin, weight: tg.weight, hard: tg.hard })),
     });
     result.ready = ready;
@@ -272,6 +275,7 @@
     }
     if (key === "frequency") return fmt(L.freq[i], 1) + " " + t("unitPerH");
     if (key === "canopy") return t("canopyRaw", { p: fmt(100 * L.canopy[i], 1) });
+    if (key === "price") return t("priceRaw", { p: fmt(L.price_m2[i]), n: fmt(L.price_n[i]), r: fmt(L.price_r[i]) });
     if (key.startsWith("svc_")) {
       const k = key.slice(4), c = state.svc[k], sv = svcNow[k];
       return sv ? t("svcCard", { n: fmt(sv.count[i]), y: c.y, mode: t("mode_" + c.mode + "_short") }) : "";
@@ -332,7 +336,7 @@
       row.querySelector("input").oninput = (e) => { state.weights[k] = +e.target.value; row.querySelector("span").textContent = e.target.value; row.className = "wrow" + (+e.target.value ? "" : " off"); recompute(); };
       return row;
     };
-    WEIGHT_KEYS.filter((k) => !k.startsWith("noise_") && k !== "canopy").forEach((k) => w.appendChild(sliderRow(k, t("w_" + k))));
+    WEIGHT_KEYS.filter((k) => !k.startsWith("noise_") && k !== "canopy" && k !== "price").forEach((k) => w.appendChild(sliderRow(k, t("w_" + k))));
     // noise: one block per source = importance of quiet + comfort limit (soft) + optional requirement (hard, typed %)
     const nb = $("noiseBlocks"); nb.innerHTML = "";
     const ind = state.bedroom ? "Ln" : "Lden", shift = state.bedroom ? M.curves.noise.bedroom_db_shift : 0;
@@ -356,6 +360,7 @@
     const more = document.createElement("details"); more.className = "nmore"; more.open = !!(state.weights.noise_rail || state.weights.noise_industry || state.hardNoise.rail || state.hardNoise.industry);
     more.innerHTML = "<summary>" + t("noiseMore") + "</summary>"; mk("rail", more); mk("industry", more); nb.appendChild(more);
     renderCanopy(sliderRow);
+    renderPrice(sliderRow);
     renderSvc(sliderRow);
     $("noNoteTargets").hidden = state.targets.length > 0;
     renderTargets();
@@ -383,6 +388,48 @@
       box.appendChild(pv);
     }
     const note = document.createElement("p"); note.className = "hint"; note.textContent = t("canopyNote", { year: M.canopy.year, h: M.canopy.height_m }); box.appendChild(note);
+  }
+  // price: importance (cheaper = better) + optional budget "at most X PLN/m2" + colour preview of the hexes that have a price
+  const priceColor = (p) => { const c = M.curves.price, x = Math.max(0, Math.min(1, (p - c.low_m2) / (c.high_m2 - c.low_m2))); return "hsl(" + Math.round(210 - 190 * x) + ",70%,50%)"; };
+  function renderPrice(sliderRow) {
+    const has = !!(M.price && LAY.price_m2 && M.curves.price && M.curves.price.enabled), box = $("priceBlock"); box.innerHTML = "";
+    document.querySelectorAll("[data-i18n=secPrice]").forEach((e) => { e.hidden = !has; });
+    $("priceHintP").hidden = !has;
+    if (!has) return;
+    const P = M.price, c = M.curves.price;
+    $("priceHintP").textContent = t("priceHint", { lo: fmt(c.low_m2), hi: fmt(c.high_m2) });
+    box.className = "nblock";
+    box.appendChild(sliderRow("price", t("w_price")));
+    const hard = document.createElement("div"); hard.className = "nrow";
+    hard.innerHTML = "<label class='toggle'><input type='checkbox' data-k='on'" + (state.price.hard ? " checked" : "") + "><span>" + t("priceRequire") + "</span></label> " +
+      "<input type='number' class='wide' data-k='max' min='0' max='50000' step='100' value='" + state.price.max + "'> " + t("unitPlnM2");
+    hard.querySelector("[data-k=on]").onchange = (e) => { state.price.hard = e.target.checked; recompute(); };
+    hard.querySelector("[data-k=max]").onchange = (e) => { state.price.max = Math.max(0, Math.min(50000, +e.target.value || 0)); e.target.value = state.price.max; recompute(); };
+    box.appendChild(hard);
+    const pv = document.createElement("div"); pv.className = "nrow";
+    pv.innerHTML = "<label class='toggle'><input type='checkbox' data-k='ov'" + (state.priceOverlay ? " checked" : "") + "><span>" + t("priceOverlay") + "</span></label>";
+    pv.querySelector("input").onchange = (e) => { state.priceOverlay = e.target.checked; applyPriceOverlay(); saveHash(); };
+    box.appendChild(pv);
+    const lg = document.createElement("div"); lg.className = "nrow pricelegend";
+    lg.innerHTML = "<span>" + fmt(c.low_m2) + "</span><i style='background:linear-gradient(to right," + priceColor(c.low_m2) + "," + priceColor((c.low_m2 + c.high_m2) / 2) + "," + priceColor(c.high_m2) + ")'></i><span>" + fmt(c.high_m2) + " " + t("unitPlnM2") + "</span>";
+    box.appendChild(lg);
+    const note = document.createElement("p"); note.className = "hint";
+    note.textContent = t("priceNote", { n: fmt(P.deeds), from: P.date_min, to: P.date_max, r: P.max_radius_m, k: P.min_n, pts: P.min_points, cov: Math.round(P.coverage_inhabited_pct) });
+    box.appendChild(note);
+  }
+  let priceHexes = null;
+  function applyPriceOverlay() {
+    if (!map || !M.price || !LAY.price_m2) return;
+    if (!priceHexes) {   // drawn on the hex canvas (a second full-size canvas froze the browser); not interactive, so clicks still reach the hexes
+      const renderer = hexRenderer;
+      priceHexes = L.layerGroup();
+      for (let i = 0; i < N; i++) {
+        const v = LAY.price_m2[i]; if (Number.isNaN(v)) continue;
+        const flat = HEX.p[i], ring = []; for (let k = 0; k < flat.length; k += 2) ring.push([flat[k + 1], flat[k]]);
+        L.polygon(ring, { renderer, interactive: false, stroke: false, fillColor: priceColor(v), fillOpacity: 0.7 }).addTo(priceHexes);
+      }
+    }
+    if (state.priceOverlay) { priceHexes.addTo(map); markers.forEach((m) => m.bringToFront()); } else map.removeLayer(priceHexes);
   }
   let canopyLayer = null;
   function applyCanopyOverlay() {
@@ -510,15 +557,17 @@
       const layers = await get(DATA + "layers.json");
       N = M.n;
       Object.keys(layers).forEach((k) => { LAY[k] = Float32Array.from(layers[k], (v) => (v == null ? NaN : v)); });
+      if (!M.price) ['price_m2', 'price_r', 'price_n'].forEach((k) => delete LAY[k]);   // a price layer without its method block is not used
       if (!M.canopy) delete LAY.canopy;   // a layer without its method block (year, version) is not used
       WEIGHT_KEYS.forEach((k) => { state.weights[k] = M.curves.defaults.weights[k] || 0; });
       if (M.curves.canopy) state.canopy.min = Math.round(M.curves.canopy.default_hard_min * 100);
+      if (M.curves.price && M.curves.price.default_hard_max_m2) state.price.max = M.curves.price.default_hard_max_m2;
       try { SVX = await fetch(DATA + "services/index.json").then((r) => (r.ok ? r.json() : null)); } catch (e) { SVX = null; }
       if (SVX) { SVC = SVX.criteria; SVC_KEYS = SVC.map((k) => "svc_" + k); }
       if (SVX) SVC.forEach((k) => { const d = SVX.defaults[k]; state.svc[k] = { mode: d.mode, y: d.y, x: d.x, hard: false }; state.weights["svc_" + k] = 0; });
       NOISE.forEach((k) => { const c = M.curves.noise[k]; state.noiseCfg[k] = { soft: c.soft_db, hard: c.hard_db, share: Math.round(c.hard_max_share * 100) }; });
       loadHash();
-      initMap(); renderStatic(); drawMarkers(); drawContext(); applyCanopyOverlay();
+      initMap(); renderStatic(); drawMarkers(); drawContext(); applyCanopyOverlay(); applyPriceOverlay();
       $("win").onchange = (e) => { state.win = e.target.value; renderStatic(); refreshAllTargets(); recompute(); };
       $("ttype").onchange = (e) => { state.ttype = e.target.value; $("ttypeHint").textContent = t("ttypeHint_" + state.ttype); refreshAllTargets(); recompute(); };
       $("rides").onchange = (e) => { state.rides = e.target.value; refreshAllTargets(); };

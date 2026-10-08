@@ -88,6 +88,8 @@ footer.note a { color: var(--accent); }
 .nblock { border-left: 3px solid var(--accent); padding-left: 8px; margin: 8px 0; }
 .nrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.8rem; margin: 4px 0; }
 .nrow input[type="number"] { width: 5ch; }
+.nrow input.wide { width: 7ch; }
+.pricelegend i { display: inline-block; width: 120px; height: 10px; border-radius: 3px; }
 .nmore summary { cursor: pointer; font-size: 0.8rem; margin: 6px 0; }
 .hint.warn { color: #8a5a00; }
 
