@@ -35,7 +35,8 @@ const STRINGS = {
       'nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>; ' +
       'przed 5.10: tramwaje <a href="druk/lodz_tramwaje_przed.pdf">PDF</a>/<a href="druk/lodz_tramwaje_przed.svg">SVG</a>/<a href="druk/lodz_tramwaje_przed.jpg">JPG</a>, ' +
       'autobusy <a href="druk/lodz_autobusy_przed.pdf">PDF</a>/<a href="druk/lodz_autobusy_przed.svg">SVG</a>/<a href="druk/lodz_autobusy_przed.jpg">JPG</a>, ' +
-      'nocne <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a>',
+      'nocne <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a> · ' +
+      'zobacz też: <a href="https://lodzcalanaprzod.pl/lodz-schemat-linii-tramwajowych-pazdziernik-2026/">schemat tramwajów Łódź Cała Naprzód</a>',
     stateAria: "Stan rozkładu",
     stateAfter: "Od 5.10.2026",
     stateBefore: "Przed 5.10.2026",
@@ -77,7 +78,8 @@ const STRINGS = {
       'night <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>; ' +
       'before 5 Oct: trams <a href="druk/lodz_tramwaje_przed.pdf">PDF</a>/<a href="druk/lodz_tramwaje_przed.svg">SVG</a>/<a href="druk/lodz_tramwaje_przed.jpg">JPG</a>, ' +
       'buses <a href="druk/lodz_autobusy_przed.pdf">PDF</a>/<a href="druk/lodz_autobusy_przed.svg">SVG</a>/<a href="druk/lodz_autobusy_przed.jpg">JPG</a>, ' +
-      'night <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a>',
+      'night <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a> · ' +
+      'see also: <a href="https://lodzcalanaprzod.pl/lodz-schemat-linii-tramwajowych-pazdziernik-2026/">tram diagram by Łódź Cała Naprzód</a>',
     stateAria: "Timetable state",
     stateAfter: "From 5 Oct 2026",
     stateBefore: "Before 5 Oct 2026",
