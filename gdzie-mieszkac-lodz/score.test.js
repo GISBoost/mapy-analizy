@@ -82,4 +82,22 @@ assert.ok(Number.isNaN(rc.score[0]) && rc.status[0] === 1);              // 5 % 
 assert.ok(Math.abs(rc.score[1] - 50) < 1e-4 && rc.status[1] === 0);        // 20 % / 40 % = 0.5
 assert.ok(Math.abs(rc.score[2] - 100) < 1e-4);                             // saturated
 assert.ok(Number.isNaN(rc.score[3]) && rc.status[3] === 3);                // no data: not rejected by the requirement, criterion skipped -> no criteria left
+// price: soft falls linearly low_m2 (1) .. high_m2 (0), NaN skipped; hard = price <= max, NaN passes; weight 0 or disabled = no effect
+const pcv = Object.assign({}, curves, { price: { enabled: true, low_m2: 7000, high_m2: 11000 } });
+assert.strictEqual(S.priceScore(6000, pcv.price), 1);
+assert.ok(Math.abs(S.priceScore(9000, pcv.price) - 0.5) < 1e-9);
+assert.strictEqual(S.priceScore(12000, pcv.price), 0);
+assert.ok(Number.isNaN(S.priceScore(NaN, pcv.price)));
+const pbase = Object.assign({}, base, { price_m2: L([6000, 9000, 12000, NaN]) });
+const rp = S.compute({ n: 4, curves: pcv, minScore: 0, weights: Object.assign({}, wz, { price: 2 }), targets: [], hardNoise: { road: false, rail: false, industry: false },
+  priceHard: { on: true, max: 10000 }, layers: pbase });
+assert.ok(Math.abs(rp.score[0] - 100) < 1e-4 && rp.status[0] === 0);
+assert.ok(Math.abs(rp.score[1] - 50) < 1e-4);
+assert.ok(Number.isNaN(rp.score[2]) && rp.status[2] === 1);                // 12000 > 10000: over budget
+assert.ok(Number.isNaN(rp.score[3]) && rp.status[3] === 3);                // no price: not rejected, criterion skipped
+const r0 = S.compute({ n: 4, curves: pcv, minScore: 0, weights: Object.assign({}, wz, { green: 1 }), targets: [], hardNoise: { road: false, rail: false, industry: false }, layers: pbase });
+assert.deepStrictEqual(Array.from(r0.score), [100, 100, 100, 100]);        // weight 0 for price: scores unchanged by the price layer
+const rd = S.compute({ n: 4, curves: Object.assign({}, curves, { price: { enabled: false } }), minScore: 0, weights: Object.assign({}, wz, { price: 2, green: 1 }), targets: [],
+  hardNoise: { road: false, rail: false, industry: false }, layers: pbase });
+assert.deepStrictEqual(Array.from(rd.score), [100, 100, 100, 100]);        // curve disabled: price ignored
 console.log("score.js OK");

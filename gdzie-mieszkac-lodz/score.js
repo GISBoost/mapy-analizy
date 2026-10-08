@@ -23,6 +23,8 @@
   const greenScore = (d, c) => (Number.isNaN(d) ? 0 : lin(d, c.full_m, c.zero_at_m));
   const serviceScore = (n, x) => (Number.isNaN(n) ? NaN : x > 0 ? Math.min(1, n / x) : 1);   // NaN = no data (skipped)
   const freqScore = (f, c) => 1 - Math.exp(-f / c.scale_per_h);
+  // price: falling, linear between low_m2 (score 1) and high_m2 (score 0); NaN = no price for the hex (criterion skipped)
+  const priceScore = (p, c) => (Number.isNaN(p) ? NaN : lin(p, c.low_m2, c.high_m2));
   const canopyScore = (share, c) => (Number.isNaN(share) ? NaN : clamp01(share / c.full_share));   // rising, saturating at full_share; NaN = no data
 
   // Graded noise penalty (0..1) from the stored "share of hex area at/above step" columns. Input: shares at the
@@ -43,7 +45,8 @@
   //   targets: [{times: Uint8Array|Array (minutes per hex, 255 = not reached), idealMin, maxMin, weight, hard}],
   //   layers: {tram_m, bus_m, green_m, freq, noise_road, noise_rail, noise_industry (soft share), hard_road, hard_rail,
   //            hard_industry (hard-limit share)}   // Float32Array each
-  //   hardNoise: {road:bool, rail:bool, industry:bool}, canopyHard: {on:bool, min:0..1} (layers.canopy = share of hex area under canopy), minScore
+  //   hardNoise: {road:bool, rail:bool, industry:bool}, canopyHard: {on:bool, min:0..1} (layers.canopy = share of hex area under canopy),
+  //   priceHard: {on:bool, max: PLN/m2} (layers.price_m2; a hex without a price passes), minScore
   // }
   // returns {score: Float32Array (NaN = filtered out), status: Uint8Array (0 ok, 1 hard-fail, 2 below min, 3 no criteria),
   //          contrib(i) -> [{key, score, weight}] for the "why" card}
@@ -62,7 +65,7 @@
       if (inp.svc) for (const k of Object.keys(inp.svc)) {   // daily services: at least X facilities within Y min (saturating)
         const sv = inp.svc[k]; add("svc_" + k, serviceScore(sv.count[i], sv.x), w["svc_" + k]);
       }
-      if (c.price.enabled && L.price_score) add("price", L.price_score[i], w.price);
+      if (c.price && c.price.enabled && L.price_m2) add("price", priceScore(L.price_m2[i], c.price), w.price);
       inp.targets.forEach((tg, k) => {
         if (!tg.hard && tg.weight > 0) add("target" + k, travelScore(tg.times[i] === 255 ? Infinity : tg.times[i], tg.idealMin, tg.maxMin), tg.weight);
       });
@@ -73,6 +76,7 @@
       for (const tg of inp.targets) if (tg.hard && !(tg.times[i] <= tg.maxMin)) fail = true;
       for (const k of ["road", "rail", "industry"]) if (inp.hardNoise[k] && L["hard_" + k][i] > (inp.hardShare ? inp.hardShare[k] : c.noise[k].hard_max_share)) fail = true;
       if (inp.canopyHard && inp.canopyHard.on && L.canopy && L.canopy[i] < inp.canopyHard.min) fail = true;   // NaN (no data) passes
+      if (inp.priceHard && inp.priceHard.on && L.price_m2 && L.price_m2[i] > inp.priceHard.max) fail = true;   // NaN (no price) passes
       if (inp.svc) for (const k of Object.keys(inp.svc)) { const sv = inp.svc[k]; if (sv.hard && !Number.isNaN(sv.count[i]) && !(sv.count[i] >= sv.x)) fail = true; }
       if (fail) { score[i] = NaN; status[i] = 1; continue; }
       let sw = 0, ss = 0;
@@ -85,6 +89,6 @@
     return { score, status, contrib: soft };
   }
 
-  const api = { travelScore, tramScore, busScore, greenScore, freqScore, noisePenalty, serviceScore, canopyScore, compute };
+  const api = { travelScore, tramScore, busScore, greenScore, freqScore, noisePenalty, serviceScore, canopyScore, priceScore, compute };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.Score = api;
 })(typeof window !== "undefined" ? window : globalThis);
