@@ -41,6 +41,20 @@ h1::before{content:"";width:14px;height:14px;border-radius:50%;border:4px solid 
 .tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
 .tab .cnt{font:500 11px var(--body);margin-left:6px;color:var(--muted);font-variant-numeric:tabular-nums}
 .meta{margin-left:auto;color:var(--muted);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:5px;overflow:hidden}
+.seg button{font:600 12px var(--body);color:var(--muted);background:var(--panel);border:0;padding:5px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+.atabs{display:flex;gap:4px}
+.atab{font:600 12px var(--sdisplay);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:2px 2px 3px;cursor:pointer}
+.atab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+#changes{list-style:none;margin:0;padding:6px 8px 12px;overflow:auto;flex:1}
+#changes .note{font-size:11px;color:var(--muted);line-height:1.4;padding:4px 8px 8px;cursor:default}
+#changes li.ch{display:grid;grid-template-columns:46px minmax(0,1fr);align-items:center;gap:10px;padding:5px 8px;border-radius:5px;cursor:pointer}
+#changes li.ch:hover{background:var(--bg)}
+#changes li.ch[aria-pressed="true"]{background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--fg)}
+#changes .what{font-size:12px;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+#changes .what small{display:block;color:var(--muted);font-size:11px}
 @media (max-width:760px){#theme{margin-left:auto}}
 main{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr)}
 aside{background:var(--panel);border-right:1px solid var(--rule);display:flex;flex-direction:column;min-height:0;min-width:0}
@@ -98,10 +112,18 @@ button:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-of
   #lines li .route,#lines li .k{display:none}
   .chipb{display:block;padding:5px 10px;min-width:30px}
   .meta,.hint{display:none}
+  /* phone: the sheet gets the height — no duplicate h1 (the topbar names the page), changes as a one-row strip like #lines */
+  h1{display:none}
+  header{padding:6px 16px;gap:4px 12px}
+  .ahead{padding:4px 16px}
+  #changes{display:flex;gap:8px;overflow-x:auto;padding:8px 16px}
+  #changes .note,#changes .what small{display:none}
+  #changes li.ch{flex:none;width:210px;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:2px 6px 2px 2px}
+  #changes .what{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
 footer.note{flex:none;padding:6px 16px;font-size:12px;color:var(--muted);background:var(--panel);border-top:1px solid var(--rule)}
 footer.note a{color:inherit}
-@media (max-width:760px){footer.note{padding:6px 16px calc(6px + env(safe-area-inset-bottom))}}
+@media (max-width:760px){footer.note{padding:5px 16px calc(5px + env(safe-area-inset-bottom));white-space:nowrap;overflow-x:auto}}
 @media (prefers-reduced-motion:reduce){svg.map *{transition:none!important}}
 </style>
 </head>
@@ -117,13 +139,15 @@ footer.note a{color:inherit}
 <header>
   <h1 data-i18n="h1">Łódź – schemat linii</h1>
   <div class="tabs" role="tablist">/*TABS*/</div>
-  <span class="meta" data-i18n="meta">Rozkład od 5.10.2026 · dzień roboczy · GTFS ZDiT Łódź</span>
+  <div class="seg" role="group" data-i18n-aria-label="stateAria" aria-label="Stan rozkładu"><button type="button" data-state="" aria-pressed="true" data-i18n="stateAfter">Od 5.10.2026</button><button type="button" data-state="_przed" aria-pressed="false" data-i18n="stateBefore">Przed 5.10.2026</button></div>
+  <span class="meta" id="meta" data-i18n="meta">Rozkład od 5.10.2026 · dzień roboczy · GTFS ZDiT Łódź</span>
   <button class="btn" id="theme" data-i18n="themeBtn" data-i18n-aria-label="themeAria" aria-label="Przełącz motyw jasny/ciemny">Motyw</button>
 </header>
 <main>
   <aside>
-    <div class="ahead"><b data-i18n="linesHead">Linie</b><button class="btn" id="clear" data-i18n="clearBtn" disabled>Pokaż wszystkie</button></div>
+    <div class="ahead"><div class="atabs" role="tablist"><button class="atab" role="tab" data-v="lines" aria-selected="true" data-i18n="linesHead">Linie</button><button class="atab" role="tab" data-v="changes" aria-selected="false"><span data-i18n="changesHead">Zmiany</span> <span id="chcnt"></span></button></div><button class="btn" id="clear" data-i18n="clearBtn" disabled>Pokaż wszystkie</button></div>
     <ul id="lines"></ul>
+    <ul id="changes" hidden></ul>
   </aside>
   <div class="stage" id="stage">
     <!--PANES-->
@@ -133,15 +157,19 @@ footer.note a{color:inherit}
 </main>
 <footer class="note" data-i18n-html="footerHtml">
   <a href="../">GISBoost</a> · dane: GTFS ZDiT Łódź · układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · do druku:
-  tramwaje <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>,
-  autobusy <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>,
-  nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>
+  tramwaje <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>/<a href="druk/lodz_tramwaje.jpg">JPG</a>,
+  autobusy <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>/<a href="druk/lodz_autobusy.jpg">JPG</a>,
+  nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>;
+  przed 5.10: tramwaje <a href="druk/lodz_tramwaje_przed.pdf">PDF</a>/<a href="druk/lodz_tramwaje_przed.svg">SVG</a>/<a href="druk/lodz_tramwaje_przed.jpg">JPG</a>,
+  autobusy <a href="druk/lodz_autobusy_przed.pdf">PDF</a>/<a href="druk/lodz_autobusy_przed.svg">SVG</a>/<a href="druk/lodz_autobusy_przed.jpg">JPG</a>,
+  nocne <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a>
 </footer>
 <script src="i18n.js"></script>
 <script>
-const META=/*META*/;
-const stage=document.getElementById('stage'), list=document.getElementById('lines'), clearBtn=document.getElementById('clear');
-const st={}; let cur='tram';
+const META=/*META*/, DIFF=/*DIFF*/;
+const stage=document.getElementById('stage'), list=document.getElementById('lines'), clearBtn=document.getElementById('clear'), chl=document.getElementById('changes');
+// cur = pane key = map + state ('' = from 5.10.2026, '_przed' = before)
+const st={}; let cur='tram', mapk='tram', state='', view='lines';
 for(const k of Object.keys(META)){
   const svg=document.getElementById('svg-'+k); const vb=svg.getAttribute('viewBox').split(/\s+/).map(Number);
   st[k]={svg,home:vb.slice(),vb:vb.slice(),sel:new Set(),
@@ -152,6 +180,7 @@ function paint(k){
   const s=st[k], any=s.sel.size>0;
   for(const [e,ls] of s.els) e.classList.toggle('dim', any && !ls.some(l=>s.sel.has(l)));
   for(const li of list.children) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l));
+  for(const li of chl.querySelectorAll('li.ch')) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l));
   clearBtn.disabled=!any;
 }
 function fitSel(){const s=st[cur]; if(!s.sel.size) return; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
@@ -164,21 +193,51 @@ function buildList(k){
   for(const m of META[k]){
     const li=document.createElement('li'); li.dataset.l=m.n; li.tabIndex=0; li.setAttribute('role','button'); li.setAttribute('aria-pressed','false');
     li.title=m.a+' – '+m.b;
-    const c=document.createElement('span'); c.className='chipb'; c.textContent=m.n; c.style.cssText='--c:#'+m.c+';--cd:#'+m.d+';--t:'+m.t+';--td:'+m.td;
+    const c=chip(m);
     const r=document.createElement('span'); r.className='route'; r.textContent=m.a+' – '+m.b;
     const q=document.createElement('span'); q.className='k'; q.textContent=t('trips',{n:m.k}); q.title=t('tripsTitle');
     li.append(c,r,q); li.onclick=()=>toggle(m.n,true); li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(m.n,true)}};
     list.append(li);
   }
 }
-function show(k){
-  cur=k;
-  for(const t of document.querySelectorAll('.tab')) t.setAttribute('aria-selected', t.dataset.map===k);
-  for(const key of Object.keys(st)) document.getElementById('pane-'+key).hidden = key!==k;
-  buildList(k); paint(k);
-  try{localStorage.setItem('lodz-map',k)}catch(e){}
+const chip=m=>{const c=document.createElement('span'); c.className='chipb'; c.textContent=m.n; c.style.cssText='--c:#'+m.c+';--cd:#'+m.d+';--t:'+m.t+';--td:'+m.td; return c};
+const has=(k,l)=>META[k].some(x=>x.n===l);
+function buildChanges(){
+  chl.textContent=''; const rows=DIFF[mapk];
+  document.getElementById('chcnt').textContent=rows.length;
+  const note=document.createElement('li'); note.className='note'; note.textContent=t('changesNote'); chl.append(note);
+  for(const r of rows){
+    const m=META[mapk].find(x=>x.n===r.n)||META[mapk+'_przed'].find(x=>x.n===r.n)||{n:r.n,c:'888888',d:'AAAAAA',t:'#fff',td:'#111'};
+    const li=document.createElement('li'); li.className='ch'; li.dataset.l=r.n; li.tabIndex=0; li.setAttribute('role','button'); li.setAttribute('aria-pressed','false');
+    const w=document.createElement('span'); w.className='what';
+    w.textContent=r.kinds.map(k=>k==='added'?t('chAdded',{b:r.k1}):k==='removed'?t('chRemoved',{a:r.k0}):k==='route'?t('chRoute',{p:r.plus.length,m:r.minus.length}):t('chTrips',{a:r.k0,b:r.k1})).join(' · ');
+    if(r.kinds.includes('route')) li.title=(r.plus.length?'+ '+r.plus.join(', '):'')+(r.plus.length&&r.minus.length?'\n':'')+(r.minus.length?'− '+r.minus.join(', '):'');
+    const sm=document.createElement('small'); sm.textContent=r.a+' – '+r.b; w.append(sm);
+    const go=()=>{ // highlight on the active diagram; switch state only if the line isn't drawn there
+      let s=state; if(!has(mapk+s,r.n)){const o=s?'':'_przed'; if(has(mapk+o,r.n)) s=o;}
+      if(s!==state) show(mapk,s);
+      if(has(cur,r.n)){st[cur].sel=new Set([r.n]); paint(cur); fitSel();}};
+    li.append(chip(m),w); li.onclick=go; li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+    chl.append(li);
+  }
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.map));
+function setView(v){view=v;
+  for(const b of document.querySelectorAll('.atab')) b.setAttribute('aria-selected', b.dataset.v===v);
+  list.hidden=v!=='lines'; chl.hidden=v!=='changes';}
+function show(m,s){
+  const prev=st[cur], k=m+s;
+  if(m===mapk&&k!==cur) st[k].sel=new Set([...prev.sel].filter(l=>has(k,l)));  // keep the selection across states
+  mapk=m; state=s; cur=k;
+  for(const b of document.querySelectorAll('.tab')){b.setAttribute('aria-selected', b.dataset.map===m); b.querySelector('.cnt').textContent=META[b.dataset.map+s].length;}
+  for(const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', b.dataset.state===s);
+  const me=document.getElementById('meta'); me.dataset.i18n=s?'metaBefore':'meta'; me.textContent=t(me.dataset.i18n);
+  for(const key of Object.keys(st)) document.getElementById('pane-'+key).hidden = key!==k;
+  buildList(k); buildChanges(); paint(k);
+  try{localStorage.setItem('lodz-map',m); localStorage.setItem('lodz-state',s)}catch(e){}
+}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.map,state));
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>show(mapk,b.dataset.state));
+document.querySelectorAll('.atab').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 clearBtn.onclick=()=>{st[cur].sel.clear(); paint(cur)};
 // pan / zoom on the viewBox
 function scaleOf(s){const r=stage.getBoundingClientRect(); return Math.max(s.vb[2]/r.width, s.vb[3]/r.height);}
@@ -203,9 +262,9 @@ document.getElementById('zout').onclick=()=>zoomAt(1/0.7,...mid());
 document.getElementById('zfit').onclick=()=>{st[cur].vb=st[cur].home.slice(); apply(cur)};
 document.getElementById('theme').onclick=()=>{const r=document.documentElement, cur_=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'), n=cur_==='dark'?'light':'dark';
   r.setAttribute('data-theme',n); try{localStorage.setItem('lodz-theme',n)}catch(e){}};
-setLangChangeHandler(()=>{buildList(cur); paint(cur)});
-let first='tram'; try{const v=localStorage.getItem('lodz-map'); if(v&&st[v]) first=v}catch(e){}
-show(first);
+setLangChangeHandler(()=>show(mapk,state));
+let first='tram', fs=''; try{const v=localStorage.getItem('lodz-map'), w=localStorage.getItem('lodz-state'); if(v&&st[v]) first=v; if(w==='_przed') fs=w}catch(e){}
+show(first,fs);
 </script>
 </body>
 </html>

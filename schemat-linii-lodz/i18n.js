@@ -30,9 +30,25 @@ const STRINGS = {
     footerHtml:
       '<a href="../">GISBoost</a> · dane: GTFS ZDiT Łódź · ' +
       'układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · do druku: ' +
-      'tramwaje <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>, ' +
-      'autobusy <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>, ' +
-      'nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>',
+      'tramwaje <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>/<a href="druk/lodz_tramwaje.jpg">JPG</a>, ' +
+      'autobusy <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>/<a href="druk/lodz_autobusy.jpg">JPG</a>, ' +
+      'nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>; ' +
+      'przed 5.10: tramwaje <a href="druk/lodz_tramwaje_przed.pdf">PDF</a>/<a href="druk/lodz_tramwaje_przed.svg">SVG</a>/<a href="druk/lodz_tramwaje_przed.jpg">JPG</a>, ' +
+      'autobusy <a href="druk/lodz_autobusy_przed.pdf">PDF</a>/<a href="druk/lodz_autobusy_przed.svg">SVG</a>/<a href="druk/lodz_autobusy_przed.jpg">JPG</a>, ' +
+      'nocne <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a>',
+    stateAria: "Stan rozkładu",
+    stateAfter: "Od 5.10.2026",
+    stateBefore: "Przed 5.10.2026",
+    metaBefore: "Rozkład sprzed 5.10.2026 · dzień roboczy 1.10.2026 · GTFS ZDiT Łódź",
+    changesHead: "Zmiany",
+    changesNote:
+      "Różnice policzone z rozkładu (GTFS), nie z rysunku: dzień roboczy 1.10.2026 (przed) i 8.10.2026 (od 5.10). " +
+      "Zmiana trasy = inna sekwencja przystanków najczęstszego wariantu w którymś kierunku. " +
+      "Układ schematów liczony osobno dla każdego stanu, więc różni się też tam, gdzie sieć się nie zmieniła.",
+    chAdded: "nowa linia · {b} kurs.",
+    chRemoved: "zlikwidowana · było {a} kurs.",
+    chRoute: "zmiana trasy (+{p} / −{m} przyst.)",
+    chTrips: "kursy {a} → {b}",
   },
   en: {
     langToggleAriaLabel: "Switch language",
@@ -56,9 +72,25 @@ const STRINGS = {
     footerHtml:
       '<a href="../">GISBoost</a> · data: GTFS ZDiT Łódź · ' +
       'layout: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · for print: ' +
-      'trams <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>, ' +
-      'buses <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>, ' +
-      'night <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>',
+      'trams <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>/<a href="druk/lodz_tramwaje.jpg">JPG</a>, ' +
+      'buses <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>/<a href="druk/lodz_autobusy.jpg">JPG</a>, ' +
+      'night <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>; ' +
+      'before 5 Oct: trams <a href="druk/lodz_tramwaje_przed.pdf">PDF</a>/<a href="druk/lodz_tramwaje_przed.svg">SVG</a>/<a href="druk/lodz_tramwaje_przed.jpg">JPG</a>, ' +
+      'buses <a href="druk/lodz_autobusy_przed.pdf">PDF</a>/<a href="druk/lodz_autobusy_przed.svg">SVG</a>/<a href="druk/lodz_autobusy_przed.jpg">JPG</a>, ' +
+      'night <a href="druk/lodz_nocne_przed.pdf">PDF</a>/<a href="druk/lodz_nocne_przed.svg">SVG</a>/<a href="druk/lodz_nocne_przed.jpg">JPG</a>',
+    stateAria: "Timetable state",
+    stateAfter: "From 5 Oct 2026",
+    stateBefore: "Before 5 Oct 2026",
+    metaBefore: "Timetable before 5 Oct 2026 · weekday 1 Oct 2026 · GTFS ZDiT Łódź",
+    changesHead: "Changes",
+    changesNote:
+      "Differences computed from the timetable (GTFS), not from the drawing: weekday 1 Oct 2026 (before) vs 8 Oct 2026 (from 5 Oct). " +
+      "Route change = a different stop sequence of the most frequent variant in some direction. " +
+      "Each state's layout is computed separately, so diagrams differ even where the network did not change.",
+    chAdded: "new line · {b} trips",
+    chRemoved: "discontinued · was {a} trips",
+    chRoute: "route change (+{p} / −{m} stops)",
+    chTrips: "trips {a} → {b}",
   },
 };
 

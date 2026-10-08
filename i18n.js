@@ -48,7 +48,7 @@ const STRINGS = {
     card7Title: "Schemat linii Łodzi",
     card7Desc:
       "Schemat linii tramwajowych, autobusowych i nocnych z rozkładu od 5.10.2026 — kliknij linię, żeby ją wyróżnić. " +
-      "Do pobrania jako PDF/SVG do druku.",
+      "Porównanie ze stanem sprzed zmian i lista zmian linii. PDF/SVG do druku.",
     tagTool: "narzędzie",
     tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
@@ -117,7 +117,7 @@ const STRINGS = {
     card7Title: "Łódź line diagram",
     card7Desc:
       "Diagram of tram, bus and night lines from the timetable valid from 5 Oct 2026 — click a line to highlight it. " +
-      "Downloadable as PDF/SVG for print.",
+      "Comparison with the network before the change and a list of line changes. PDF/SVG for print.",
     tagTool: "tool",
     tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",

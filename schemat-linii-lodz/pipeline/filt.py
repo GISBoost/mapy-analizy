@@ -1,5 +1,5 @@
 import pandas as pd, sys, os, re, json
-G=sys.argv[1]; OUT=sys.argv[2]; MODE=sys.argv[3]; DATE='20261008'
+G=sys.argv[1]; OUT=sys.argv[2]; MODE=sys.argv[3]; DATE=sys.argv[4] if len(sys.argv)>4 else '20261008'  # weekday YYYYMMDD inside the feed's validity
 rd=lambda f: pd.read_csv(f'{G}/{f}.txt',dtype=str,encoding='utf-8-sig')
 r=rd('routes'); t=rd('trips'); st=rd('stop_times'); cd=rd('calendar_dates'); stops=rd('stops'); sh=rd('shapes')
 night=r.route_short_name.str.match(r'^N\d')
@@ -49,7 +49,7 @@ sh=sh[sh.shape_id.isin(t.shape_id)]
 miss=~t.shape_id.isin(sh.shape_id); print('trips without shape:',sorted(set(t[miss].route_id))); t.loc[miss,'shape_id']=''
 os.makedirs(OUT,exist_ok=True)
 for f in os.listdir(OUT): os.remove(f'{OUT}/{f}')
-json.dump(info,open(f'{OUT}/lines.json','w'),ensure_ascii=False)
+json.dump(info,open(f'{OUT}/lines.json','w',encoding='utf-8'),ensure_ascii=False)
 for n_,df in [('routes',r),('trips',t),('stop_times',st),('stops',stops),('shapes',sh),('calendar_dates',cd[cd.service_id.isin(t.service_id)]),('agency',rd('agency'))]:
     df.to_csv(f'{OUT}/{n_}.txt',index=False)
 print(MODE,'routes',len(r),'patterns',len(t),'stops',len(stops),'| not shown:',sorted(allr-set(names)))

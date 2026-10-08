@@ -8,9 +8,11 @@ FS = float(sys.argv[7]) if len(sys.argv) > 7 else 9.0     # station font size (s
 LABEL_MODE = sys.argv[8] if len(sys.argv) > 8 else 'all'  # all | key
 LL_SVG = sys.argv[9] if len(sys.argv) > 9 else None
 PFX = sys.argv[10] if len(sys.argv) > 10 else 'm'
-GEO = sys.argv[11] if len(sys.argv) > 11 else None
-FR = ImageFont.truetype('/usr/share/fonts/opentype/inter/Inter-Medium.otf', 100)
-FB = ImageFont.truetype('/usr/share/fonts/opentype/inter/Inter-Bold.otf', 100)
+GEO = sys.argv[11] if len(sys.argv) > 11 and sys.argv[11] else None
+FIXED = json.load(open(sys.argv[12])) if len(sys.argv) > 12 else {}  # {line: 'RRGGBB'} kept as-is (colours of another state)
+import os; FONT_DIR = os.environ.get('FONT_DIR', '/usr/share/fonts/opentype/inter')
+FR = ImageFont.truetype(f'{FONT_DIR}/Inter-Medium.otf', 100)
+FB = ImageFont.truetype(f'{FONT_DIR}/Inter-Bold.otf', 100)
 tw = lambda s, f, size: f.getlength(s) * size / 100.0
 
 PAL = ["E32017","0098D4","00782A","EE7C0E","9B0056","003688","E8B600","00A4A7","B36305","6950A1","84B817","F06EA9",
@@ -29,12 +31,12 @@ def clean0(s):
     if s.isupper() and len(s) > 4: s = s.title()
     return s
 # ---------- line metadata + colour assignment (co-running lines get distant colours)
-info = json.load(open(LINES))
+info = json.load(open(LINES, encoding='utf-8'))
 names = sorted(info, key=nkey)
 pairs = {n: set(map(tuple, info[n]['pairs'])) for n in names}
 nb = {n: {m for m in names if m != n and pairs[n] & pairs[m]} for n in names}
-col = {}; used = {p: 0 for p in PAL}
-for n in sorted(names, key=lambda n: (-len(nb[n]), nkey(n))):
+col = {n: FIXED[n] for n in names if n in FIXED}; used = {p: sum(1 for c in col.values() if c == p) for p in PAL}
+for n in sorted((n for n in names if n not in col), key=lambda n: (-len(nb[n]), nkey(n))):
     best = max(PAL, key=lambda p: (min([cdist(p, col[m]) for m in nb[n] if m in col] + [400]) - 60 * used[p], -PAL.index(p)))
     col[n] = best; used[best] += 1
 byidx = {info[n]['idx']: n for n in names}
@@ -322,7 +324,7 @@ for i, n in enumerate(names):
     E.append(chip(cx, cy, LF * 3.2, n, h=LF * 1.35, fs=LF * 0.95))
     E.append(f'<text class="lt" data-l="{n}" x="{cx+LF*3.9:.1f}" y="{cy+LF*1.0:.1f}" font-size="{LF:.1f}" fill="#16181d">{esc(ltxt[n])}</text>')
 E.append('</g></svg>')
-open(OUT, 'w').write('\n'.join(E))
+open(OUT, 'w', encoding='utf-8').write('\n'.join(E))
 json.dump([dict(n=n, c=col[n], t=txtcol(col[n]), a=clean(info[n]['from']), b=clean(info[n]['to']), k=info[n]['trips']) for n in names],
-          open(OUT.replace('.svg', '.lines.json'), 'w'), ensure_ascii=False)
+          open(OUT.replace('.svg', '.lines.json'), 'w', encoding='utf-8'), ensure_ascii=False)
 print('wrote', OUT, f'{vw:.0f}x{vh:.0f}')
