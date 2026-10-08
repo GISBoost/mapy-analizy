@@ -45,6 +45,10 @@ const STRINGS = {
     card6Desc:
       "Ustaw wymagania (do 5 celów dojazdu, przystanki, zieleń, hałas), a mapa heksagonów 250 m pokaże miejsca, które je spełniają. " +
       "Czasy z rozkładu i ze zrekonstruowanego GTFS-RT (P50/P85).",
+    card7Title: "Schemat linii Łodzi",
+    card7Desc:
+      "Schemat linii tramwajowych, autobusowych i nocnych z rozkładu od 5.10.2026 — kliknij linię, żeby ją wyróżnić. " +
+      "Do pobrania jako PDF/SVG do druku.",
     tagTool: "narzędzie",
     tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
@@ -110,6 +114,10 @@ const STRINGS = {
     card6Desc:
       "Set your requirements (up to 5 commute destinations, stops, green space, noise) and the 250 m hex map shows the places that meet them. " +
       "Times from the timetable and from reconstructed GTFS-RT (P50/P85).",
+    card7Title: "Łódź line diagram",
+    card7Desc:
+      "Diagram of tram, bus and night lines from the timetable valid from 5 Oct 2026 — click a line to highlight it. " +
+      "Downloadable as PDF/SVG for print.",
     tagTool: "tool",
     tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",
