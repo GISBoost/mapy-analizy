@@ -9,7 +9,7 @@ else: r=r[(r.route_type=='3')&night]
 allr=set(r.route_short_name)
 sv=set(cd[(cd.date==DATE)&(cd.exception_type=='1')].service_id)
 t=t[t.service_id.isin(sv)&t.route_id.isin(r.route_id)]
-st=st[st.trip_id.isin(t.trip_id)].copy(); st['ss']=st.stop_sequence.astype(int)
+st=st[st.trip_id.isin(t.trip_id)&~st.stop_id.isin(stops[stops.stop_name=='przejazd techniczny'].stop_id)].copy(); st['ss']=st.stop_sequence.astype(int)  # technical pass point, not a passenger stop
 st=st.sort_values(['trip_id','ss'])
 t=t.join(st.groupby('trip_id').stop_id.agg('|'.join).rename('pat'),on='trip_id')
 cnt=t.groupby('route_id').size(); rare=set(cnt[cnt<6].index)

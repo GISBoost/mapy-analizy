@@ -156,6 +156,17 @@ for nid, nd in nodes.items():
             if nm_ not in cands_: nm_ = max(set(cands_), key=cands_.count)
     stations.append(dict(id=nid, poly=polys[i], name=nm_, term=term, lines=sorted(serve & set(col), key=nkey),
                          deg=len(nd['edges']), nbs=[b for b, _ in nd['edges']]))
+# a node that lost its polygon to a nearer node (transitmap drew both as one symbol) hands its termini to that station
+if GEO:
+    by_poly = {_np[s['id']]: s for s in stations}
+    for nid, nd in nodes.items():
+        if not nd['label'] or nid in _np or not term_by_sid.get(nd['sid']): continue
+        P = Point(nd['xy']); i = int(tree.nearest(P))
+        if i in by_poly and polys[i].distance(P) < 60:
+            s = by_poly[i]; extra = set(term_by_sid[nd['sid']]) - set(s['term'])
+            if not s['term']: s['name'] = max(set(name_by_sid[nd['sid']]), key=name_by_sid[nd['sid']].count)
+            s['term'] = sorted(set(s['term']) | extra, key=nkey)
+            print('termini moved:', nd['label'], '->', s['name'], sorted(extra, key=nkey))
 print('stations', len(stations), 'polys', len(polys), 'lines', len(col))
 
 # ---------- label layout
