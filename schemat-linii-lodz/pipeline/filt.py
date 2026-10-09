@@ -11,6 +11,19 @@ sv=set(cd[(cd.date==DATE)&(cd.exception_type=='1')].service_id)
 t=t[t.service_id.isin(sv)&t.route_id.isin(r.route_id)]
 st=st[st.trip_id.isin(t.trip_id)&~st.stop_id.isin(stops[stops.stop_name=='przejazd techniczny'].stop_id)].copy(); st['ss']=st.stop_sequence.astype(int)  # technical pass point, not a passenger stop
 st=st.sort_values(['trip_id','ss'])
+# railway-station hubs: 'Dw. Łódź X' and every 'Street-Dw. Łódź X' within HUB_M m become one stop at their centroid,
+# otherwise LOOM draws each platform as its own node and the terminal loops between them as spaghetti (Fabryczna)
+# extra hub members by name: Fabryczna's terminal loop runs through these two Narutowicza stops (200-240 m away)
+HUB_ADD=json.loads(os.environ.get('HUB_ADD','{"Dw. Łódź Fabryczna": ["Narutowicza-pl. Dąbrowskiego", "Narutowicza-P.O.W. NŻ"]}'))
+HUB_M=250; used=stops[stops.stop_id.isin(st.stop_id)].copy(); used['lo']=used.stop_lon.astype(float); used['la']=used.stop_lat.astype(float)
+hub={}
+for h,hs in used[used.stop_name.str.startswith('Dw. Łódź ')].groupby('stop_name'):
+    near=lambda z: min(((z.lo-x)*69000)**2+((z.la-y)*111320)**2 for x,y in zip(hs.lo,hs.la))**.5<=HUB_M
+    m=pd.concat([hs,used[(used.stop_name.str.endswith('-'+h)|used.stop_name.isin(HUB_ADD.get(h,[])))&used.apply(near,axis=1)]])
+    rep=hs.stop_id.iloc[0]; hub.update({i:rep for i in m.stop_id})
+    stops.loc[stops.stop_id==rep,['stop_lon','stop_lat']]=['%.6f'%m.lo.mean(),'%.6f'%m.la.mean()]
+    print('hub',h,'<-',sorted(set(m.stop_name)-{h}),len(m),'stops')
+st['stop_id']=st.stop_id.replace(hub); st=st[st.stop_id!=st.groupby('trip_id').stop_id.shift()]  # collapse repeats inside a hub
 t=t.join(st.groupby('trip_id').stop_id.agg('|'.join).rename('pat'),on='trip_id')
 cnt=t.groupby('route_id').size(); rare=set(cnt[cnt<6].index)
 t=t[~t.route_id.isin(rare)]

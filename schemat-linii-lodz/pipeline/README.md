@@ -40,7 +40,20 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
 przed krańcówką (59/86 kończyły się 1 km przed Pomorską-Edwarda); skrypt dokleja ją po najkrótszej
 ścieżce do przystanku najbliższego krańcówce z rozkładu (log w `out$SUF/<m>.logfix`).
 `filt.py` pomija przystanek „przejazd techniczny” (87A/87B), bo to nie przystanek dla pasażerów.
-Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”, 75A/B i 82A/B „Dw. Łódź Widzew”) to nazwy:
+
+### Dworce i centrum (Fabryczna)
+LOOM nie grupuje przystanków (`gtfs2graph` robi węzeł z każdego `stop_id`, `parent_station` ignoruje),
+a pętle końcowe przez kilka peronów rysuje jako supeł. Trzy kroki:
+- `filt.py` — **węzeł dworca**: przystanek „Dw. Łódź X” i każdy „Ulica-Dw. Łódź X” do 250 m stają się
+  jednym przystankiem w ich środku ciężkości (Fabryczna, Widzew, Kaliska, Chojny). `HUB_ADD` (env, JSON)
+  dodaje członków po nazwie; domyślnie Fabryczna dostaje Narutowicza-pl. Dąbrowskiego i Narutowicza-P.O.W. NŻ,
+  bo przez nie biegnie pętla końcowa 51A/B, 53A/B, 58A/B, 61, 88A–D, Z13.
+- `hubsnap.py` (w `run.sh` po `fixends.py`) — węzły pomocnicze `topo` do `HUB_R` m (300) od dworca
+  wciągane w dworzec, równoległe krawędzie scalane (wjazd i wyjazd różnymi ulicami).
+- `fisheye.py` (w `run.sh` przed `octi`) — powiększenie centrum, `FISHEYE="M R0"`, domyślnie `1.5 2500`
+  (pusty = wyłączone). `octi` ma jedną skalę siatki, więc bez tego przystanki centrum lądują w sąsiednich
+  komórkach. 1.8 i `--geo-pen 1` dawały nowe pętle (bramka), 1.5 bez `geo-pen` — najmniej konfliktów etykiet.
+Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 `topo -d 150` scala przystanki do 150 m w jeden węzeł, chip stoi we właściwym miejscu.
 
 `mk.sh`/`fin.sh` łączą kroki 2–3 i robią podgląd PNG (`shot.py`, Playwright) — env:
@@ -52,7 +65,7 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”, 75A/B i 82A/B „D
   `lodz_static_gtfs_2026-10-02.zip`, `feed_start_date` 20261001. Dzień: czwartek **1.10.2026**.
 - Stan „po”: tramwaje i nocne to dotychczasowe SVG z `../druk/` (release `lodz-realized-2026-10-05-phone`,
   dzień 8.10.2026), nieprzeliczane; ich `lines.json` odtworzono z metadanych strony. Autobusy
-  w obu stanach przeliczone 9.10.2026 z `fixends.py` i poprawionym `filt.py` (bramka `gate.py` czysta).
+  w obu stanach przeliczone 9.10.2026 z węzłami dworców, `hubsnap.py`, `fisheye.py 1.5` i `fixends.py`.
 - LOOM w WSL (Ubuntu 24.04, cmake + g++); `src/topo/tests/ContractTest.cpp` skompilowany
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.
