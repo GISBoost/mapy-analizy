@@ -43,16 +43,27 @@ przed krańcówką (59/86 kończyły się 1 km przed Pomorską-Edwarda); skrypt 
 
 ### Dworce i centrum (Fabryczna)
 LOOM nie grupuje przystanków (`gtfs2graph` robi węzeł z każdego `stop_id`, `parent_station` ignoruje),
-a pętle końcowe przez kilka peronów rysuje jako supeł. Trzy kroki:
-- `filt.py` — **węzeł dworca**: przystanek „Dw. Łódź X” i każdy „Ulica-Dw. Łódź X” do 250 m stają się
-  jednym przystankiem w ich środku ciężkości (Fabryczna, Widzew, Kaliska, Chojny). `HUB_ADD` (env, JSON)
-  dodaje członków po nazwie; domyślnie Fabryczna dostaje Narutowicza-pl. Dąbrowskiego i Narutowicza-P.O.W. NŻ,
-  bo przez nie biegnie pętla końcowa 51A/B, 53A/B, 58A/B, 61, 88A–D, Z13.
-- `hubsnap.py` (w `run.sh` po `fixends.py`) — węzły pomocnicze `topo` do `HUB_R` m (300) od dworca
-  wciągane w dworzec, równoległe krawędzie scalane (wjazd i wyjazd różnymi ulicami).
-- `fisheye.py` (w `run.sh` przed `octi`) — powiększenie centrum, `FISHEYE="M R0"`, domyślnie `1.5 2500`
-  (pusty = wyłączone). `octi` ma jedną skalę siatki, więc bez tego przystanki centrum lądują w sąsiednich
-  komórkach. 1.8 i `--geo-pen 1` dawały nowe pętle (bramka), 1.5 bez `geo-pen` — najmniej konfliktów etykiet.
+a pętle końcowe przez kilka peronów rysuje jako supeł. Fabryczna to w realu cztery grupy peronów wokół jednej
+pętli (51/53/61/85: pl. Dąbrowskiego → Rodziny Poznańskich wsch. → dworzec → Rodziny Poznańskich zach. → pl. Dąbrowskiego),
+więc rysujemy ją jako cztery węzły połączone pierścieniem:
+- `filt.py` — **węzły**: `HUBS` (env, JSON z listami `stop_id`) — domyślnie dworzec (2999, 2995, 2998), Rodziny
+  Poznańskich zach. (2989–2992) i wsch. (3015, 3002, 3003), pl. Dąbrowskiego (769, 763 Narutowicza + 760 Sterlinga,
+  bo `topo -d 150` i tak by je skleił). ID są te same w feedach z 2.10 i 5.10.2026. Pozostałe dworce (Widzew, Kaliska,
+  Chojny): „Dw. Łódź X” + każdy „Ulica-Dw. Łódź X” do 250 m w jeden przystanek w środku ciężkości.
+- `hubsnap.py` (w `run.sh` po `fixends.py`) — węzeł pomocniczy `topo` trafia do najbliższego przystanku i jest
+  wciągany, tylko gdy to dworzec do `HUB_R` m (300); równoległe krawędzie scalane. Dworcom zdejmuje `not_serving`
+  (inaczej symbol rysuje się tylko na jednej linii) i nadaje unikalne `station_id` bliźniakom o tej samej nazwie
+  (`render.py` przypisuje krańcówki po `station_id`, oba „Rodziny Poznańskich” dostawały „Dw. Łódź Fabryczna”).
+- `fisheye.py` (w `run.sh` przed `octi`) — najpierw `MOVE` (env, JSON `[lon, lat, nowy_lon, nowy_lat]`): cztery węzły
+  ręcznie w romb 300 m od dworca (S, W, E, N; w realu W–dworzec–E leżą na jednej prostej i `octi` robi z nich jeden pęk).
+  Potem soczewki `FISHEYE="M R0 [lon lat], …"` po kolei: lokalna na Fabryczną i globalna na centrum (domyślnie
+  `2.5 650 19.4687 51.7703, 1.5 2500`). `octi` ma jedną skalę siatki, bez tego przystanki centrum lądują
+  w sąsiednich komórkach.
+- `octi` jest bardzo czuły na wejście: drobna zmiana soczewki daje inny układ. Wariant wybierany z kilku po bramce
+  (`gate.py`), liczbie konfliktów etykiet i niedopasowanych przystankach w `render.py` oraz zrzucie okolic dworca.
+  Opublikowane: stan „po” `FISHEYE="2.2 650 19.4687 51.7703, 1.5 2500"`, stan „przed” `"2.5 700 19.4687 51.7703, 1.5 2500"`.
+  Szybka iteracja: sam `fisheye.py` + `octi` + `transitmap` na gotowym `loom.json` (~20 s).
+- `fixends.py` łata krańcówki dalsze niż 120 m od linii (`topo` gubił też ostatnie 230 m linii 61 do dworca).
 Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 `topo -d 150` scala przystanki do 150 m w jeden węzeł, chip stoi we właściwym miejscu.
 
@@ -65,7 +76,8 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
   `lodz_static_gtfs_2026-10-02.zip`, `feed_start_date` 20261001. Dzień: czwartek **1.10.2026**.
 - Stan „po”: tramwaje i nocne to dotychczasowe SVG z `../druk/` (release `lodz-realized-2026-10-05-phone`,
   dzień 8.10.2026), nieprzeliczane; ich `lines.json` odtworzono z metadanych strony. Autobusy
-  w obu stanach przeliczone 9.10.2026 z węzłami dworców, `hubsnap.py`, `fisheye.py 1.5` i `fixends.py`.
+  w obu stanach przeliczone 9.10.2026 z czterema węzłami Fabrycznej, `hubsnap.py`, `fisheye.py` (MOVE + dwie soczewki)
+  i `fixends.py`.
 - LOOM w WSL (Ubuntu 24.04, cmake + g++); `src/topo/tests/ContractTest.cpp` skompilowany
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.

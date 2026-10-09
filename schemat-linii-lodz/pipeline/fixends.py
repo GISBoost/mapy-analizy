@@ -4,7 +4,7 @@
 # farther than MIN m from the line's own nodes, add the line along the shortest graph path from
 # its nearest dead end to the station closest to the terminus (if that path is < MAX m).
 import json, sys, math, heapq
-MIN, MAX = 300, 3000
+MIN, MAX = 120, 3000  # MIN below topo -d 150; Fabryczna's 61 lost its last 230 m
 TOPO, META = sys.argv[1], sys.argv[2]
 g = json.load(open(TOPO, encoding='utf-8')); info = json.load(open(META, encoding='utf-8'))
 k = math.cos(math.radians(51.76)) * 111320

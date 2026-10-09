@@ -13,13 +13,22 @@ st=st[st.trip_id.isin(t.trip_id)&~st.stop_id.isin(stops[stops.stop_name=='przeja
 st=st.sort_values(['trip_id','ss'])
 # railway-station hubs: 'Dw. Łódź X' and every 'Street-Dw. Łódź X' within HUB_M m become one stop at their centroid,
 # otherwise LOOM draws each platform as its own node and the terminal loops between them as spaghetti (Fabryczna)
-# extra hub members by name: Fabryczna's terminal loop runs through these two Narutowicza stops (200-240 m away)
-HUB_ADD=json.loads(os.environ.get('HUB_ADD','{"Dw. Łódź Fabryczna": ["Narutowicza-pl. Dąbrowskiego", "Narutowicza-P.O.W. NŻ"]}'))
+# explicit hubs (HUBS env, JSON list of stop_id lists) come first: Fabryczna is four platform groups around one
+# terminal loop - station, Rodziny Poznańskich west and east, pl. Dąbrowskiego (Narutowicza + Sterlinga, which topo
+# would merge anyway); fisheye.py's local lens then gives octi room to draw them as a square
+HUBS=json.loads(os.environ.get('HUBS','[["2999","2995","2998"],["2989","2990","2991","2992"],["3015","3002","3003"],["769","763","760"]]'))
 HUB_M=250; used=stops[stops.stop_id.isin(st.stop_id)].copy(); used['lo']=used.stop_lon.astype(float); used['la']=used.stop_lat.astype(float)
 hub={}
+for ids in HUBS:
+    m=used[used.stop_id.isin(ids)]
+    if m.empty: continue
+    rep=[i for i in ids if i in set(m.stop_id)][0]; hub.update({i:rep for i in m.stop_id})
+    stops.loc[stops.stop_id==rep,['stop_lon','stop_lat']]=['%.6f'%m.lo.mean(),'%.6f'%m.la.mean()]
+    print('hub',m[m.stop_id==rep].stop_name.iloc[0],list(m.stop_id))
+used=used[~used.stop_id.isin(hub)]
 for h,hs in used[used.stop_name.str.startswith('Dw. Łódź ')].groupby('stop_name'):
     near=lambda z: min(((z.lo-x)*69000)**2+((z.la-y)*111320)**2 for x,y in zip(hs.lo,hs.la))**.5<=HUB_M
-    m=pd.concat([hs,used[(used.stop_name.str.endswith('-'+h)|used.stop_name.isin(HUB_ADD.get(h,[])))&used.apply(near,axis=1)]])
+    m=pd.concat([hs,used[used.stop_name.str.endswith('-'+h)&used.apply(near,axis=1)]])
     rep=hs.stop_id.iloc[0]; hub.update({i:rep for i in m.stop_id})
     stops.loc[stops.stop_id==rep,['stop_lon','stop_lat']]=['%.6f'%m.lo.mean(),'%.6f'%m.la.mean()]
     print('hub',h,'<-',sorted(set(m.stop_name)-{h}),len(m),'stops')
