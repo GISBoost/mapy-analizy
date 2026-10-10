@@ -14,7 +14,8 @@ Strona: `https://gisboost.github.io/mapy-analizy/schemat-linii-lodz/`
 - `index.html`: gotowa strona, wynik `pipeline/build_page.py` (lista linii, różnice, skrypt) oraz `i18n.js` (PL/EN).
 - `mapy/`: sześć schematów SVG strony (`<m>.svg`, `<m>_przed.svg`), też z `build_page.py`. Strona pobiera
   schemat przy pierwszym otwarciu zakładki, więc nie działa otwarta z dysku (`file://`), tylko z serwera.
-  Przeciąganie i zoom przesuwają gotowy obraz (CSS `transform`), a `viewBox` zmienia się po zakończeniu gestu.
+  Przeciąganie i zoom zmieniają `viewBox` przy każdym ruchu (przesuwanie gotowego obrazu przez CSS `transform` było
+  szybsze, ale rozmyte przy zoomie i szarpało po geście, więc z niego zrezygnowaliśmy). Legenda mapy: przycisk „Legenda”.
 - `druk/`: PDF i SVG do druku: tramwaje (szerokość 594 mm), autobusy (1189 mm), nocne (841 mm);
   stan sprzed 5.10 z sufiksem `_przed`. Do szybkiego podglądu także JPG (2500 px po dłuższym boku).
 - `pipeline/`: skrypty, którymi to powstało (opis niżej).
