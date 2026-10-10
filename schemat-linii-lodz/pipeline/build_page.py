@@ -19,7 +19,7 @@ def merge(s):  # all polylines of a group -> one path: subpaths keep their own c
 from pdf import NEUT  # light -> dark colours of the print downloads; the orientation layer's ones also theme the page
 BASE={'#fff','#ffffff','#16181d','#5b6270','#f3f4f6','#d5d9e0','#c8102e','#111'}  # these the page themes by class
 def lmcss():  # dark theme of the orientation layer: its colours are attributes, so they are matched by value
-    r=[f'svg.map [{a}="{k}" i]{{{a}:{v}}}' for k,v in NEUT.items() if k not in BASE for a in ('fill','stroke')]+[f'svg.map .lb.rl text{{fill:{NEUT["#7a818d"]}}}']
+    r=[f':is(svg.map,.legend svg) [{a}="{k}" i]{{{a}:{v}}}' for k,v in NEUT.items() if k not in BASE for a in ('fill','stroke')]+[f'svg.map .lb.rl text{{fill:{NEUT["#7a818d"]}}}']
     return '@media (prefers-color-scheme: dark){'+''.join(':root:not([data-theme="light"]) '+x for x in r)+'}\n'+''.join(':root[data-theme="dark"] '+x for x in r)
 tc=lambda h: '#111' if lum(h)>165 else '#fff'
 def themed(s,cols):

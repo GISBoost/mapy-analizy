@@ -72,7 +72,7 @@ aside{background:var(--panel);border-right:1px solid var(--rule);display:flex;fl
 .stage{position:relative;min-width:0;min-height:0;background:var(--sheet);overflow:hidden;touch-action:none;cursor:grab}
 .stage.drag{cursor:grabbing}
 .pane{position:absolute;inset:0}
-svg.map{width:100%;height:100%;display:block;overflow:visible;user-select:none;-webkit-user-select:none}  /* visible: no blank edge while a gesture moves it */
+svg.map{width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
 svg.map .bg{fill:var(--sheet)}
 svg.map .casing{stroke:var(--sheet)}
 svg.map .stops{fill:var(--sheet);stroke:var(--sheet-ink)}
@@ -99,6 +99,7 @@ svg.map .chip text,svg.map .leg .chip text{stroke:none;fill:var(--t)!important}
 :root[data-theme="dark"] svg.map .chip rect{fill:var(--cd)}
 :root[data-theme="dark"] svg.map .chip text{fill:var(--td)!important}
 :root[data-theme="dark"] .chipb{background:var(--cd);color:var(--td)}
+svg.map .ln,svg.map .lb,svg.map .chip,svg.map .st{transition:opacity .15s}
 svg.map .ln{cursor:pointer}
 /* orientation layer (render.py LANDMARKS): railway station names grey, zone-2 insets keep their tint, white parts follow the sheet */
 svg.map .lb.rl text{fill:#7a818d}
@@ -108,6 +109,13 @@ svg.map .bgl [stroke="#fff"],svg.map .ic [stroke="#fff"]{stroke:var(--sheet)}
 /*LMCSS*/
 .zoom{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:4px}
 .zoom button{width:36px;height:36px;font:600 18px var(--body);color:var(--fg);background:var(--panel);border:1px solid var(--rule);border-radius:6px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.legend{position:absolute;left:16px;top:16px;max-width:calc(100% - 32px);font-size:12px;color:var(--fg)}
+.legend summary{display:inline-block;list-style:none;font:500 12px var(--body);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.legend summary::-webkit-details-marker{display:none}
+.legend summary::before{content:"▸ "}.legend[open] summary::before{content:"▾ "}
+.legend ul{list-style:none;margin:6px 0 0;padding:8px 12px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.15);max-height:calc(100vh - 260px);overflow:auto}
+.legend li{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:8px;padding:2px 0;line-height:1.3}
+.legend .lgk{display:flex;justify-content:center}.legend svg{display:block}
 .hint{position:absolute;left:16px;bottom:16px;font-size:12px;color:var(--muted);background:var(--panel);opacity:.92;padding:4px 8px;border-radius:4px}
 button:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:760px){
@@ -127,6 +135,7 @@ button:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-of
   #changes li.ch{flex:none;width:210px;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:2px 6px 2px 2px}
   #changes .what{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
+@media (prefers-reduced-motion:reduce){svg.map *{transition:none!important}}
 footer.note{flex:none;padding:6px 16px;font-size:12px;color:var(--muted);background:var(--panel);border-top:1px solid var(--rule)}
 footer.note a{color:inherit}
 @media (max-width:760px){footer.note{padding:5px 16px calc(5px + env(safe-area-inset-bottom));white-space:nowrap;overflow-x:auto}}
@@ -156,6 +165,7 @@ footer.note a{color:inherit}
   </aside>
   <div class="stage" id="stage">
     <!--PANES-->
+    <details class="legend"><summary data-i18n="legendBtn">Legenda</summary><ul><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><circle cx="12" cy="7" r="4" style="fill:var(--sheet);stroke:var(--sheet-ink)" stroke-width="1.5"/></svg></span><span data-i18n="lgStop"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="3" y="2" width="18" height="10" rx="3.5" style="fill:var(--sheet);stroke:var(--sheet-ink)" stroke-width="1.5"/></svg></span><span data-i18n="lgHub"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="2" y="1.5" width="20" height="11" rx="2.5" style="fill:var(--sheet-ink)"/><text x="12" y="10.3" font-size="8" font-weight="700" text-anchor="middle" style="fill:var(--sheet)">12</text></svg></span><span data-i18n="lgTerm"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><text x="12" y="10.5" font-size="9" font-weight="700" text-anchor="middle" style="fill:var(--sheet-ink)">4 8</text></svg></span><span data-i18n="lgNums"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><line x1="2" x2="22" y1="7" y2="7" style="stroke:var(--sheet-ink)" stroke-width="3" stroke-linecap="round" stroke-dasharray=".3 4.5"/></svg></span><span data-i18n="lgCont"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><line x1="1" x2="23" y1="7" y2="7" stroke="#9ba2ad" stroke-width="4.5" stroke-linecap="round"/><line x1="1" x2="23" y1="7" y2="7" style="stroke:var(--sheet)" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="7" r="3.4" stroke="#9ba2ad" stroke-width="1.7" style="fill:var(--sheet)"/></svg></span><span data-i18n="lgRail"></span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#3b4250"/><path d="M3 1.6h4a1.4 1.4 0 0 1 1.4 1.4v3.6a1 1 0 0 1-1 1H2.6a1 1 0 0 1-1-1V3a1.4 1.4 0 0 1 1.4-1.4z" style="fill:var(--sheet)"/><rect x="2.6" y="2.8" width="4.8" height="1.9" fill="#3b4250"/><circle cx="3.3" cy="6" r=".6" fill="#3b4250"/><circle cx="6.7" cy="6" r=".6" fill="#3b4250"/><path d="M3.2 7.6 2.2 9M6.8 7.6 7.8 9" style="stroke:var(--sheet)" stroke-width=".9"/></svg></span><span data-i18n="lgTrain"></span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#1e5bb8"/><path d="M3 2v6M7 2v6M3 5h4" style="stroke:var(--sheet)" stroke-width="1.6" fill="none"/></svg></span><span data-i18n="lgHosp"></span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#3b4250"/><path d="M1.5 4h7l-.6 4.6H2.1z" style="fill:var(--sheet)"/><path d="M3.4 4.6c0-3 3.2-3 3.2 0" fill="none" style="stroke:var(--sheet)" stroke-width=".7"/></svg></span><span data-i18n="lgMall"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="1" y="1" width="22" height="12" rx="3.5" fill="#dcecd6"/></svg></span><span data-i18n="lgPark"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="12" y="0" width="12" height="14" fill="#f1eef7"/><line x1="12" x2="12" y1="0" y2="14" stroke="#a18bd0" stroke-width="2"/></svg></span><span data-i18n="lgZone"></span></li></ul></details>
     <div class="hint" data-i18n="hint">Kliknij linię, żeby ją wyróżnić · przeciągnij i przewiń, żeby przybliżyć</div>
     <div class="zoom"><button id="zin" data-i18n-aria-label="zoomIn" aria-label="Przybliż">+</button><button id="zout" data-i18n-aria-label="zoomOut" aria-label="Oddal">−</button><button id="zfit" data-i18n-aria-label="zoomFit" aria-label="Cały schemat">⤢</button></div>
   </div>
@@ -182,15 +192,7 @@ function load(k){const s=st[k], p=document.getElementById('pane-'+k);
   return s.ready||(s.ready=fetch(SVGS[k]).then(r=>{if(!r.ok) throw new Error(r.status); return r.text()}).then(txt=>{
     p.innerHTML=txt; s.svg=p.querySelector('svg'); const vb=s.svg.getAttribute('viewBox').split(/\s+/).map(Number); s.home=vb.slice(); s.vb=vb.slice();
   }).catch(e=>{s.ready=null; p.textContent=t('loadErr'); throw e}));}
-let tmr=0;
-function apply(k){const s=st[k]; clearTimeout(tmr); s.svg.style.transform=''; s.svg.style.willChange=''; s.svg.setAttribute('viewBox',s.vb.map(v=>v.toFixed(2)).join(' '));}
-// during a gesture the drawing of the committed viewBox is only moved and scaled (CSS transform, no repaint of the
-// whole map per frame); the viewBox catches up when the gesture ends
-function move(k){const s=st[k], r=stage.getBoundingClientRect(), v=s.vb;
-  s.vb=s.svg.getAttribute('viewBox').split(/\s+/).map(Number); const k0=scaleOf(s), [x0,y0]=pt(s,r.left,r.top);
-  s.vb=v; const k1=scaleOf(s), [x1,y1]=pt(s,r.left,r.top);
-  Object.assign(s.svg.style,{willChange:'transform',transformOrigin:'0 0',transform:`translate(${(x0-x1)/k1}px,${(y0-y1)/k1}px) scale(${k0/k1})`});
-  clearTimeout(tmr); if(!ptrs.size) tmr=setTimeout(()=>apply(k),250);}  // wheel and buttons: after a pause
+function apply(k){const s=st[k]; s.svg.setAttribute('viewBox',s.vb.map(v=>v.toFixed(2)).join(' '));}
 // highlight: one generated rule set dims every element of the diagram except the selected lines' ones
 const selCss=document.head.appendChild(document.createElement('style'));
 function paint(k){
@@ -242,7 +244,7 @@ function setView(v){view=v;
   for(const b of document.querySelectorAll('.atab')) b.setAttribute('aria-selected', b.dataset.v===v);
   list.hidden=v!=='lines'; chl.hidden=v!=='changes';}
 function show(m,s){
-  const prev=st[cur], k=m+s; if(prev.svg&&prev.svg.style.transform) apply(cur);
+  const prev=st[cur], k=m+s;
   if(m===mapk&&k!==cur) st[k].sel=new Set([...prev.sel].filter(l=>has(k,l)));  // keep the selection across states
   mapk=m; state=s; cur=k;
   for(const b of document.querySelectorAll('.tab')){b.setAttribute('aria-selected', b.dataset.map===m); b.querySelector('.cnt').textContent=META[b.dataset.map+s].length;}
@@ -261,16 +263,16 @@ function scaleOf(s){const r=stage.getBoundingClientRect(); return Math.max(s.vb[
 function pt(s,cx,cy){const r=stage.getBoundingClientRect(), k=scaleOf(s);
   const ox=s.vb[0]+(s.vb[2]-r.width*k)/2, oy=s.vb[1]+(s.vb[3]-r.height*k)/2; return [ox+(cx-r.left)*k, oy+(cy-r.top)*k];}
 function zoomAt(f,cx,cy){const s=st[cur]; if(!s.svg) return; const nw=s.vb[2]*f; if(nw>s.home[2]*1.5||nw<s.home[2]/60) return;
-  const [px,py]=pt(s,cx,cy); s.vb=[px-(px-s.vb[0])*f, py-(py-s.vb[1])*f, s.vb[2]*f, s.vb[3]*f]; move(cur);}
-stage.addEventListener('wheel',e=>{e.preventDefault(); zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
+  const [px,py]=pt(s,cx,cy); s.vb=[px-(px-s.vb[0])*f, py-(py-s.vb[1])*f, s.vb[2]*f, s.vb[3]*f]; apply(cur);}
+stage.addEventListener('wheel',e=>{if(e.target.closest('.legend'))return; e.preventDefault(); zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
 const ptrs=new Map(); let moved=0, pinch=0;
-stage.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom')||!st[cur].svg)return; clearTimeout(tmr); ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
+stage.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom,.legend')||!st[cur].svg)return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
   if(ptrs.size===2){const a=[...ptrs.values()]; pinch=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);}});
 stage.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId))return; const p=ptrs.get(e.pointerId), s=st[cur];
-  if(ptrs.size===1){const k=scaleOf(s); s.vb[0]-=(e.clientX-p[0])*k; s.vb[1]-=(e.clientY-p[1])*k; moved+=Math.abs(e.clientX-p[0])+Math.abs(e.clientY-p[1]); move(cur);}
+  if(ptrs.size===1){const k=scaleOf(s); s.vb[0]-=(e.clientX-p[0])*k; s.vb[1]-=(e.clientY-p[1])*k; moved+=Math.abs(e.clientX-p[0])+Math.abs(e.clientY-p[1]); apply(cur);}
   ptrs.set(e.pointerId,[e.clientX,e.clientY]);
   if(ptrs.size===2){const a=[...ptrs.values()], d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]); if(pinch>0&&d>0){zoomAt(pinch/d,(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2); moved+=5;} pinch=d;}});
-function up(e){ if(!ptrs.has(e.pointerId))return; ptrs.delete(e.pointerId); stage.classList.remove('drag'); if(!ptrs.size&&st[cur].svg.style.transform) apply(cur);
+function up(e){ if(!ptrs.has(e.pointerId))return; ptrs.delete(e.pointerId); stage.classList.remove('drag');
   if(moved<5&&e.type==='pointerup'){const el=document.elementFromPoint(e.clientX,e.clientY); const g=el&&el.closest&&el.closest('.ln,.chip'); if(g) toggle(g.getAttribute('data-l'));}}
 stage.addEventListener('pointerup',up); stage.addEventListener('pointercancel',up);
 const mid=()=>{const r=stage.getBoundingClientRect(); return [r.left+r.width/2,r.top+r.height/2]};
