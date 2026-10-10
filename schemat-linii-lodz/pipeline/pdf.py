@@ -13,7 +13,11 @@ def darkv(h):
 tc=lambda h: '#111' if lum(h)>165 else '#fff'
 # neutral colours of the light drawing -> dark theme (keys lower-case, whole-token match)
 NEUT={'#fff':'#12151a','#ffffff':'#12151a','#16181d':'#e8eaee','#5b6270':'#98a0ae',
-      '#f3f4f6':'#1b1f26','#d5d9e0':'#2c313a','#c8102e':'#ff5a6e','#111':'#111'}
+      '#f3f4f6':'#1b1f26','#d5d9e0':'#2c313a','#c8102e':'#ff5a6e','#111':'#111',
+      # orientation layer (render.py LANDMARKS): railway, its labels, district names, ul. Piotrkowska, pictograms
+      '#9ba2ad':'#737c8a','#7a818d':'#8e96a3','#e2e5ea':'#232831','#ebdfc4':'#4a4231','#9c8350':'#c2a76e',
+      '#3b4250':'#c3c9d2','#1e5bb8':'#5b9bf5','#f1eef7':'#1a1822','#a18bd0':'#9a86cc','#8a75bd':'#a08fd0',
+      '#dcecd6':'#16261a','#5c8a52':'#7fb173','#c9b48a':'#8a7752'}
 def dark_svg(s):
     s=re.sub(r'#[0-9a-fA-F]{3,6}(?![0-9a-fA-F])', lambda m: NEUT.get(m.group(0).lower(), m.group(0)), s)
     cols={d:c[1:] for d,c in re.findall(r'<g class="ln" data-l="([^"]+)"[^>]*? stroke="(#[0-9a-fA-F]{6})"', s)}

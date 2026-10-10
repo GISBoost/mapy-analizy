@@ -126,3 +126,19 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 - LOOM w WSL (Ubuntu 24.04, cmake + g++); `src/topo/tests/ContractTest.cpp` skompilowany
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.
+
+## Warstwa orientacyjna (prototyp, 10.10.2026)
+
+Opcjonalne tło schematu: kolej, granica Łodzi (strefa biletowa 1 | 2), parki i lasy, nazwy pięciu dzielnic, ul. Piotrkowska
+z pl. Wolności oraz piktogramy przy nazwach przystanków (stacja kolejowa w promieniu 350 m, duże szpitale, Manufaktura).
+Na razie przetestowana tylko na tramwajach, stan „po”; pliki w `druk/` i na stronie są jeszcze bez niej.
+
+- `landmarks.py <work>/landmarks.json`: pobiera dane z OpenStreetMap (Overpass API) do katalogu roboczego; surowa odpowiedź
+  zostaje obok (`*.osm.json`), więc kolejne uruchomienie nie odpytuje serwera. Dane nie trafiają do repozytorium.
+- `render.py` z `LANDMARKS=<work>/landmarks.json` rysuje warstwę, z `RAIL_STYLE=double` kolej jak na mapie NYC (podwójna linia).
+- Geografia trafia na schemat przez odwzorowanie odcinkowo-afiniczne na trójkątach rozpiętych na przystankach; poza siecią
+  działa jedno przekształcenie afiniczne dopasowane do wszystkich przystanków.
+- Kolej: tory pasażerskie (relacje `route=train`) sklejone w jedną linię na korytarz, przecięte na stacjach i rozjazdach
+  (węzły bliższe niż 350 m łączone), każdy odcinek narysowany jako skos + prosta (kąty 45/90°), do granicy miasta.
+- Parki i granica: wielokąty uproszczone i dociągnięte do siatki, boki tylko co 45/90°; parki z zaokrąglonymi narożnikami.
+- Kolory warstwy w wersji ciemnej: tabela `NEUT` w `pdf.py`.

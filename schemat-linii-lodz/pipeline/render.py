@@ -299,10 +299,202 @@ for c in cuts:
             o = (k_ - (len(Le) - 1) / 2) * DL; x_, y_ = cx - uy * o, cy + ux * o
             c['stub'].append((nm, [(x_, y_), (x_ + ux * FS * 4, y_ + uy * FS * 4)]))
 
+# ---------- orientation layer (env LANDMARKS: landmarks.py output): railways, ul. Piotrkowska, district names, pictograms of
+# stations / hospitals / Manufaktura by their stops; geography goes onto the drawing by a piecewise-affine warp over the stops
+LM = json.load(open(os.environ['LANDMARKS'], encoding='utf-8')) if os.environ.get('LANDMARKS') and GEO else None
+RAIL = os.environ.get('RAIL_STYLE', 'grey')  # grey | double | ladder | dash | none
+RAIL_SET = os.environ.get('RAIL_SET', 'passenger')  # passenger (ways of route=train relations) | all
+rail_l, tun_l, piotr_l, rexit, green_, cityd, bmark, sq_ = [], [], [], [], [], None, [], None
+if LM:
+    from scipy.spatial import Delaunay
+    KX, KY = 111320 * math.cos(math.radians(51.77)), -110570  # lon/lat -> metres, y down like the drawing
+    sll = {f['properties']['station_id']: f['geometry']['coordinates'] for f in gf if f['geometry']['type'] == 'Point' and f['properties'].get('station_id')}
+    inset_ = {s['id'] for c in cuts if 'box' in c for s in c['st']}
+    G_ = {}
+    for s in stations:
+        sid = nodes[s['id']]['sid'] if s['id'] in nodes else None
+        if sid in sll and s['id'] not in inset_: G_.setdefault((round(sll[sid][0] * KX), round(sll[sid][1] * KY)), []).append(s['poly'].centroid.coords[0])
+    gp = np.array(list(G_), float); dp = np.array([np.mean(v, axis=0) for v in G_.values()])
+    AF = np.linalg.lstsq(np.c_[gp, np.ones(len(gp))], dp, rcond=None)[0]  # outside the stops: the affine fit of them all
+    fr = gp.mean(0) + 40000 * np.array([(math.cos(a), math.sin(a)) for a in np.linspace(0, 2 * math.pi, 24, endpoint=False)])
+    nin = len(gp); gp = np.r_[gp, fr]; dp = np.r_[dp, np.c_[fr, np.ones(len(fr))] @ AF]; tri = Delaunay(gp)
+    sg_ = lambda P: np.sign((P[:, 1, 0] - P[:, 0, 0]) * (P[:, 2, 1] - P[:, 0, 1]) - (P[:, 1, 1] - P[:, 0, 1]) * (P[:, 2, 0] - P[:, 0, 0]))
+    print('warp: triangles', len(tri.simplices), 'folded', int((sg_(gp[tri.simplices]) != sg_(dp[tri.simplices])).sum()))
+    from shapely.geometry import MultiPoint
+    REG = unary_union([Point(q).buffer(float(os.environ.get('LM_REACH', 1500))) for q in gp[:nin]]).intersection(MultiPoint(gp[:nin]).convex_hull.buffer(-5))  # near a stop
+    CITY = Polygon([(x * KX, y * KY) for x, y in LM['city']]).buffer(0) if LM.get('city') else None  # the city (fare zone 1)
+    RREG = CITY if CITY is not None else REG  # the railway runs to the city boundary
+    def warp(q):  # metres (n x 2) -> drawing, nan outside the triangulation
+        s_ = tri.find_simplex(q); T = tri.transform[s_]; b = np.einsum('ijk,ik->ij', T[:, :2], q - T[:, 2])
+        P = np.einsum('ij,ijk->ik', np.c_[b, 1 - b.sum(1)], dp[tri.simplices[s_]]); P[s_ < 0] = np.nan; return P
+    mtr = lambda pts: [(x * KX, y * KY) for x, y in pts]
+    def chaikin(p, n=2):
+        for _ in range(n): p = [p[0]] + [q for a, b in zip(p, p[1:]) for q in ((.75 * a[0] + .25 * b[0], .75 * a[1] + .25 * b[1]), (.25 * a[0] + .75 * b[0], .25 * a[1] + .75 * b[1]))] + [p[-1]]
+        return p
+    def wline(g, tol=0):  # line in metres -> polylines on the drawing (inside the region and the triangulation): with tol
+        g = g.intersection(REG); res = []  # simplified first, straight runs between the few warped vertices; else densified, smoothed
+        for ln in [g] if g.geom_type == 'LineString' else list(getattr(g, 'geoms', [])):
+            if ln.geom_type != 'LineString' or ln.length < 50: continue
+            if tol: P = warp(np.array(ln.simplify(tol).coords))
+            else: n = max(2, int(ln.length / 40)); P = warp(np.array([ln.interpolate(i / (n - 1), normalized=True).coords[0] for i in range(n)]))
+            cur = []
+            for v in list(P) + [(np.nan, np.nan)]:
+                if not np.isnan(v[0]): cur.append(tuple(v))
+                elif len(cur) > 1: res.append(cur if tol else chaikin(list(LineString(cur).simplify(LW * 0.4).coords))); cur = []
+                else: cur = []
+        return res
+    # railways: one line per corridor. Points every 40 m along the tracks join the first centre within 45 m (longest tracks
+    # first), so parallel tracks and station throats fold into one chain of centres; consecutive centres make the edges
+    from shapely.ops import linemerge
+    rw = sorted([(LineString(mtr(r['xy'])), r['tunnel']) for r in LM['rail'] if RAIL_SET == 'all' or r['passenger']], key=lambda t: -t[0].length)
+    cl, grid, E_ = [], {}, {False: set(), True: set()}
+    def cid(q):
+        gx, gy = int(q[0] // 60), int(q[1] // 60)
+        for k in (k for i_ in (gx - 1, gx, gx + 1) for j_ in (gy - 1, gy, gy + 1) for k in grid.get((i_, j_), ())):
+            if math.dist(cl[k], q) < 45: return k
+        cl.append(q); grid.setdefault((gx, gy), []).append(len(cl) - 1); return len(cl) - 1
+    for g, tn in rw:
+        n = max(2, int(g.length / 40) + 1); ids = [cid(g.interpolate(i_ / (n - 1), normalized=True).coords[0]) for i_ in range(n)]
+        E_[tn] |= {(min(a, b), max(a, b)) for a, b in zip(ids, ids[1:]) if a != b}
+    E_[True] -= E_[False]
+    RT = float(os.environ.get('RAIL_TOL', 250))
+    geo_es = {}
+    for tn in (False, True):
+        mg = linemerge([LineString([cl[a], cl[b]]) for a, b in E_[tn]]) if E_[tn] else None
+        es = [] if mg is None else list(getattr(mg, 'geoms', [mg]))
+        for _ in range(4):  # spurs (short edges with a free end: sidings, yard throats) go, then merge again
+            deg = {}
+            for e in es:
+                for q in (e.coords[0], e.coords[-1]): k = (round(q[0]), round(q[1])); deg[k] = deg.get(k, 0) + 1
+            free = lambda e: any(deg[(round(q[0]), round(q[1]))] == 1 for q in (e.coords[0], e.coords[-1]))
+            es2 = [e for e in es if not (free(e) and e.length < 700 and RREG.buffer(-200).contains(e))]
+            if len(es2) == len(es): break
+            mg = linemerge(es2); es = list(getattr(mg, 'geoms', [mg])) if not mg.is_empty else []
+        geo_es[tn] = es
+    # schematic railway: the corridors are cut at their stations and at the edge of the drawing, ends past the last station
+    # go, nodes closer than RAIL_MERGE metres become one (a station wins); an edge is drawn between its warped ends as one
+    # diagonal and one straight run, in the order that passes nearer the warped middle of the real track
+    from shapely.ops import substring
+    rst = {}
+    for r_ in LM['stations']:
+        q = Point(r_['ll'][0] * KX, r_['ll'][1] * KY)
+        if RREG.contains(q): rst.setdefault(r_['name'].removeprefix('Łódź '), (q, r_['ll']))
+    key = lambda q: (round(q[0]), round(q[1])); npos, sname, pcs_ = {}, {}, []
+    for tn, es in geo_es.items():
+        for e in es:
+            e = e.intersection(RREG)
+            for e_ in [x for x in getattr(e, 'geoms', [e]) if x.geom_type == 'LineString' and x.length > 50]:
+                on = {nm: e_.project(q) for nm, (q, _) in rst.items() if e_.distance(q) < 200}
+                for nm, d in on.items(): k = key(e_.interpolate(d).coords[0]); sname[k] = nm; npos[k] = e_.interpolate(d).coords[0]
+                cs = sorted(set(on.values()) | {0, e_.length})
+                for a, b in zip(cs, cs[1:]):
+                    if b - a < 1: continue
+                    g = substring(e_, a, b); ka, kb = key(g.coords[0]), key(g.coords[-1]); npos.setdefault(ka, g.coords[0]); npos.setdefault(kb, g.coords[-1])
+                    pcs_.append([ka, kb, tn, g])
+    par = {k: k for k in npos}
+    def fnd(k):
+        while par[k] != k: k = par[k]
+        return k
+    ks = list(npos); RM = float(os.environ.get('RAIL_MERGE', 350))
+    for i_, a in enumerate(ks):
+        for b in ks[i_ + 1:]:
+            if math.dist(npos[a], npos[b]) < RM:
+                ra, rb = fnd(a), fnd(b)
+                if ra != rb: (par.__setitem__(rb, ra) if ra in sname or rb not in sname else par.__setitem__(ra, rb))
+    redg = {}
+    for ka, kb, tn, g in pcs_:
+        a, b = fnd(ka), fnd(kb)
+        if a != b and (min(a, b), max(a, b)) not in redg: redg[min(a, b), max(a, b)] = (tn, g)
+    exits = {k for k in npos if CITY is not None and CITY.exterior.distance(Point(npos[k])) < 30}
+    while True:  # dangling ends that are neither stations nor exits through the city boundary go
+        deg = {}
+        for a, b in redg: deg[a] = deg.get(a, 0) + 1; deg[b] = deg.get(b, 0) + 1
+        drop = [e for e in redg if any(deg[k] == 1 and k not in sname and fnd(k) not in {fnd(x) for x in exits} for k in e)]
+        if not drop: break
+        for e in drop: del redg[e]
+    used = {k for e in redg for k in e}; wp = {k: warp(np.array([npos[k]]))[0] for k in used}
+    def octi(A, B, M):
+        dx, dy = B[0] - A[0], B[1] - A[1]; d = min(abs(dx), abs(dy)); ddx, ddy = math.copysign(d, dx), math.copysign(d, dy)
+        c1 = [tuple(A), (A[0] + ddx, A[1] + ddy), tuple(B)]; c2 = [tuple(A), (B[0] - ddx, B[1] - ddy), tuple(B)]
+        return min((c1, c2), key=lambda c: LineString(c).distance(Point(M)))
+    for (a, b), (tn, g) in redg.items():
+        A, B, M = wp[a], wp[b], warp(np.array([g.interpolate(0.5, normalized=True).coords[0]]))[0]
+        if np.isnan(A[0]) or np.isnan(B[0]): continue
+        (tun_l if tn else rail_l).append(octi(A, B, M if not np.isnan(M[0]) else (A + B) / 2))
+    rexit = []  # bars across the railway where it leaves the city
+    for k in {fnd(x) for x in exits} & used:
+        e = next(e for e in redg if k in e); o = e[1] if e[0] == k else e[0]
+        A, B = wp[k], wp[o]; dx, dy = B[0] - A[0], B[1] - A[1]
+        u = (math.copysign(1, dx) if abs(dx) > 1e-6 and abs(dx) >= abs(dy) * 0.4 else 0, math.copysign(1, dy) if abs(dy) > 1e-6 and abs(dy) >= abs(dx) * 0.4 else 0)
+        n_ = math.hypot(*u) or 1; rexit.append((tuple(A), (-u[1] / n_, u[0] / n_)))
+    print('railway: edges', len(redg), sorted((sname.get(a, 'exit' if a in {fnd(x) for x in exits} else '+'), sname.get(b, 'exit' if b in {fnd(x) for x in exits} else '+'), 'T' if tn else '') for (a, b), (tn, _) in redg.items()))
+    # pictograms: a stop gets the ones of the railway stations (<= 350 m, every such stop) and the POIs (the nearest, <= 450 m)
+    sm = [(s, np.array([sll[nodes[s['id']]['sid']][0] * KX, sll[nodes[s['id']]['sid']][1] * KY])) for s in stations if s['id'] in nodes and nodes[s['id']]['sid'] in sll]
+    def near(ll_, r=450, every=False):  # the nearest stop within r (every: all of them)
+        q = np.array([ll_[0] * KX, ll_[1] * KY]); ds = sorted(((np.hypot(*(v - q)), i) for i, (s, v) in enumerate(sm)))
+        ok = [sm[i][0] for d, i in ds if d <= r]; return ok if every else (ok[0] if ok else None)
+    for nm, (q, ll_) in rst.items():  # a station by a stop: the stop's label gets the pictogram; else a dot with a grey name
+        ss = near(ll_, 350, every=True)
+        for s in ss:
+            if 'train' not in s.setdefault('ic', []): s['ic'].insert(0, 'train')
+        k = next((k for k in used if sname.get(k) == nm), None)
+        if ss or k is None or np.isnan(wp[k][0]) or not box(*mb).contains(Point(wp[k])): continue  # dots only within the network
+        rp = Point(wp[k]).buffer(LW * 0.55)
+        stations.append(dict(id='rail' + nm, poly=rp, name=nm, term=[], lines=[], deg=1, nbs=[], rail=True)); polys.append(rp)
+    for p_ in LM['poi']:
+        s = near(p_['ll'])
+        if s is not None and p_['kind'] not in s.setdefault('ic', []): s['ic'].append(p_['kind'])
+    print('pictograms:', sorted((s['name'], s['ic']) for s in stations if s.get('ic')))
+    def wpoly(rg, step=80):  # ring in lon/lat -> polygon on the drawing
+        g = LineString(mtr(rg)); n = max(4, int(g.length / step))
+        return Polygon(warp(np.array([g.interpolate(i_ / n, normalized=True).coords[0] for i_ in range(n)]))).buffer(0)
+    def octify(g, G, tol):  # simplified, vertices snapped to a G grid, every step between them one diagonal + one straight run
+        g = max(getattr(g, 'geoms', [g]), key=lambda q: q.area).simplify(tol); ring = g.exterior
+        pts = [(round(x / G) * G, round(y / G) * G) for x, y in ring.coords]; out = [pts[0]]
+        for b in pts[1:]:
+            a = out[-1]; dx, dy = b[0] - a[0], b[1] - a[1]
+            if (dx, dy) == (0, 0): continue
+            if dx and dy and abs(abs(dx) - abs(dy)) > 1e-6:  # the corner (diagonal first or last) nearer the real outline
+                d = min(abs(dx), abs(dy)); c1 = (a[0] + math.copysign(d, dx), a[1] + math.copysign(d, dy)); c2 = (b[0] - math.copysign(d, dx), b[1] - math.copysign(d, dy))
+                out.append(min((c1, c2), key=lambda c: ring.distance(Point(c))))
+            out.append(b)
+        q = Polygon(out).buffer(0) if len(out) > 3 else Polygon()
+        return max(getattr(q, 'geoms', [q]), key=lambda r: r.area).simplify(0.01) if not q.is_empty else q
+    green_, gby = [], {}
+    for i_, gr in enumerate(LM.get('green', [])): gby.setdefault(gr['name'] or i_, []).extend(gr['rings'])  # one shape per name (Źródliska I + II)
+    for nm_, rgs in gby.items():
+        gr = dict(name=nm_ if isinstance(nm_, str) else ''); g = unary_union([wpoly(rg) for rg in rgs]).convex_hull if isinstance(nm_, str) and len(rgs) > 1 else unary_union([wpoly(rg) for rg in rgs])
+        if g.is_empty or g.area < (FS * 2) ** 2: continue
+        if g.area < (FS * 10) ** 2:  # a small park: its bounding rectangle on the grid, at least 3 x 2 cells
+            G = FS * 1.5; x0_, y0_, x1_, y1_ = [round(v / G) * G for v in g.bounds]
+            g = box(x0_, y0_, max(x1_, x0_ + 3 * G), max(y1_, y0_ + 2 * G))
+        else: g = octify(g, FS * 1.5, max(FS * 1.5, math.sqrt(g.area) * 0.1))
+        r_ = max(FS * 0.9, math.sqrt(g.area) * 0.05)  # rounded corners, convex and concave, growing with the park (the sides stay
+        # at 0/45/90 degrees); steps and spikes narrower than 2 r_ go
+        g = g.buffer(-r_, join_style=1).buffer(2 * r_, join_style=1).buffer(-r_, join_style=1) if g.area > (4 * r_) ** 2 else g
+        if not g.is_empty: green_.append((gr['name'], g))
+    cityd = None
+    if CITY is not None:
+        g = LineString(list(CITY.exterior.coords)); n = int(g.length / 100)
+        cityd = octify(Polygon(warp(np.array([g.interpolate(i_ / n, normalized=True).coords[0] for i_ in range(n)]))).buffer(0), FS * 3, FS * 5)
+    bmark = []  # the boundary across a straightened inset: between its last stop inside the city and the first outside
+    for c in cuts:
+        if 'box' not in c or c['cfg'].get('shape') == 'keep' or CITY is None: continue
+        seq = sorted(c['ghosts'] + c['st'], key=lambda s_: abs(s_['poly'].centroid.x - c['ghosts'][0]['poly'].centroid.x))
+        geo = lambda s_: sll.get(nodes[c['cs']['id'] if s_ in c['ghosts'] else s_['id']]['sid'])
+        for a_, b_ in zip(seq, seq[1:]):
+            ga, gb_ = geo(a_), geo(b_)
+            if ga and gb_ and CITY.contains(Point(ga[0] * KX, ga[1] * KY)) != CITY.contains(Point(gb_[0] * KX, gb_[1] * KY)):
+                bmark.append(((a_['poly'].centroid.x + b_['poly'].centroid.x) / 2, a_['poly'].centroid.y))
+    pk = LM['piotrkowska']; ps_ = next((s for s in stations if s['name'] == pk['stop']), None)  # straight up from its stop
+    if ps_ is not None:  # to the height of its north end (pl. Wolności); drawn south to north, so the name reads upward
+        x_, y_ = ps_['poly'].centroid.coords[0]; yn = warp(np.array([[pk['north'][0] * KX, pk['north'][1] * KY]]))[0][1]
+        if not np.isnan(yn) and yn < y_: piotr_l = [[(x_, ps_['poly'].bounds[1]), (x_, yn + FS * 1.3)]]; sq_ = (x_, yn)  # the octagon on top
+
 # ---------- label layout
-CH = FS * 0.95; CF = FS * 0.68; LH = FS * 1.12; GAP = FS * 0.35
+CH = FS * 0.95; CF = FS * 0.68; LH = FS * 1.12; GAP = FS * 0.35; ICS = FS * 1.05
 def layout(st, wrap):
-    bold = bool(st['term']) or st['deg'] > 2; f = FB if bold else FR; fs = FS * (1.08 if st['term'] else 1.0)
+    bold = bool(st['term']) or st['deg'] > 2; f = FB if bold else FR; fs = FS * (1.08 if st['term'] else 0.85 if st.get('rail') else 1.0)
     name = st['name']; lines = [name]
     if wrap and len(name) > 13 and '-' in name:
         i = min((j for j, ch in enumerate(name) if ch == '-'), key=lambda j: abs(j - len(name) / 2))
@@ -311,6 +503,7 @@ def layout(st, wrap):
         i = min((j for j, ch in enumerate(name) if ch == ' '), key=lambda j: abs(j - len(name) / 2))
         lines = [name[:i], name[i + 1:]]
     rows = [dict(kind='t', text=l, w=tw(l, f, fs), h=LH * fs / FS, fs=fs, bold=bold) for l in lines]
+    if st.get('ic'): rows[0]['ic'] = st['ic']; rows[0]['w'] += len(st['ic']) * (ICS + GAP * 0.5)  # pictograms after the name
     if st['term']:
         chips = [(l, max(CH * 1.25, tw(l, FB, CF) + CH * 0.6)) for l in st['term']]
         per = 6
@@ -391,6 +584,57 @@ if llg:
     keepll = [not any(stations_l[j]['sel']['geom'].intersects(g) for j in lt.query(g)) for g in llg]
     print('line labels kept', sum(keepll), 'of', len(llg))
     linelabels = [l for l, k in zip(linelabels, keepll) if k]
+# district names: large pale capitals in the free room nearest each district's anchor
+dlab = []
+if LM:
+    DF = FS * float(os.environ.get('DISTRICT_FS', 4)); DLS = 0.22  # font size, letter spacing (em)
+    ob2 = obst + [s_['sel']['geom'] for s_ in stations_l] + [ll_geom(l) for l in linelabels] + [LineString(p).buffer(LW) for p in rail_l + tun_l + piotr_l]
+    t2_ = STRtree(ob2); step = FS * 1.5
+    for d in LM['districts']:
+        a = warp(np.array([[d['ll'][0] * KX, d['ll'][1] * KY]]))[0]
+        if np.isnan(a[0]): continue
+        t = d['name'].upper(); w = tw(t, FB, DF) + DF * DLS * (len(t) - 1); h = DF * 0.75; best = None
+        for r in range(int(FS * 60 / step)):
+            ring = [(a[0] + i * step - w / 2, a[1] + j * step - h / 2) for i in range(-r, r + 1) for j in range(-r, r + 1) if max(abs(i), abs(j)) == r]
+            ok = [q for q in ring if not any(ob2[k].intersects(b_) for b_ in [box(q[0] - FS, q[1] - FS, q[0] + w + FS, q[1] + h + FS)] for k in t2_.query(b_))]
+            if ok: best = min(ok, key=lambda q: math.hypot(q[0] + w / 2 - a[0], q[1] + h / 2 - a[1])); break
+        if best: dlab.append((t, best, h))
+        else: print('district not placed:', t)
+    def spot_(w, h, cands_, inside=None):  # first candidate top-left corner whose box is free (and inside `inside`)
+        for q in cands_:
+            b_ = box(q[0], q[1], q[0] + w, q[1] + h)
+            if (inside is None or inside.contains(b_)) and not any(ob2[k].intersects(b_) for k in t2_.query(b_)): return q
+    GF = FS * 0.85; glab = []
+    for nm, g in green_:
+        if not nm: continue
+        w = tw(nm, FR, GF) * 1.05; h = GF * 1.1; c_ = g.representative_point(); bx_ = g.bounds
+        cand = sorted(((x, y) for x in np.arange(bx_[0], bx_[2], FS) for y in np.arange(bx_[1], bx_[3], FS)), key=lambda q: math.hypot(q[0] + w / 2 - c_.x, q[1] + h / 2 - c_.y))
+        q = spot_(w, h, cand, g.buffer(FS * 0.5))
+        if q: glab.append((nm, q, h))
+        else: print('green label not placed:', nm)
+    sqlab = None
+    if sq_:
+        w = tw(pk['square'], FR, FS * 0.9) * 1.05; h = FS
+        for q in [(sq_[0] + FS * 1.8, sq_[1] - h / 2), (sq_[0] - FS * 1.8 - w, sq_[1] - h / 2), (sq_[0] - w / 2, sq_[1] - FS * 1.6 - h)]:
+            if spot_(w, h, [q]): sqlab = (q, h); break
+        sqlab = sqlab or ((sq_[0] + FS * 1.8, sq_[1] - h / 2), h)
+RW = LW * 0.4; RC = os.environ.get('RAIL_COLOR', '#9ba2ad')
+def rail_svg(ps, tun=()):  # the railway drawn in style RAIL: one <g> per pass, so crossings and junctions merge
+    st = dict(grey=[f'stroke="{RC}" stroke-width="{RW*1.3:.2f}" stroke-linecap="round"'],
+              double=[f'stroke="{RC}" stroke-width="{RW*2.8:.2f}" stroke-linecap="round"', f'stroke="#fff" stroke-width="{RW*1.2:.2f}" stroke-linecap="round"'],
+              ladder=[f'stroke="{RC}" stroke-width="{RW*0.7:.2f}"', f'stroke="{RC}" stroke-width="{RW*2.6:.2f}" stroke-dasharray="{RW*0.6:.2f} {RW*3.5:.2f}"'],
+              dash=[f'stroke="{RC}" stroke-width="{RW*1.3:.2f}" stroke-dasharray="{RW*5:.2f} {RW*3:.2f}"']).get(RAIL, [])
+    out = [f'<g fill="none" stroke-linejoin="round" {a}>' + ''.join(f'<polyline points="{pl(p)}"/>' for p in ps) + '</g>' for a in st]
+    if st and tun: out.append(f'<g fill="none" stroke="{RC}" stroke-width="{RW:.2f}" stroke-dasharray="{RW*1.4:.2f} {RW*1.4:.2f}">' + ''.join(f'<polyline points="{pl(p)}"/>' for p in tun) + '</g>')
+    return out
+def icon(kind, x, y, sz=None):  # pictogram (10 x 10 design box) with its top-left corner at x, y
+    sz = sz or ICS; bg = '#1e5bb8' if kind == 'hospital' else '#3b4250'
+    g = {'train': f'<path d="M3 1.6h4a1.4 1.4 0 0 1 1.4 1.4v3.6a1 1 0 0 1-1 1H2.6a1 1 0 0 1-1-1V3a1.4 1.4 0 0 1 1.4-1.4z" fill="#fff"/><rect x="2.6" y="2.8" width="4.8" height="1.9" fill="{bg}"/>'
+                  f'<circle cx="3.3" cy="6" r=".6" fill="{bg}"/><circle cx="6.7" cy="6" r=".6" fill="{bg}"/><path d="M3.2 7.6 2.2 9M6.8 7.6 7.8 9" stroke="#fff" stroke-width=".9"/>',
+         'hospital': '<path d="M3 2v6M7 2v6M3 5h4" stroke="#fff" stroke-width="1.6" fill="none"/>',
+         'mall': '<path d="M1.5 4h7l-.6 4.6H2.1z" fill="#fff"/><path d="M3.4 4.6c0-3 3.2-3 3.2 0" fill="none" stroke="#fff" stroke-width=".7"/>',
+         'airport': '<path d="M5 1.2l.7 2.9 3.1 1.6v1l-3.1-.8-.3 2 .9.7v.7L5 8.9l-1.3.4v-.7l.9-.7-.3-2-3.1.8v-1l3.1-1.6z" fill="#fff"/>'}[kind]
+    return f'<g class="ic" transform="translate({x:.2f},{y:.2f}) scale({sz/10:.3f})"><rect width="10" height="10" rx="2" fill="{bg}"/>{g}</g>'
 # ---------- emit svg
 E = []
 for c in cuts:  # final inset frame: the reserved box grown to whatever the tail's labels need
@@ -419,9 +663,33 @@ vx, vy, vw, vh = minx - M, miny - M, maxx - minx + 2 * M, maxy - miny + 2 * M
 esc = lambda s: s.replace('&', '&amp;').replace('<', '&lt;')
 FONT = "Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
 E.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx:.1f} {vy:.1f} {vw:.1f} {vh:.1f}" width="{vw:.0f}" height="{vh:.0f}" font-family="{FONT}">')
-E.append(f'<style>.lb text{{paint-order:stroke;stroke:#fff;stroke-width:{FS*0.28:.2f}px;stroke-linejoin:round;fill:#16181d}}.chip text,.leg .chip text{{stroke:none}}.dim{{opacity:.08}}.ln,.lb,.chip{{transition:opacity .15s}}</style>')
+E.append(f'<style>.lb text{{paint-order:stroke;stroke:#fff;stroke-width:{FS*0.28:.2f}px;stroke-linejoin:round;fill:#16181d}}.chip text,.leg .chip text{{stroke:none}}.lb.rl text{{fill:#7a818d}}.dim{{opacity:.08}}.ln,.lb,.chip{{transition:opacity .15s}}</style>')
 E.append(f'<rect class="bg" x="{vx:.1f}" y="{vy:.1f}" width="{vw:.1f}" height="{vh:.1f}" fill="#fff"/>')
 pl = lambda p: ' '.join(f'{x:.1f},{y:.1f}' for x, y in p)
+if LM:  # orientation layer under everything else
+    E.append('<g class="bgl">')
+    ring_ = lambda g: 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in g.exterior.coords) + 'Z'
+    if cityd is not None:  # outside the city (fare zone 2) a tint; the boundary a thin line of its own colour
+        X_, Y_ = vx - 5e4, vy - 5e4
+        E.append(f'<path d="M{X_:.0f} {Y_:.0f}h{vw+1e5:.0f}v{vh+1e5:.0f}h{-vw-1e5:.0f}Z {"".join(ring_(p) for p in getattr(cityd, "geoms", [cityd]))}" fill="#f1eef7" fill-rule="evenodd"/>')
+    E += [f'<path d="{"".join(ring_(p) for p in getattr(g, "geoms", [g]))}" fill="#dcecd6"/>' for _, g in green_]
+    E += [f'<text x="{x:.1f}" y="{y+h*0.8:.1f}" font-size="{GF:.1f}" font-style="italic" font-weight="600" fill="#5c8a52">{esc(t)}</text>' for t, (x, y), h in glab]
+    if cityd is not None:
+        E += [f'<path d="{"".join(ring_(p) for p in getattr(cityd, "geoms", [cityd]))}" fill="none" stroke="#a18bd0" stroke-width="{RW*1.1:.2f}" stroke-linejoin="round"/>']
+    E += [f'<text x="{x:.1f}" y="{y+h:.1f}" font-size="{DF:.1f}" font-weight="800" letter-spacing="{DF*DLS:.1f}" fill="#e2e5ea">{esc(t)}</text>' for t, (x, y), h in dlab]
+    for p in piotr_l:
+        E.append(f'<polyline points="{pl(p)}" fill="none" stroke="#ebdfc4" stroke-width="{LW*2.2:.2f}" stroke-linecap="round" stroke-linejoin="round"/>'
+                 f'<path id="{PFX}pz" d="M{" L".join(f"{x:.1f} {y:.1f}" for x, y in p)}" fill="none"/><text font-size="{FS*0.9:.1f}" font-style="italic" font-weight="700" fill="#9c8350" dy="{FS*0.32:.2f}">'
+                 f'<textPath href="#{PFX}pz" startOffset="50%" text-anchor="middle">ul. Piotrkowska</textPath></text>')
+    if sq_:  # pl. Wolności: an octagon with the monument's dot
+        r_ = FS * 1.25; oc = ' '.join(f'{sq_[0]+r_*math.cos(math.pi/8+i*math.pi/4):.1f},{sq_[1]+r_*math.sin(math.pi/8+i*math.pi/4):.1f}' for i in range(8))
+        (qx, qy), h = sqlab
+        E.append(f'<polygon points="{oc}" fill="#fff" stroke="#c9b48a" stroke-width="{FS*0.3:.2f}"/><circle cx="{sq_[0]:.1f}" cy="{sq_[1]:.1f}" r="{FS*0.32:.2f}" fill="#9c8350"/>'
+                 f'<text x="{qx:.1f}" y="{qy+h*0.8:.1f}" font-size="{FS*0.9:.1f}" font-style="italic" font-weight="700" fill="#9c8350">{esc(pk["square"])}</text>')
+    E += rail_svg(rail_l, tun_l)
+    E += [f'<line x1="{x-nx*RW*2.6:.1f}" y1="{y-ny*RW*2.6:.1f}" x2="{x+nx*RW*2.6:.1f}" y2="{y+ny*RW*2.6:.1f}" stroke="{RC}" stroke-width="{RW*1.2:.2f}" stroke-linecap="round"/>' for (x, y), (nx, ny) in rexit]
+    E += [f'<circle cx="{s_["poly"].centroid.x:.1f}" cy="{s_["poly"].centroid.y:.1f}" r="{LW*0.5:.2f}" fill="#fff" stroke="{RC}" stroke-width="{RW*1.1:.2f}"/>' for s_ in stations if s_.get('rail')]
+    E.append('</g>')
 for c in cuts:
     if 'box' not in c: continue
     x0, y0, x1, y1 = c['box'].bounds; t = c['cfg'].get('title', '')
@@ -435,10 +703,14 @@ for n in names:
     E.append(f'<g class="ln" data-l="{n}" fill="none" stroke="#{col[n]}" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-linejoin="round">')
     for p in segs.get(n, []): E.append(f'<polyline points="{pl(p)}"/>')
     E.append('</g>')
+for x, y in bmark:  # the city boundary across an inset's bundle
+    E.append(f'<line x1="{x:.1f}" y1="{y-FS*2.2:.1f}" x2="{x:.1f}" y2="{y+FS*2.2:.1f}" stroke="#a18bd0" stroke-width="{RW*1.4:.2f}"/>'
+             f'<text x="{x:.1f}" y="{y+FS*3.4:.1f}" font-size="{FS*0.7:.1f}" font-style="italic" text-anchor="middle" fill="#8a75bd">granica Łodzi</text>')
 for c in cuts:
     for nm, p in c['stub']: E.append(f'<g class="ln" data-l="{nm}" fill="none" stroke="#{col[nm]}" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-dasharray="{LW*0.1:.2f} {LW*1.6:.2f}"><polyline points="{pl(p)}"/></g>')
 E.append(f'<g class="stops" fill="#fff" stroke="#16181d" stroke-width="{LW*0.42:.2f}" stroke-linejoin="round">')
 for s in stations:
+    if s.get('rail'): continue
     E.append(f'<polygon class="st" data-l="{" ".join(s["lines"])}" points="{pl(s["poly"].exterior.coords)}"/>')
 E.append('</g>')
 def dark(h):
@@ -456,11 +728,14 @@ def chip(x, y, w, n, h=CH, fs=CF):
             f'<text x="{x+w/2:.2f}" y="{y+h/2:.2f}" font-size="{fs:.2f}" font-weight="700" text-anchor="middle" dominant-baseline="central" style="fill:{txtcol(col[n])}">{esc(n)}</text></g>')
 for s in stations_l:
     c = s['sel']; y = c['y0']
-    E.append(f'<g class="lb" data-l="{" ".join(s["lines"])}" transform="translate({c["ax"]:.1f},{c["ay"]:.1f}) rotate({c["ang"]})">')
+    E.append(f'<g class="lb{" rl" if s.get("rail") else ""}" data-l="{" ".join(s["lines"])}" transform="translate({c["ax"]:.1f},{c["ay"]:.1f}) rotate({c["ang"]})">')
     for r in c['rows']:
         x = c['x0'] if c['al'] == 'l' else (c['x0'] + c['w'] - r['w'] if c['al'] == 'r' else c['x0'] + (c['w'] - r['w']) / 2)
         if r['kind'] == 't':
             E.append(f'<text x="{x:.2f}" y="{y + r["h"]*0.78:.2f}" font-size="{r["fs"]:.2f}" font-weight="{700 if r["bold"] else 500}">{esc(r["text"])}</text>')
+            ix = x + r['w'] - len(r.get('ic', [])) * (ICS + GAP * 0.5) + GAP * 0.5; iy = y + (r['h'] - ICS) / 2
+            for k_ in r.get('ic', []):  # upright whatever the label's angle
+                E.append(f'<g transform="rotate({-c["ang"]} {ix+ICS/2:.2f} {iy+ICS/2:.2f})">{icon(k_, ix, iy)}</g>'); ix += ICS + GAP * 0.5
         else:
             for n, w in r['chips']:
                 E.append(chip(x, y + r['h'] * 0.1, w, n)); x += w + GAP * 0.6
@@ -527,6 +802,14 @@ KEY = [(lambda x, y: f'<circle cx="{x+LF2:.1f}" cy="{y:.1f}" r="{LF2*0.45:.1f}" 
        (lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{LF2*0.3:.1f}" fill="#16181d"/><text x="{x+LF2:.1f}" y="{y:.1f}" font-size="{LF2*0.8:.1f}" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="#fff">12</text>', 'krańcówka linii'),
        (lambda x, y: f'<text x="{x+LF2:.1f}" y="{y+LF2*0.35:.1f}" font-size="{LF2*0.9:.1f}" font-weight="700" text-anchor="middle" fill="#16181d">4 8</text>', 'numery linii przy wiązce')]
 if cuts: KEY.append((lambda x, y: f'<line x1="{x:.1f}" x2="{x+LF2*2:.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="#16181d" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-dasharray="{LW*0.1:.2f} {LW*1.6:.2f}"/>', 'ciąg dalszy linii w ramce'))
+if LM:
+    if RAIL != 'none': KEY.append((lambda x, y: ''.join(rail_svg([[(x, y), (x + LF2 * 2, y)]])) + f'<circle cx="{x+LF2:.1f}" cy="{y:.1f}" r="{LW*0.5:.2f}" fill="#fff" stroke="{RC}" stroke-width="{RW*1.1:.2f}"/>', 'kolej, stacja'))
+    KEY += [(lambda x, y: icon('train', x + LF2 * 0.4, y - LF2 * 0.6, LF2 * 1.2), 'stacja kolejowa przy przystanku'),
+            (lambda x, y: icon('hospital', x + LF2 * 0.4, y - LF2 * 0.6, LF2 * 1.2), 'szpital'),
+            (lambda x, y: icon('mall', x + LF2 * 0.4, y - LF2 * 0.6, LF2 * 1.2), 'Manufaktura'),
+            (lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{LF2*0.4:.1f}" fill="#dcecd6"/>', 'park, las'),
+            (lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" fill="#f1eef7"/><line x1="{x+LF2*0.9:.1f}" x2="{x+LF2*0.9:.1f}" y1="{y-LF2*0.6:.1f}" y2="{y+LF2*0.6:.1f}" stroke="#a18bd0" stroke-width="{RW*1.4:.2f}"/>', 'granica Łodzi (strefa 1 | 2)'),
+            (lambda x, y: f'<path d="M{x+LF2:.1f} {y-LF2*0.75:.1f}l{LF2*0.55:.1f} {LF2*1.5:.1f}l{-LF2*0.55:.1f} {-LF2*0.42:.1f}l{-LF2*0.55:.1f} {LF2*0.42:.1f}z" fill="#16181d"/>', 'północ (kierunki przybliżone)')]
 if SB: KEY.append((lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{FS*0.4:.1f}" fill="none" stroke="#c8102e" stroke-width="{FS*0.25:.2f}" stroke-dasharray="{FS*0.8:.1f} {FS*0.5:.1f}"/>', 'obszar powiększenia (pod schematem)'))
 NOTES = ['Schemat pokazuje główne warianty tras w dzień roboczy: warianty obsługiwane przez co najmniej 25% kursów linii '
          'w danym kierunku. Linie z mniej niż 6 kursami pominięto. Odległości nie są w skali.',
@@ -536,7 +819,7 @@ NOTES = ['Schemat pokazuje główne warianty tras w dzień roboczy: warianty obs
 kw = pw_; kr = (len(KEY) + 1) // 2
 nl = [wrap(t, kw - LF2 * 2, FR, LF2 * 0.95) for t in NOTES]
 kh = LF2 * 3.2 + kr * LF2 * 2.2 + LF2 * 1.2 + sum(len(l) * LF2 * 1.35 + LF2 * 0.8 for l in nl)
-Pk = []; y = LF2 * 2.1
+Pk = [f'<rect width="{kw:.1f}" height="{kh:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'] if LM else []; y = LF2 * 2.1  # a panel once the map has a background
 Pk.append(f'<text x="{LF2:.1f}" y="{y:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Jak czytać schemat</text>')
 for i, (sym, t) in enumerate(KEY):
     x_ = LF2 + (i % 2) * (kw - LF2) / 2; y_ = y + LF2 * 2.2 * (1 + i // 2)
