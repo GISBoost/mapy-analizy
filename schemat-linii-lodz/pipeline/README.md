@@ -28,13 +28,28 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
    kropkowany odcinek. Z `"box": false` ogon zostaje na miejscu, ściśnięty `k` razy w stronę `cut`. Tramwaje:
    `[{"lines":["41"],"cut":"Chocianowice IKEA","title":"do Pabianic","at":"bl"},
    {"lines":["43"],"cut":"Legionów-Włókniarzy","title":"do Konstantynowa Łódzkiego","at":"bl"},
-   {"lines":["45"],"cut":"Zgierska-Helenówek-pętla","k":0.5,"box":false}]`.
+   {"lines":["45"],"cut":"Zgierska-Helenówek-pętla","k":0.5,"box":false}]` (z `CUT_GAP=3`).
+  Z `"shape":"keep"` i `"to":[…]` ogon może mieć pętle i rozgałęzienia: do ramki idą wszystkie fragmenty za
+  przystankami `cut` (może być lista: kilka miejsc wyjazdu z miasta) jeżdżone tylko przez `lines`, które dochodzą do
+  przystanku z nazwą zawierającą coś z `to`; rysunek octi zostaje, osie ściśnięte `k` razy, wiązki i znaczki w
+  pełnym rozmiarze. `"at":"side"` stawia ramkę na prawo od mapy, a plakat poziomy przenosi ją na dół bocznej kolumny.
+  Odstęp ramka–mapa: env `CUT_GAP` (w wysokościach czcionki, domyślnie 5). Autobusy (podmiejskie ogony z GTFS vs
+  granica Łodzi, 10.10.2026), wszystkie z `"shape":"keep"`: 94 → Lutomiersk (bl, k 0,45); 50A/50B/56 → Rzgów
+  (cut Rudzka-Skrajna i Rzgowska-Zagłoby, bl); 88B/88C/88D/91B/91C → Skoszewy, Kalonka (cut Marmurowa-Moskuliki,
+  Byszewska-Byszewska 26, Grabińska 40; tr, k 0,36); 60B/60C → Stryków, Michałówek (tr); 53B → Brzeziny (tr);
+  201/202/82B/92A/92B → Andrespol, Bedoń, Janówka, Stróża (cut Rokicińska-Andrzejki i Kolumny-Czajewskiego NŻ;
+  side, k 0,6). Kolejność na liście decyduje, kto pierwszy dostaje róg.
    Obok `<out>.svg` (strona) powstaje `<out>.poster.svg` (druk, `pdf.py` bierze go, jeśli jest): arkusz o proporcji
    `POSTER_RATIO` (domyślnie A1 pionowo, 841/594), pasek tytułu, lista linii i objaśnienia w pustych rogach mapy
    (`LEGEND_AT`, `KEY_AT`, domyślnie tr i tl), a wysokość, której mapa nie wypełnia, idzie na pas z lupą pod mapą.
    Lupa (env `ZOOM`): `{"stations":[…],"k":2.2,"title":"Centrum"}` — wycinek wokół podanych przystanków (`<use>`
    głównego rysunku) na całą szerokość pasa, zaznaczony na mapie czerwoną przerywaną ramką; ramki wycinków są w lupie
-   zasłonięte. Tramwaje: Piotrkowska Centrum, Kościuszki-Zamenhofa, Mickiewicza-Żeromskiego, Piłsudskiego-Kilińskiego,
+   zasłonięte. Gdy lista linii nie mieści się w rogach mapy, idzie z objaśnieniami do pasa (`BAND_COLS` kolumn,
+  domyślnie 2); na arkuszu poziomym (`POSTER_RATIO` < 1) pas jest kolumną z prawej, a lupa ma wysokość najwyżej
+  `ZOOM_H` × szerokość (domyślnie 1, kwadrat). Autobusy: A0 poziomo (`POSTER_RATIO=0.7073`), lupa `k` 3 na
+  Dw. Łódź Fabryczna, Rodziny Poznańskich-Dw. Łódź Fabryczna, Narutowicza-pl. Dąbrowskiego, Kilińskiego-Narutowicza,
+  Jaracza-Piotrkowska, Zamenhofa-Piotrkowska, Struga-Piotrkowska, Tuwima-Kilińskiego (EC1 Centr. Nauki),
+  Żeromskiego-pl. Barlickiego, Gdańska-1 Maja. Tramwaje: Piotrkowska Centrum, Kościuszki-Zamenhofa, Mickiewicza-Żeromskiego, Piłsudskiego-Kilińskiego,
    Piotrkowska-Brzeźna, Kościuszki-Struga, Piłsudskiego-Sienkiewicza, Żwirki-Piotrkowska, Kościuszki-Mickiewicza.
 4. `diff.py <gtfs_przed> <dzień> <gtfs_po> <dzień> <diff.json>` — różnice z samego GTFS:
    linie dodane, usunięte, ze zmienioną trasą (inna sekwencja nazw przystanków najczęstszego

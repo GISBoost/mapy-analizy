@@ -182,25 +182,49 @@ CUTS = json.loads(os.environ.get('CUTS', '[]')); cuts = []
 R0 = min(math.sqrt(p.area / math.pi) for p in polys)  # radius of a one-line stop symbol
 DL = LW * float(os.environ.get('LINE_PITCH', 37 / 30))  # distance between parallel lines (transitmap width + spacing)
 for cfg in CUTS:
-    L = sorted(cfg.get('lines') or [cfg['line']], key=nkey); Ls = set(L)
-    cs = next((s for s in stations if s['name'] == cfg['cut'] and any(Ls & set(ls.values()) for _, ls in nodes[s['id']]['edges'])), None)  # not lines: 41 passes IKEA as not_serving
-    if cs is None: print('cut station not found:', cfg); continue
-    tail, todo, te = set(), [cs['id']], set()
-    while todo:
-        a = todo.pop()
-        for b, ls in nodes[a]['edges']:
-            if set(ls.values()) == Ls and b != cs['id'] and frozenset((a, b)) not in te:
-                te.add(frozenset((a, b))); todo += [b] if b not in tail else []; tail.add(b)
+    L = sorted(cfg.get('lines') or [cfg['line']], key=nkey); Ls = set(L); cn = cfg['cut'] if isinstance(cfg['cut'], list) else [cfg['cut']]
+    css = [next((s for s in stations if s['name'] == n_ and any(Ls & set(ls.values()) for _, ls in nodes[s['id']]['edges'])), None) for n_ in cn]  # not lines: 41 passes IKEA as not_serving
+    if None in css: print('cut station not found:', cfg); continue
+    cs = css[0]; cids = {s['id'] for s in css}; tail, te, ents = set(), set(), []
+    if 'to' in cfg:  # loops, branches, several ways out: the components beyond the cut stations made of the group's lines
+        for s in css:  # only, that reach a terminus named in `to`
+            for b0, ls0 in nodes[s['id']]['edges']:
+                if b0 in cids or not set(ls0.values()) <= Ls: continue
+                comp, ce, todo, lk = {b0}, {frozenset((s['id'], b0))}, [b0], set()
+                while todo:
+                    a = todo.pop()
+                    for b, ls in nodes[a]['edges']:
+                        if not set(ls.values()) <= Ls:
+                            if b not in cids: lk.add(nodes[a]['label'] or a)
+                            continue
+                        ce.add(frozenset((a, b)))
+                        if b not in comp and b not in cids: comp.add(b); todo.append(b)
+                if any(t in nodes[a]['label'] for a in comp for t in cfg['to']): te |= ce; tail |= comp; ents.append((s, b0)); lk and print('cut: other lines also leave', sorted(lk))
+    else:
+        todo = [cs['id']]
+        while todo:
+            a = todo.pop()
+            for b, ls in nodes[a]['edges']:
+                if set(ls.values()) == Ls and b != cs['id'] and frozenset((a, b)) not in te:
+                    te.add(frozenset((a, b))); todo += [b] if b not in tail else []; tail.add(b)
+        if te: ents = [(cs, next(b for b, ls in nodes[cs['id']]['edges'] if frozenset((cs['id'], b)) in te))]
     if not te: print('cut has no tail:', cfg); continue
-    reg = unary_union([LineString(egeo[tuple(e)]).buffer(LW * (len(L) + 1)) for e in te]).difference(cs['poly'].buffer(LW * 0.6))
-    first = next(b for b, ls in nodes[cs['id']]['edges'] if frozenset((cs['id'], b)) in te)
-    cuts.append(dict(cfg=cfg, L=L, cs=cs, reg=reg, te=te, first=first, st=[s for s in stations if s['id'] in tail],
+    reg = unary_union([LineString(egeo[tuple(e)]).buffer(LW * (len(L) + 1)) for e in te]).difference(unary_union([s['poly'].buffer(LW * 0.6) for s in css]))
+    cuts.append(dict(cfg=cfg, L=L, cs=cs, reg=reg, te=te, ents=ents, st=[s for s in stations if s['id'] in tail],
                      segs={n: [p for p in segs[n] if reg.contains(LineString(p).interpolate(0.5, normalized=True))] for n in L},
                      ll=[l for l in linelabels if reg.contains(LineString(l['pts']).interpolate(0.5, normalized=True))]))
     print('cut', L, 'at', cfg['cut'], len(cuts[-1]['st']), 'stations', sum(map(len, cuts[-1]['segs'].values())), 'polylines')
 moved = {id(p) for c in cuts for v in c['segs'].values() for p in v} | {id(s['poly']) for c in cuts for s in c['st']}
 maing = [LineString(p) for n in segs for p in segs[n] if id(p) not in moved] + [p for p in polys if id(p) not in moved]
-mtree = STRtree(maing); mb = unary_union(maing).bounds; boxes = []; below = []
+mtree = STRtree(maing); mb = unary_union(maing).bounds; boxes = []; below = []; CG = FS * float(os.environ.get('CUT_GAP', 5))  # inset to map gap
+def slot(w, h, at, gap):  # free w x h spot inside the main map's bounds, nearest to corner `at`; outside the bounds if none
+    step = FS * 2
+    xs = [mb[0] + i * step for i in range(int((mb[2] - mb[0] - w) / step) + 1)] or [mb[0]]
+    ys = [mb[1] + i * step for i in range(int((mb[3] - mb[1] - h) / step) + 1)] or [mb[1]]
+    corner = lambda x, y: (abs(x - (mb[0] if 'l' in at else mb[2] - w)) + abs(y - (mb[3] - h if 'b' in at else mb[1])))
+    free_ = lambda b: not any(maing[i].intersects(b) for i in mtree.query(b)) and not any(o.buffer(gap).intersects(b) for o in boxes)
+    pos = next(((x, y) for x, y in sorted(((x, y) for x in xs for y in ys), key=lambda q: corner(*q)) if free_(box(x, y, x + w, y + h).buffer(gap))), None)
+    return pos or ((mb[0] - w - gap, mb[3] - h) if 'l' in at else (mb[2] + gap, mb[3] - h))
 for c in cuts:
     cx, cy = c['cs']['poly'].centroid.coords[0]; L = c['L']
     if not c['cfg'].get('box', True):  # in place: scale the tail toward the cut station
@@ -212,6 +236,29 @@ for c in cuts:
         for s in c['st']:
             i = next(j for j, p in enumerate(polys) if p is s['poly']); q = s['poly'].centroid; nx, ny = sc(q.x, q.y)
             s['poly'] = polys[i] = affinity.translate(s['poly'], nx - q.x, ny - q.y)
+    elif c['cfg'].get('shape') == 'keep':
+        # inset keeping the tail's own drawing (for loops and branches): centrelines scaled by k, every line keeps its
+        # offset from its centreline (bundles stay as wide as on the map), stop symbols keep their size
+        k = c['cfg'].get('k', 0.5); cl = [LineString(egeo[tuple(e)]) for e in c['te']]; ct = STRtree(cl); o0 = unary_union(cl).centroid
+        def mp(x, y):
+            P_ = Point(x, y); g = cl[int(ct.nearest(P_))]; q = g.interpolate(g.project(P_))
+            return o0.x + k * (q.x - o0.x) + x - q.x, o0.y + k * (q.y - o0.y) + y - q.y
+        pcs = [p for v in c['segs'].values() for p in v]; new = [[mp(x, y) for x, y in p] for p in pcs]
+        sc_ = [mp(*s['poly'].centroid.coords[0]) for s in c['st']]; ug = list({s['id']: s for s, _ in c['ents']}.values()); gc = [mp(*s['poly'].centroid.coords[0]) for s in ug]
+        bx = unary_union([LineString(p) for p in new] + [Point(q) for q in sc_ + gc]).bounds
+        side, top = FS * 10, FS * 6; w, h = bx[2] - bx[0] + 2 * side, bx[3] - bx[1] + top + side
+        at_ = c['cfg'].get('at', 'bl'); pos = (mb[2] + CG, mb[3] - h) if at_ == 'side' else slot(w, h, at_, CG); boxes.append(box(pos[0], pos[1], pos[0] + w, pos[1] + h))
+        dx, dy = pos[0] + side - bx[0], pos[1] + top - bx[1]
+        for p, n_ in zip(pcs, new): p[:] = [(x + dx, y + dy) for x, y in n_]
+        for s, (x, y) in zip(c['st'], sc_):
+            j = next(j for j, p in enumerate(polys) if p is s['poly']); q = s['poly'].centroid
+            s['poly'] = polys[j] = affinity.translate(s['poly'], x + dx - q.x, y + dy - q.y)
+        for l in c['ll']:
+            l['pts'] = [(x + dx, y + dy) for x, y in (mp(*q) for q in l['pts'])]; l['d'] = 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in l['pts'])
+        c.update(box=boxes[-1], ghosts=[])
+        for s, (x, y) in zip(ug, gc):  # each cut station again, where the tail leaves it
+            q = s['poly'].centroid; gp = affinity.translate(s['poly'], x + dx - q.x, y + dy - q.y)
+            gs = dict(id='cut' + s['id'], poly=gp, name=s['name'], term=[], lines=L, deg=3, nbs=[]); stations.append(gs); polys.append(gp); c['ghosts'].append(gs)
     else:
         # inset: the tail straightened into a horizontal bundle (stations in hop order from the cut, SP apart, labels
         # get the room above it at 45 deg), in a box slid from the preferred corner until it keeps clear of the map
@@ -226,20 +273,15 @@ for c in cuts:
         gw = tw(c['cs']['name'], FB, FS) + FS * 2  # the cut station's label sits beside the bundle's open end
         SP = FS * 3.2; n = len(sts); top, bot, side = FS * 17, FS * 4 + off, FS * 4
         w, h = n * SP + 2 * side + gw, top + bot
-        at = c['cfg'].get('at', 'bl'); step = FS * 2; gap = FS * 3
-        xs = [mb[0] + i * step for i in range(int((mb[2] - mb[0] - w) / step) + 1)] or [mb[0]]
-        ys = [mb[1] + i * step for i in range(int((mb[3] - mb[1] - h) / step) + 1)] or [mb[1]]
-        corner = lambda x, y: (abs(x - (mb[0] if 'l' in at else mb[2] - w)) + abs(y - (mb[3] - h if 'b' in at else mb[1])))
-        free_ = lambda b: not any(maing[i].intersects(b) for i in mtree.query(b)) and not any(o.buffer(gap).intersects(b) for o in boxes)
-        pos = None if at == 'below' else next(((x, y) for x, y in sorted(((x, y) for x in xs for y in ys), key=lambda q: corner(*q)) if free_(box(x, y, x + w, y + h).buffer(gap))), None)
+        at = c['cfg'].get('at', 'bl'); gap = CG
         if at == 'below':  # stacked under the map, left-aligned: the poster's band column
             pos = (mb[0], max([o.bounds[3] for o in boxes] + [mb[3] + FS * 6]) + gap); below.append(len(boxes))
-        if pos is None: pos = (mb[0] - w - gap, mb[3] - h) if 'l' in at else (mb[2] + gap, mb[3] - h)
+        else: pos = slot(w, h, at, gap)
         boxes.append(box(pos[0], pos[1], pos[0] + w, pos[1] + h))
         gx = pos[0] + side + (n * SP if sg < 0 else gw); gy = pos[1] + top  # the cut station again, where the tail starts
         ghost = cap(gx, gy)
         gs = dict(id='cut' + '_'.join(L), poly=ghost, name=c['cs']['name'], term=[], lines=L, deg=3, nbs=[], only={'E', 'W'} - {'W' if sg < 0 else 'E'}); stations.append(gs); polys.append(ghost)
-        c.update(box=boxes[-1], ghost=gs)
+        c.update(box=boxes[-1], ghosts=[gs])
         for i_, s in enumerate(sts):
             j = next(j for j, p in enumerate(polys) if p is s['poly'])
             s['poly'] = polys[j] = cap(gx + sg * (i_ + 1) * SP, gy)
@@ -249,11 +291,13 @@ for c in cuts:
             segs[nm] = [p for p in segs[nm] if id(p) not in drop] + [[(gx, y_), (gx + sg * n * SP, y_)]]
         dropl = {id(l) for l in c['ll']}; linelabels = [l for l in linelabels if id(l) not in dropl]
     # stubs on the main map: the bundle leaves the cut station for a few units toward where its tail went
-    fx, fy = nodes[c['first']]['xy']; L_ = math.hypot(fx - cx, fy - cy) or 1; ux, uy = (fx - cx) / L_, (fy - cy) / L_
     c['stub'] = []
-    for k_, nm in enumerate(L):
-        o = (k_ - (len(L) - 1) / 2) * DL; x_, y_ = cx - uy * o, cy + ux * o
-        c['stub'].append((nm, [(x_, y_), (x_ + ux * FS * 4, y_ + uy * FS * 4)]))
+    for s, first in c['ents']:
+        cx, cy = s['poly'].centroid.coords[0]; fx, fy = nodes[first]['xy']; L_ = math.hypot(fx - cx, fy - cy) or 1; ux, uy = (fx - cx) / L_, (fy - cy) / L_
+        Le = sorted(set(L) & set(next(ls for b, ls in nodes[s['id']]['edges'] if b == first).values()), key=nkey)
+        for k_, nm in enumerate(Le):
+            o = (k_ - (len(Le) - 1) / 2) * DL; x_, y_ = cx - uy * o, cy + ux * o
+            c['stub'].append((nm, [(x_, y_), (x_ + ux * FS * 4, y_ + uy * FS * 4)]))
 
 # ---------- label layout
 CH = FS * 0.95; CF = FS * 0.68; LH = FS * 1.12; GAP = FS * 0.35
@@ -350,7 +394,7 @@ if llg:
 # ---------- emit svg
 E = []
 for c in cuts:  # final inset frame: the reserved box grown to whatever the tail's labels need
-    if 'box' in c: c['box'] = box(*unary_union([c['box']] + [s['sel']['geom'].buffer(FS) for s in c['st'] + [c['ghost']] if s.get('sel')]).bounds)
+    if 'box' in c: c['box'] = box(*unary_union([c['box']] + [s['sel']['geom'].buffer(FS) for s in c['st'] + c['ghosts'] if s.get('sel')]).bounds)
 geoms = [p for p in polys] + [s['sel']['geom'] for s in stations_l] + [LineString(p) for n in segs for p in segs[n]] + [c['box'] for c in cuts if 'box' in c]
 minx = min(g.bounds[0] for g in geoms); miny = min(g.bounds[1] for g in geoms)
 maxx = max(g.bounds[2] for g in geoms); maxy = max(g.bounds[3] for g in geoms)
@@ -369,6 +413,7 @@ def free(x, y):
 M = FS * 4
 spots = [(minx, miny), (maxx - legw, miny), (minx, maxy - legh), (maxx - legw, maxy - legh)]
 spot = next((s for s in spots if free(*s)), None)
+gb = (minx, miny, maxx, maxy)  # the drawing's own bounds (the poster ignores the page legend's spot)
 if spot is None: spot = (maxx + M, miny); maxx = spot[0] + legw; maxy = max(maxy, miny + legh)
 vx, vy, vw, vh = minx - M, miny - M, maxx - minx + 2 * M, maxy - miny + 2 * M
 esc = lambda s: s.replace('&', '&amp;').replace('<', '&lt;')
@@ -445,6 +490,9 @@ def wrap(t, width, f, size):
         if out[-1] and tw(out[-1] + ' ' + w_, f, size) > width: out.append(w_)
         else: out[-1] = (out[-1] + ' ' + w_).strip()
     return out
+sideb = [c['box'] for c in cuts if c['cfg'].get('at') == 'side' and 'box' in c] if RATIO < 1 else []
+if sideb: pg = [g for g in geoms if not any(b.buffer(FS).contains(g) for b in sideb)]; gb = tuple(f(g.bounds[i] for g in pg) for i, f in enumerate((min, min, max, max)))
+minx, miny, maxx, maxy = gb; vx, vy, vw, vh = minx - M, miny - M, maxx - minx + 2 * M, maxy - miny + 2 * M
 placed = []; ptree = STRtree(geoms)
 def place(w, h, at):  # free w x h spot inside the map's bounds, nearest to corner `at` (tl/tr/bl/br), or None
     step = FS * 2; gap = FS * 2
@@ -454,15 +502,21 @@ def place(w, h, at):  # free w x h spot inside the map's bounds, nearest to corn
         b_ = box(x - gap, y - gap, x + w + gap, y + h + gap)
         if not any(geoms[i].intersects(b_) for i in ptree.query(b_)) and not any(o.intersects(b_) for o in placed):
             placed.append(box(x, y, x + w, y + h)); return x, y
-# line list panel
-pw_, ph_ = ncol * pcolw + LF2, LF2 * 3.9 + nrow * prowh
-plx, ply = place(pw_, ph_, os.environ.get('LEGEND_AT', 'tr')) or (lx - LF2, ly - LF2)
-Pl = [f'<rect x="{plx:.1f}" y="{ply:.1f}" width="{pw_:.1f}" height="{ph_:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
-      f'<text x="{plx+LF2:.1f}" y="{ply+LF2*2.1:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Linie</text>']
-for i, n in enumerate(names):
-    cx = plx + LF2 + (i // nrow) * pcolw; cy = ply + LF2 * 3.4 + (i % nrow) * prowh
-    Pl.append(chip(cx, cy, LF2 * 3.2, n, h=LF2 * 1.35, fs=LF2 * 0.95))
-    Pl.append(f'<text x="{cx+LF2*3.9:.1f}" y="{cy+LF2*1.0:.1f}" font-size="{LF2:.1f}" fill="#16181d">{esc(ltxt[n])}</text>')
+# line list panel and key: drawn at the origin, then moved into a free corner of the map, or (no room, e.g. buses
+# with their insets in the corners) stacked in a column at the left of the band under the map
+def legend(nc):
+    nr = math.ceil(len(names) / nc); w, h = nc * pcolw + LF2, LF2 * 3.9 + nr * prowh
+    out = [f'<rect width="{w:.1f}" height="{h:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
+           f'<text x="{LF2:.1f}" y="{LF2*2.1:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Linie</text>']
+    for i, n in enumerate(names):
+        cx = LF2 + (i // nr) * pcolw; cy = LF2 * 3.4 + (i % nr) * prowh
+        out.append(chip(cx, cy, LF2 * 3.2, n, h=LF2 * 1.35, fs=LF2 * 0.95))
+        out.append(f'<text x="{cx+LF2*3.9:.1f}" y="{cy+LF2*1.0:.1f}" font-size="{LF2:.1f}" fill="#16181d">{esc(ltxt[n])}</text>')
+    return w, h, out
+mv = lambda q, els: [f'<g transform="translate({q[0]:.1f},{q[1]:.1f})">'] + els + ['</g>']
+pw_, ph_, Pl = legend(ncol); lp = place(pw_, ph_, os.environ.get('LEGEND_AT', 'tr')); band = []
+if lp: Pl = mv(lp, Pl)
+else: pw_, ph_, Pl = legend(int(os.environ.get('BAND_COLS', 2))); band.append((ph_, Pl)); Pl = []
 # key + notes block
 ZOOM = json.loads(os.environ.get('ZOOM', 'null'))
 zc = [s_['poly'].centroid for s_ in stations if ZOOM and s_['name'] in ZOOM['stations']]
@@ -481,23 +535,26 @@ NOTES = ['Schemat pokazuje główne warianty tras w dzień roboczy: warianty obs
 kw = pw_; kr = (len(KEY) + 1) // 2
 nl = [wrap(t, kw - LF2 * 2, FR, LF2 * 0.95) for t in NOTES]
 kh = LF2 * 3.2 + kr * LF2 * 2.2 + LF2 * 1.2 + sum(len(l) * LF2 * 1.35 + LF2 * 0.8 for l in nl)
-kp = place(kw, kh, os.environ.get('KEY_AT', 'tl'))
-Pk = []
-if kp:
-    x0_, y0_ = kp; y = y0_ + LF2 * 2.1
-    Pk.append(f'<text x="{x0_+LF2:.1f}" y="{y:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Jak czytać schemat</text>')
-    for i, (sym, t) in enumerate(KEY):
-        x_ = x0_ + LF2 + (i % 2) * (kw - LF2) / 2; y_ = y + LF2 * 2.2 * (1 + i // 2)
-        Pk.append(sym(x_, y_) + f'<text x="{x_+LF2*2.8:.1f}" y="{y_+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" fill="#16181d">{esc(t)}</text>')
-    y += LF2 * 2.2 * kr + LF2 * 1.2
-    for l in nl:
-        for ln in l: y += LF2 * 1.35; Pk.append(f'<text x="{x0_+LF2:.1f}" y="{y:.1f}" font-size="{LF2*0.95:.1f}" fill="#5b6270">{esc(ln)}</text>')
-        y += LF2 * 0.8
-else: print('poster: no room for the key')
+Pk = []; y = LF2 * 2.1
+Pk.append(f'<text x="{LF2:.1f}" y="{y:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Jak czytać schemat</text>')
+for i, (sym, t) in enumerate(KEY):
+    x_ = LF2 + (i % 2) * (kw - LF2) / 2; y_ = y + LF2 * 2.2 * (1 + i // 2)
+    Pk.append(sym(x_, y_) + f'<text x="{x_+LF2*2.8:.1f}" y="{y_+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" fill="#16181d">{esc(t)}</text>')
+y += LF2 * 2.2 * kr + LF2 * 1.2
+for l in nl:
+    for ln in l: y += LF2 * 1.35; Pk.append(f'<text x="{LF2:.1f}" y="{y:.1f}" font-size="{LF2*0.95:.1f}" fill="#5b6270">{esc(ln)}</text>')
+    y += LF2 * 0.8
+kp = None if band else place(kw, kh, os.environ.get('KEY_AT', 'tl'))
+if kp: Pk = mv(kp, Pk)
+else: band.append((kh, Pk)); Pk = []
 # sheet: width of the drawing, height from RATIO; what the map does not fill becomes the magnifier band
-PW = vw + 2 * MX; BH = PW * RATIO - (vh + HT + FT)
-if BH < LF2 * 20 or not SB: BH = 0; PW = max(PW, (vh + HT + FT) / RATIO)  # no band: pad the sides
-PH = PW * RATIO; X0, Y0 = vx - (PW - vw) / 2, vy - HT; xl, xr = X0 + MX + FS * 2, X0 + PW - MX - FS * 2
+PW = vw + 2 * MX; BH = PW * RATIO - (vh + HT + FT); SIDE = RATIO < 1 and bool(band)
+if SIDE:  # landscape sheet: the band is a column right of the map (legend, key, magnifier), the map centred in height
+    PW = max(vw + 2 * MX + pw_ + BG_, (vh + HT + FT) / RATIO); BH = 0
+    PH = PW * RATIO; X0, Y0 = vx - MX, vy - HT - (PH - vh - HT - FT) / 2
+elif BH < LF2 * 20 or not (SB or band): BH = 0; PW = max(PW, (vh + HT + FT) / RATIO)  # no band: pad the sides
+if not SIDE: PH = PW * RATIO; X0, Y0 = vx - (PW - vw) / 2, vy - HT
+xl, xr = X0 + MX + FS * 2, X0 + PW - MX - FS * 2
 P = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{X0:.1f} {Y0:.1f} {PW:.1f} {PH:.1f}" width="{PW:.0f}" height="{PH:.0f}" font-family="{FONT}">',
      E[1], f'<rect class="bg" x="{X0:.1f}" y="{Y0:.1f}" width="{PW:.1f}" height="{PH:.1f}" fill="#fff"/>', f'<g id="{PFX}main">'] + E[3:body] + ['</g>']
 t1, _, t2 = TITLE.partition(' — '); by = Y0 + LF2 * 4
@@ -507,8 +564,26 @@ P.append(f'<g class="poster"><circle cx="{xl+LF2*1.1:.1f}" cy="{by-LF2*1.05:.1f}
          f'<text x="{xr:.1f}" y="{by:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">{esc(SUB)}</text>'
          f'<line x1="{xl:.1f}" x2="{xr:.1f}" y1="{Y0+HT-LF2*1.2:.1f}" y2="{Y0+HT-LF2*1.2:.1f}" stroke="#c8102e" stroke-width="{LF2*0.3:.1f}"/>')
 P += Pl + Pk
+zh = LF2 * 2.6
+if SIDE:  # column: legend and key from the top, the magnifier under them (at most ZOOM_H x its width tall)
+    cx0 = xr - pw_; by_ = Y0 + HT
+    for h_, els in band: P += mv((cx0, by_), els); by_ += h_ + BG_
+    yb = Y0 + PH - FT - BG_ / 2  # side insets from the column's bottom up: a white patch over the original, a clipped copy
+    for b in sideb:
+        x0_, y0_, x1_, y1_ = b.bounds; tx, ty = xr - (x1_ - x0_), yb - (y1_ - y0_); yb = ty - BG_
+        P.insert(P.index(f'<g id="{PFX}main">') + body - 1, f'<rect x="{x0_-FS:.1f}" y="{y0_-FS:.1f}" width="{x1_-x0_+2*FS:.1f}" height="{y1_-y0_+2*FS:.1f}" fill="#fff"/>')
+        P.append(f'<clipPath id="{PFX}sc{len(P)}"><rect x="{x0_:.1f}" y="{y0_:.1f}" width="{x1_-x0_:.1f}" height="{y1_-y0_:.1f}"/></clipPath>'
+                 f'<g transform="translate({tx-x0_:.1f},{ty-y0_:.1f})"><g clip-path="url(#{PFX}sc{len(P)})"><use href="#{PFX}main"/></g></g>')
+    zx, zy, zw = cx0, by_, pw_; zhh = min(yb - zy - zh, zw * float(os.environ.get('ZOOM_H', 1.0)))
+    if zhh < LF2 * 10: print('poster: no room for the magnifier in the column'); SB = None
 if BH:  # magnifier across the band, region centred on the named stations, never cropping them
-    zh = LF2 * 2.6; zx, zy, zw = xl, vy + vh + BG_ / 2, xr - xl; zhh = BH - BG_ - zh
+    zx, zy = xl, vy + vh + BG_ / 2; zhh = BH - BG_ - zh
+    by_ = zy
+    for h_, els in band: P += mv((xl, by_), els); by_ += h_ + BG_
+    if by_ - BG_ > zy + BH - BG_: print('poster: band column taller than the band by', f'{by_ - BG_ - zy - BH + BG_:.0f}')
+    if band: zx += pw_ + BG_
+    zw = xr - zx
+if (BH or SIDE) and SB:
     k = min(ZOOM.get('k', 2.5), zw / (SB[2] - SB[0]), zhh / (SB[3] - SB[1])); cx_, cy_ = (SB[0] + SB[2]) / 2, (SB[1] + SB[3]) / 2
     R = (cx_ - zw / k / 2, cy_ - zhh / k / 2, cx_ + zw / k / 2, cy_ + zhh / k / 2)
     P.insert(P.index(f'<g id="{PFX}main">'), f'<rect x="{R[0]:.1f}" y="{R[1]:.1f}" width="{R[2]-R[0]:.1f}" height="{R[3]-R[1]:.1f}" rx="{FS*0.6:.1f}" fill="none" stroke="#c8102e" stroke-width="{FS*0.3:.2f}" stroke-dasharray="{FS*0.8:.1f} {FS*0.5:.1f}"/>')
