@@ -29,8 +29,8 @@ KEEP = {'Centralny Szpital Kliniczny': 'CSK', 'Instytut Centrum Zdrowia Matki Po
         'Wojewódzki Specjalistyczny Szpital imienia Mikołaja Pirogowa': 'Pirogow',
         'Port Lotniczy Łódź': 'Lotnisko'}
 MANUFAKTURA = dict(kind='mall', name='Manufaktura', ll=[19.4469, 51.7795])  # its pictogram goes to the nearest stop
-# ul. Piotrkowska: a straight line up from this stop to the height of pl. Wolności (an octagon there)
-PIOTRKOWSKA = dict(stop='Piotrkowska Centrum', north=[19.4567, 51.7768], square='pl. Wolności')
+# ul. Piotrkowska: a straight line up from this stop (where a map has no such stop: from its place) to the height of pl. Wolności
+PIOTRKOWSKA = dict(stop='Piotrkowska Centrum', south=[19.4569, 51.7593], north=[19.4567, 51.7768], square='pl. Wolności')
 # green areas: parks and forests of at least GREEN_HA hectares (protected-area boundaries left out: they are not places);
 # the ones listed here also when smaller, with a label (short name)
 GREEN_HA = 20

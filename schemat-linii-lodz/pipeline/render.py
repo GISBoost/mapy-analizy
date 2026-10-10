@@ -255,7 +255,7 @@ for c in cuts:
             s['poly'] = polys[j] = affinity.translate(s['poly'], x + dx - q.x, y + dy - q.y)
         for l in c['ll']:
             l['pts'] = [(x + dx, y + dy) for x, y in (mp(*q) for q in l['pts'])]; l['d'] = 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in l['pts'])
-        c.update(box=boxes[-1], ghosts=[])
+        c.update(box=boxes[-1], ghosts=[], exits=[LineString([(x + dx, y + dy) for x, y in (mp(*q) for q in egeo[s['id'], b0])]) for s, b0 in c['ents']])
         for s, (x, y) in zip(ug, gc):  # each cut station again, where the tail leaves it
             q = s['poly'].centroid; gp = affinity.translate(s['poly'], x + dx - q.x, y + dy - q.y)
             gs = dict(id='cut' + s['id'], poly=gp, name=s['name'], term=[], lines=L, deg=3, nbs=[]); stations.append(gs); polys.append(gp); c['ghosts'].append(gs)
@@ -473,6 +473,14 @@ if LM:
         # at 0/45/90 degrees); steps and spikes narrower than 2 r_ go
         g = g.buffer(-r_, join_style=1).buffer(2 * r_, join_style=1).buffer(-r_, join_style=1) if g.area > (4 * r_) ** 2 else g
         if not g.is_empty: green_.append((gr['name'], g))
+    # a park never crosses a line (it would look like it goes over the street): cut along every line with a margin,
+    # slivers (under a fifth of the largest piece, or tiny) go, the cut corners get rounded
+    ln_ = unary_union([LineString(p).buffer(LW / 2 + FS * 0.6, cap_style=2) for n in segs for p in segs[n] if len(p) > 1])
+    for i_, (nm, g) in enumerate(green_):
+        pcs = sorted(getattr(g.difference(ln_), 'geoms', [g.difference(ln_)]), key=lambda q: -q.area)
+        r_ = FS * 0.6; pcs = [q.buffer(-r_, join_style=1).buffer(r_, join_style=1) for q in pcs if pcs and q.area >= max(pcs[0].area * 0.2, (FS * 3) ** 2)]
+        green_[i_] = (nm, unary_union([q for q in pcs if not q.is_empty]))
+    green_ = [(nm, g) for nm, g in green_ if not g.is_empty]
     cityd = None
     if CITY is not None:
         g = LineString(list(CITY.exterior.coords)); n = int(g.length / 100)
@@ -485,11 +493,20 @@ if LM:
         for a_, b_ in zip(seq, seq[1:]):
             ga, gb_ = geo(a_), geo(b_)
             if ga and gb_ and CITY.contains(Point(ga[0] * KX, ga[1] * KY)) != CITY.contains(Point(gb_[0] * KX, gb_[1] * KY)):
-                bmark.append(((a_['poly'].centroid.x + b_['poly'].centroid.x) / 2, a_['poly'].centroid.y))
+                bmark.append(((a_['poly'].centroid.x + b_['poly'].centroid.x) / 2, a_['poly'].centroid.y, 0, 1, True))
+    for c in cuts:  # an inset keeping its drawing: when it all lies outside the city, it gets the zone 2 tint and the boundary
+        if 'exits' not in c or CITY is None: continue  # across each way out of its cut stations (on the first edge)
+        if all(g and not CITY.contains(Point(g[0] * KX, g[1] * KY)) for g in (sll.get(nodes[s_['id']]['sid']) for s_ in c['st'])):
+            c['zone2'] = True
+            for g in c['exits']:
+                (x0_, y0_), (x1_, y1_) = g.interpolate(0.4, normalized=True).coords[0], g.interpolate(0.6, normalized=True).coords[0]; d_ = math.hypot(x1_ - x0_, y1_ - y0_) or 1
+                bmark.append(((x0_ + x1_) / 2, (y0_ + y1_) / 2, -(y1_ - y0_) / d_, (x1_ - x0_) / d_, False))
     pk = LM['piotrkowska']; ps_ = next((s for s in stations if s['name'] == pk['stop']), None)  # straight up from its stop
-    if ps_ is not None:  # to the height of its north end (pl. Wolności); drawn south to north, so the name reads upward
-        x_, y_ = ps_['poly'].centroid.coords[0]; yn = warp(np.array([[pk['north'][0] * KX, pk['north'][1] * KY]]))[0][1]
-        if not np.isnan(yn) and yn < y_: piotr_l = [[(x_, ps_['poly'].bounds[1]), (x_, yn + FS * 1.3)]]; sq_ = (x_, yn)  # the octagon on top
+    yn = warp(np.array([[pk['north'][0] * KX, pk['north'][1] * KY]]))[0][1]  # to the height of its north end (pl. Wolności)
+    if ps_ is not None: (x_, y_), y0_ = ps_['poly'].centroid.coords[0], ps_['poly'].bounds[1]
+    else: x_, y_ = warp(np.array([[pk['south'][0] * KX, pk['south'][1] * KY]]))[0]; y0_ = y_  # no such stop (buses, night): the stop's place
+    if os.environ.get('PIOTRKOWSKA', '1') == '1' and not np.isnan(yn) and not np.isnan(y_) and yn < y_:  # drawn south to north, so the name reads upward; the octagon on top
+        piotr_l = [[(x_, y0_), (x_, yn + FS * 1.3)]]; sq_ = (x_, yn)
 
 # ---------- label layout
 CH = FS * 0.95; CF = FS * 0.68; LH = FS * 1.12; GAP = FS * 0.35; ICS = FS * 1.05
@@ -588,18 +605,26 @@ if llg:
 dlab = []
 if LM:
     DF = FS * float(os.environ.get('DISTRICT_FS', 4)); DLS = 0.22  # font size, letter spacing (em)
+    if sq_:  # pl. Wolności: slid along the street (at most 8 font heights) off the lines and stops (labels go over it)
+        ob1 = obst; t1_ = STRtree(ob1)
+        for dy in sorted(np.arange(-FS * 8, FS * 8.1, FS * 0.5), key=abs):
+            c_ = Point(sq_[0], sq_[1] + dy).buffer(FS * 1.6)
+            if dy < piotr_l[0][0][1] - sq_[1] - FS * 3 and not any(ob1[k].intersects(c_) for k in t1_.query(c_)):
+                sq_ = (sq_[0], sq_[1] + dy); piotr_l[0][1] = (sq_[0], sq_[1] + FS * 1.3); print(f'square moved {dy:.0f}'); break
+        else: print('square: no free spot')
     ob2 = obst + [s_['sel']['geom'] for s_ in stations_l] + [ll_geom(l) for l in linelabels] + [LineString(p).buffer(LW) for p in rail_l + tun_l + piotr_l]
-    t2_ = STRtree(ob2); step = FS * 1.5
+    t2_ = STRtree(ob2 + [g for _, g in green_]); step = FS * 1.5; ob2_ = ob2 + [g for _, g in green_]  # district names keep off the parks
     for d in LM['districts']:
         a = warp(np.array([[d['ll'][0] * KX, d['ll'][1] * KY]]))[0]
         if np.isnan(a[0]): continue
         t = d['name'].upper(); w = tw(t, FB, DF) + DF * DLS * (len(t) - 1); h = DF * 0.75; best = None
         for r in range(int(FS * 60 / step)):
             ring = [(a[0] + i * step - w / 2, a[1] + j * step - h / 2) for i in range(-r, r + 1) for j in range(-r, r + 1) if max(abs(i), abs(j)) == r]
-            ok = [q for q in ring if not any(ob2[k].intersects(b_) for b_ in [box(q[0] - FS, q[1] - FS, q[0] + w + FS, q[1] + h + FS)] for k in t2_.query(b_))]
+            ok = [q for q in ring if not any(ob2_[k].intersects(b_) for b_ in [box(q[0] - FS, q[1] - FS, q[0] + w + FS, q[1] + h + FS)] for k in t2_.query(b_))]
             if ok: best = min(ok, key=lambda q: math.hypot(q[0] + w / 2 - a[0], q[1] + h / 2 - a[1])); break
         if best: dlab.append((t, best, h))
         else: print('district not placed:', t)
+    ob2 += [box(x, y, x + tw(t, FB, DF) + DF * DLS * (len(t) - 1), y + h) for t, (x, y), h in dlab]; t2_ = STRtree(ob2)  # park labels keep off them
     def spot_(w, h, cands_, inside=None):  # first candidate top-left corner whose box is free (and inside `inside`)
         for q in cands_:
             b_ = box(q[0], q[1], q[0] + w, q[1] + h)
@@ -615,9 +640,12 @@ if LM:
     sqlab = None
     if sq_:
         w = tw(pk['square'], FR, FS * 0.9) * 1.05; h = FS
-        for q in [(sq_[0] + FS * 1.8, sq_[1] - h / 2), (sq_[0] - FS * 1.8 - w, sq_[1] - h / 2), (sq_[0] - w / 2, sq_[1] - FS * 1.6 - h)]:
-            if spot_(w, h, [q]): sqlab = (q, h); break
-        sqlab = sqlab or ((sq_[0] + FS * 1.8, sq_[1] - h / 2), h)
+        near_ = [(sq_[0] + FS * 1.8, sq_[1] - h / 2), (sq_[0] - FS * 1.8 - w, sq_[1] - h / 2), (sq_[0] - w / 2, sq_[1] - FS * 1.6 - h)]
+        far_ = sorted(((sq_[0] + i * FS * 0.5 - w / 2, sq_[1] + j * FS * 0.5 - h / 2) for i in range(-16, 17) for j in range(-10, 11)),
+                      key=lambda q: math.hypot(q[0] + w / 2 - sq_[0], q[1] + h / 2 - sq_[1]))  # then anywhere within ~8 font heights
+        q = spot_(w, h, near_ + far_)
+        if q: sqlab = (q, h)
+        else: print('square label not placed')
 RW = LW * 0.4; RC = os.environ.get('RAIL_COLOR', '#9ba2ad')
 def rail_svg(ps, tun=()):  # the railway drawn in style RAIL: one <g> per pass, so crossings and junctions merge
     st = dict(grey=[f'stroke="{RC}" stroke-width="{RW*1.3:.2f}" stroke-linecap="round"'],
@@ -667,7 +695,7 @@ E.append(f'<style>.lb text{{paint-order:stroke;stroke:#fff;stroke-width:{FS*0.28
 E.append(f'<rect class="bg" x="{vx:.1f}" y="{vy:.1f}" width="{vw:.1f}" height="{vh:.1f}" fill="#fff"/>')
 pl = lambda p: ' '.join(f'{x:.1f},{y:.1f}' for x, y in p)
 if LM:  # orientation layer under everything else
-    E.append('<g class="bgl">')
+    E.append(f'<clipPath id="{PFX}bc"><rect x="{gb[0]-M:.1f}" y="{gb[1]-M:.1f}" width="{gb[2]-gb[0]+2*M:.1f}" height="{gb[3]-gb[1]+2*M:.1f}"/></clipPath><g class="bgl" clip-path="url(#{PFX}bc)">')
     ring_ = lambda g: 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in g.exterior.coords) + 'Z'
     if cityd is not None:  # outside the city (fare zone 2) a tint; the boundary a thin line of its own colour
         X_, Y_ = vx - 5e4, vy - 5e4
@@ -683,9 +711,8 @@ if LM:  # orientation layer under everything else
                  f'<textPath href="#{PFX}pz" startOffset="50%" text-anchor="middle">ul. Piotrkowska</textPath></text>')
     if sq_:  # pl. Wolności: an octagon with the monument's dot
         r_ = FS * 1.25; oc = ' '.join(f'{sq_[0]+r_*math.cos(math.pi/8+i*math.pi/4):.1f},{sq_[1]+r_*math.sin(math.pi/8+i*math.pi/4):.1f}' for i in range(8))
-        (qx, qy), h = sqlab
-        E.append(f'<polygon points="{oc}" fill="#fff" stroke="#c9b48a" stroke-width="{FS*0.3:.2f}"/><circle cx="{sq_[0]:.1f}" cy="{sq_[1]:.1f}" r="{FS*0.32:.2f}" fill="#9c8350"/>'
-                 f'<text x="{qx:.1f}" y="{qy+h*0.8:.1f}" font-size="{FS*0.9:.1f}" font-style="italic" font-weight="700" fill="#9c8350">{esc(pk["square"])}</text>')
+        E.append(f'<polygon points="{oc}" fill="#fff" stroke="#c9b48a" stroke-width="{FS*0.3:.2f}"/><circle cx="{sq_[0]:.1f}" cy="{sq_[1]:.1f}" r="{FS*0.32:.2f}" fill="#9c8350"/>')
+        if sqlab: (qx, qy), h = sqlab; E.append(f'<text x="{qx:.1f}" y="{qy+h*0.8:.1f}" font-size="{FS*0.9:.1f}" font-style="italic" font-weight="700" fill="#9c8350">{esc(pk["square"])}</text>')
     E += rail_svg(rail_l, tun_l)
     E += [f'<line x1="{x-nx*RW*2.6:.1f}" y1="{y-ny*RW*2.6:.1f}" x2="{x+nx*RW*2.6:.1f}" y2="{y+ny*RW*2.6:.1f}" stroke="{RC}" stroke-width="{RW*1.2:.2f}" stroke-linecap="round"/>' for (x, y), (nx, ny) in rexit]
     E += [f'<circle cx="{s_["poly"].centroid.x:.1f}" cy="{s_["poly"].centroid.y:.1f}" r="{LW*0.5:.2f}" fill="#fff" stroke="{RC}" stroke-width="{RW*1.1:.2f}"/>' for s_ in stations if s_.get('rail')]
@@ -693,7 +720,7 @@ if LM:  # orientation layer under everything else
 for c in cuts:
     if 'box' not in c: continue
     x0, y0, x1, y1 = c['box'].bounds; t = c['cfg'].get('title', '')
-    E.append(f'<g class="inset" data-l="{" ".join(c["L"])}"><rect class="box" x="{x0:.1f}" y="{y0:.1f}" width="{x1-x0:.1f}" height="{y1-y0:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
+    E.append(f'<g class="inset" data-l="{" ".join(c["L"])}"><rect class="box" x="{x0:.1f}" y="{y0:.1f}" width="{x1-x0:.1f}" height="{y1-y0:.1f}" rx="{FS:.1f}" fill="{"#f1eef7" if c.get("zone2") else "#f3f4f6"}" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
              f'<text class="it" x="{x0+FS*(1+3.6*len(c["L"])):.1f}" y="{y0+FS*2.25:.1f}" font-size="{FS*1.3:.1f}" font-weight="800" fill="#16181d">{esc(t)}</text></g>')
 E.append(f'<g class="casing" fill="none" stroke="#fff" stroke-width="{LW+1.0:.2f}" stroke-linecap="round" stroke-linejoin="round">')
 for n in names:
@@ -703,9 +730,9 @@ for n in names:
     E.append(f'<g class="ln" data-l="{n}" fill="none" stroke="#{col[n]}" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-linejoin="round">')
     for p in segs.get(n, []): E.append(f'<polyline points="{pl(p)}"/>')
     E.append('</g>')
-for x, y in bmark:  # the city boundary across an inset's bundle
-    E.append(f'<line x1="{x:.1f}" y1="{y-FS*2.2:.1f}" x2="{x:.1f}" y2="{y+FS*2.2:.1f}" stroke="#a18bd0" stroke-width="{RW*1.4:.2f}"/>'
-             f'<text x="{x:.1f}" y="{y+FS*3.4:.1f}" font-size="{FS*0.7:.1f}" font-style="italic" text-anchor="middle" fill="#8a75bd">granica Łodzi</text>')
+for x, y, nx, ny, lab in bmark:  # the city boundary across an inset's bundle
+    E.append(f'<line x1="{x-nx*FS*2.2:.1f}" y1="{y-ny*FS*2.2:.1f}" x2="{x+nx*FS*2.2:.1f}" y2="{y+ny*FS*2.2:.1f}" stroke="#a18bd0" stroke-width="{RW*1.4:.2f}"/>'
+             + (f'<text x="{x:.1f}" y="{y+FS*3.4:.1f}" font-size="{FS*0.7:.1f}" font-style="italic" text-anchor="middle" fill="#8a75bd">granica Łodzi</text>' if lab else ''))
 for c in cuts:
     for nm, p in c['stub']: E.append(f'<g class="ln" data-l="{nm}" fill="none" stroke="#{col[nm]}" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-dasharray="{LW*0.1:.2f} {LW*1.6:.2f}"><polyline points="{pl(p)}"/></g>')
 E.append(f'<g class="stops" fill="#fff" stroke="#16181d" stroke-width="{LW*0.42:.2f}" stroke-linejoin="round">')
@@ -816,13 +843,13 @@ NOTES = ['Schemat pokazuje główne warianty tras w dzień roboczy: warianty obs
          'Układ oktylinearny policzony automatycznie z rozkładu GTFS ZDiT Łódź programem LOOM (Uniwersytet we Fryburgu); '
          'etykiety, kolory i oprawa: GISBoost.',
          'Wersja interaktywna z wyróżnianiem linii i listą zmian rozkładu: gisboost.github.io/mapy-analizy/schemat-linii-lodz']
-kw = pw_; kr = (len(KEY) + 1) // 2
+kw = pw_; kc = 1 if LM and max(tw(t, FR, LF2 * 0.95) for _, t in KEY) + LF2 * 3.3 > (kw - LF2) / 2 else 2; kr = math.ceil(len(KEY) / kc)
 nl = [wrap(t, kw - LF2 * 2, FR, LF2 * 0.95) for t in NOTES]
 kh = LF2 * 3.2 + kr * LF2 * 2.2 + LF2 * 1.2 + sum(len(l) * LF2 * 1.35 + LF2 * 0.8 for l in nl)
 Pk = [f'<rect width="{kw:.1f}" height="{kh:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'] if LM else []; y = LF2 * 2.1  # a panel once the map has a background
 Pk.append(f'<text x="{LF2:.1f}" y="{y:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Jak czytać schemat</text>')
 for i, (sym, t) in enumerate(KEY):
-    x_ = LF2 + (i % 2) * (kw - LF2) / 2; y_ = y + LF2 * 2.2 * (1 + i // 2)
+    x_ = LF2 + (i % kc) * (kw - LF2) / 2; y_ = y + LF2 * 2.2 * (1 + i // kc)
     Pk.append(sym(x_, y_) + f'<text x="{x_+LF2*2.8:.1f}" y="{y_+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" fill="#16181d">{esc(t)}</text>')
 y += LF2 * 2.2 * kr + LF2 * 1.2
 for l in nl:

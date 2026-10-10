@@ -131,11 +131,21 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 
 Opcjonalne tło schematu: kolej, granica Łodzi (strefa biletowa 1 | 2), parki i lasy, nazwy pięciu dzielnic, ul. Piotrkowska
 z pl. Wolności oraz piktogramy przy nazwach przystanków (stacja kolejowa w promieniu 350 m, duże szpitale, Manufaktura).
-Na razie przetestowana tylko na tramwajach, stan „po”; pliki w `druk/` i na stronie są jeszcze bez niej.
+Przetestowana na tramwajach, autobusach i nocnych, stan „po”; pliki w `druk/` i na stronie są jeszcze bez niej.
 
 - `landmarks.py <work>/landmarks.json`: pobiera dane z OpenStreetMap (Overpass API) do katalogu roboczego; surowa odpowiedź
   zostaje obok (`*.osm.json`), więc kolejne uruchomienie nie odpytuje serwera. Dane nie trafiają do repozytorium.
 - `render.py` z `LANDMARKS=<work>/landmarks.json` rysuje warstwę, z `RAIL_STYLE=double` kolej jak na mapie NYC (podwójna linia).
+- Tło jest przycięte do ramki rysunku (nie wchodzi pod pasek tytułu ani do bocznej kolumny plakatu). Gdy panel objaśnień
+  jest wąski (nocne), objaśnienia idą w jednej kolumnie.
+- Parki nie przechodzą przez linie (wyglądałoby to jak przejście na drugą stronę ulicy): są cięte wzdłuż każdej linii
+  z odstępem, a skrawki (poniżej 1/5 największej części) znikają. Nazwy dzielnic omijają parki, podpisy parków omijają
+  nazwy dzielnic.
+- Na mapach bez przystanku „Piotrkowska Centrum” (nocne) ulica zaczyna się w miejscu tego przystanku przeniesionym
+  przez odwzorowanie. Na autobusach jej nie rysujemy (`PIOTRKOWSKA=0`), bo nie ma jak jej wpasować. Ośmiokąt pl. Wolności zjeżdża wzdłuż ulicy (do 8 wysokości czcionki) z linii i przystanków; podpis
+  szuka wolnego miejsca w pobliżu, a bez niego jest pomijany.
+- Ramki `"shape":"keep"` (autobusy), które w całości leżą poza Łodzią, mają tło strefy 2 i kreskę granicy na pierwszym
+  odcinku za każdym przystankiem cięcia.
 - Geografia trafia na schemat przez odwzorowanie odcinkowo-afiniczne na trójkątach rozpiętych na przystankach; poza siecią
   działa jedno przekształcenie afiniczne dopasowane do wszystkich przystanków.
 - Kolej: tory pasażerskie (relacje `route=train`) sklejone w jedną linię na korytarz, przecięte na stacjach i rozjazdach
