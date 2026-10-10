@@ -1,6 +1,7 @@
 import sys, json, math, re, xml.etree.ElementTree as ET
 from shapely.geometry import LineString, Polygon, Point, box
 from shapely import affinity, STRtree
+from shapely.ops import unary_union
 from PIL import ImageFont
 
 SVG_IN, OCTI, LINES, OUT, TITLE, SUB = sys.argv[1:7]
@@ -66,6 +67,9 @@ for el in root.iter():
 linelabels = []
 if LL_SVG:
     r2 = ET.parse(LL_SVG).getroot(); XL = '{http://www.w3.org/1999/xlink}href'
+    # transitmap -l widens the canvas for labels sticking out: map its coordinates back onto the -l-less drawing
+    a0, b0, a1, b1 = map(float, r2.get('latlng-box').split(',')); W2, H2 = float(r2.get('width')), float(r2.get('height'))
+    t2 = lambda x, y: proj(a0 + x / W2 * (a1 - a0), math.degrees(2 * math.atan(math.exp(my(b1) - y / H2 * (my(b1) - my(b0)))) - math.pi / 2))
     paths = {p.get('id'): p.get('d') for p in r2.iter(ns + 'path') if p.get('id')}
     for t in r2.iter(ns + 'text'):
         if t.get('class') != 'line-label': continue
@@ -73,12 +77,12 @@ if LL_SVG:
         items = [byidx.get(int(ts.get('fill').lstrip('#'), 16) // 16) for ts in tp.findall(ns + 'tspan')]
         items = [i for i in items if i]
         nums = [float(v) for v in re.findall(r'-?\d+\.?\d*', d)]
-        P = [(nums[i], nums[i + 1]) for i in range(0, len(nums), 2)]
-        if items and len(P) > 1: linelabels.append(dict(d=d, items=items, pts=P, dy=t.get('dy')))
+        P = [t2(nums[i], nums[i + 1]) for i in range(0, len(nums), 2)]
+        if items and len(P) > 1: linelabels.append(dict(d='M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in P), items=items, pts=P, dy=t.get('dy')))
 
 # ---------- graph from octi json
 feats = json.load(open(OCTI))['features']
-nodes = {}; adj = {}
+nodes = {}; adj = {}; egeo = {}
 for f in feats:
     if f['geometry']['type'] == 'Point':
         p = f['properties']; nodes[p['id']] = dict(sid=p.get('station_id'), xy=proj(*f['geometry']['coordinates']), label=p.get('station_label', ''),
@@ -86,6 +90,7 @@ for f in feats:
 for f in feats:
     if f['geometry']['type'] == 'LineString':
         p = f['properties']; ls = {l['id']: l['label'] for l in p['lines']}
+        egeo[p['from'], p['to']] = egeo[p['to'], p['from']] = [proj(*c) for c in f['geometry']['coordinates']]
         for a, b in ((p['from'], p['to']), (p['to'], p['from'])):
             if a in nodes: nodes[a]['edges'].append((b, ls))
 def clean(s):
@@ -128,6 +133,7 @@ for _it in range(6):
     if len(A) < 10: break
     ax_, bx_ = np.polyfit(A[:, 0], Bx, 1); ay_, by_ = np.polyfit(A[:, 1], By, 1)
     for nd in nodes.values(): nd['xy'] = (ax_ * nd['xy'][0] + bx_, ay_ * nd['xy'][1] + by_)
+    for e in egeo: egeo[e] = [(ax_ * x + bx_, ay_ * y + by_) for x, y in egeo[e]]
 stations = []
 _c = []
 for nid, nd in nodes.items():
@@ -169,6 +175,86 @@ if GEO:
             print('termini moved:', nd['label'], '->', s['name'], sorted(extra, key=nkey))
 print('stations', len(stations), 'polys', len(polys), 'lines', len(col))
 
+# ---------- cut-outs (env CUTS, JSON list of {lines, cut, k, box, title, at}): the tail beyond station `cut` served by
+# exactly `lines` (e.g. 41 to Pabianice, 9+10B to Olechów) either goes into a framed inset in the `at` corner (bl/tl/br/tr)
+# of the main map, straightened, or (box=false) stays in place scaled by k toward the cut station (shortens a radial)
+CUTS = json.loads(os.environ.get('CUTS', '[]')); cuts = []
+R0 = min(math.sqrt(p.area / math.pi) for p in polys)  # radius of a one-line stop symbol
+DL = LW * float(os.environ.get('LINE_PITCH', 37 / 30))  # distance between parallel lines (transitmap width + spacing)
+for cfg in CUTS:
+    L = sorted(cfg.get('lines') or [cfg['line']], key=nkey); Ls = set(L)
+    cs = next((s for s in stations if s['name'] == cfg['cut'] and any(Ls & set(ls.values()) for _, ls in nodes[s['id']]['edges'])), None)  # not lines: 41 passes IKEA as not_serving
+    if cs is None: print('cut station not found:', cfg); continue
+    tail, todo, te = set(), [cs['id']], set()
+    while todo:
+        a = todo.pop()
+        for b, ls in nodes[a]['edges']:
+            if set(ls.values()) == Ls and b != cs['id'] and frozenset((a, b)) not in te:
+                te.add(frozenset((a, b))); todo += [b] if b not in tail else []; tail.add(b)
+    if not te: print('cut has no tail:', cfg); continue
+    reg = unary_union([LineString(egeo[tuple(e)]).buffer(LW * (len(L) + 1)) for e in te]).difference(cs['poly'].buffer(LW * 0.6))
+    first = next(b for b, ls in nodes[cs['id']]['edges'] if frozenset((cs['id'], b)) in te)
+    cuts.append(dict(cfg=cfg, L=L, cs=cs, reg=reg, te=te, first=first, st=[s for s in stations if s['id'] in tail],
+                     segs={n: [p for p in segs[n] if reg.contains(LineString(p).interpolate(0.5, normalized=True))] for n in L},
+                     ll=[l for l in linelabels if reg.contains(LineString(l['pts']).interpolate(0.5, normalized=True))]))
+    print('cut', L, 'at', cfg['cut'], len(cuts[-1]['st']), 'stations', sum(map(len, cuts[-1]['segs'].values())), 'polylines')
+moved = {id(p) for c in cuts for v in c['segs'].values() for p in v} | {id(s['poly']) for c in cuts for s in c['st']}
+maing = [LineString(p) for n in segs for p in segs[n] if id(p) not in moved] + [p for p in polys if id(p) not in moved]
+mtree = STRtree(maing); mb = unary_union(maing).bounds; boxes = []; below = []
+for c in cuts:
+    cx, cy = c['cs']['poly'].centroid.coords[0]; L = c['L']
+    if not c['cfg'].get('box', True):  # in place: scale the tail toward the cut station
+        k = c['cfg'].get('k', 0.5); sc = lambda x, y: (cx + k * (x - cx), cy + k * (y - cy))
+        for v in c['segs'].values():
+            for p in v: p[:] = [sc(x, y) for x, y in p]
+        for l in c['ll']:
+            l['pts'] = [sc(x, y) for x, y in l['pts']]; l['d'] = 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in l['pts'])
+        for s in c['st']:
+            i = next(j for j, p in enumerate(polys) if p is s['poly']); q = s['poly'].centroid; nx, ny = sc(q.x, q.y)
+            s['poly'] = polys[i] = affinity.translate(s['poly'], nx - q.x, ny - q.y)
+    else:
+        # inset: the tail straightened into a horizontal bundle (stations in hop order from the cut, SP apart, labels
+        # get the room above it at 45 deg), in a box slid from the preferred corner until it keeps clear of the map
+        hop, todo = {c['cs']['id']: 0}, [c['cs']['id']]
+        while todo:
+            a_ = todo.pop(0)
+            for b_, _ in nodes[a_]['edges']:
+                if b_ not in hop and frozenset((a_, b_)) in c['te']: hop[b_] = hop[a_] + 1; todo.append(b_)
+        sts = sorted(c['st'], key=lambda s: hop[s['id']])
+        sg = -1 if sum(s['poly'].centroid.x for s in sts) / len(sts) < cx else 1
+        off = (len(L) - 1) / 2 * DL; cap = lambda x, y: LineString([(x, y - off), (x, y + off + 0.01)]).buffer(R0)  # stop symbol across the bundle
+        gw = tw(c['cs']['name'], FB, FS) + FS * 2  # the cut station's label sits beside the bundle's open end
+        SP = FS * 3.2; n = len(sts); top, bot, side = FS * 17, FS * 4 + off, FS * 4
+        w, h = n * SP + 2 * side + gw, top + bot
+        at = c['cfg'].get('at', 'bl'); step = FS * 2; gap = FS * 3
+        xs = [mb[0] + i * step for i in range(int((mb[2] - mb[0] - w) / step) + 1)] or [mb[0]]
+        ys = [mb[1] + i * step for i in range(int((mb[3] - mb[1] - h) / step) + 1)] or [mb[1]]
+        corner = lambda x, y: (abs(x - (mb[0] if 'l' in at else mb[2] - w)) + abs(y - (mb[3] - h if 'b' in at else mb[1])))
+        free_ = lambda b: not any(maing[i].intersects(b) for i in mtree.query(b)) and not any(o.buffer(gap).intersects(b) for o in boxes)
+        pos = None if at == 'below' else next(((x, y) for x, y in sorted(((x, y) for x in xs for y in ys), key=lambda q: corner(*q)) if free_(box(x, y, x + w, y + h).buffer(gap))), None)
+        if at == 'below':  # stacked under the map, left-aligned: the poster's band column
+            pos = (mb[0], max([o.bounds[3] for o in boxes] + [mb[3] + FS * 6]) + gap); below.append(len(boxes))
+        if pos is None: pos = (mb[0] - w - gap, mb[3] - h) if 'l' in at else (mb[2] + gap, mb[3] - h)
+        boxes.append(box(pos[0], pos[1], pos[0] + w, pos[1] + h))
+        gx = pos[0] + side + (n * SP if sg < 0 else gw); gy = pos[1] + top  # the cut station again, where the tail starts
+        ghost = cap(gx, gy)
+        gs = dict(id='cut' + '_'.join(L), poly=ghost, name=c['cs']['name'], term=[], lines=L, deg=3, nbs=[], only={'E', 'W'} - {'W' if sg < 0 else 'E'}); stations.append(gs); polys.append(ghost)
+        c.update(box=boxes[-1], ghost=gs)
+        for i_, s in enumerate(sts):
+            j = next(j for j, p in enumerate(polys) if p is s['poly'])
+            s['poly'] = polys[j] = cap(gx + sg * (i_ + 1) * SP, gy)
+            s['only'] = {'NE', 'NW' if sg < 0 else 'NE'}  # a ladder of 45 deg labels
+        for k_, nm in enumerate(L):
+            drop = {id(p) for p in c['segs'][nm]}; y_ = gy - off + k_ * DL
+            segs[nm] = [p for p in segs[nm] if id(p) not in drop] + [[(gx, y_), (gx + sg * n * SP, y_)]]
+        dropl = {id(l) for l in c['ll']}; linelabels = [l for l in linelabels if id(l) not in dropl]
+    # stubs on the main map: the bundle leaves the cut station for a few units toward where its tail went
+    fx, fy = nodes[c['first']]['xy']; L_ = math.hypot(fx - cx, fy - cy) or 1; ux, uy = (fx - cx) / L_, (fy - cy) / L_
+    c['stub'] = []
+    for k_, nm in enumerate(L):
+        o = (k_ - (len(L) - 1) / 2) * DL; x_, y_ = cx - uy * o, cy + ux * o
+        c['stub'].append((nm, [(x_, y_), (x_ + ux * FS * 4, y_ + uy * FS * 4)]))
+
 # ---------- label layout
 CH = FS * 0.95; CF = FS * 0.68; LH = FS * 1.12; GAP = FS * 0.35
 def layout(st, wrap):
@@ -195,7 +281,8 @@ CAND = [('E', (1, 0), 0, 'l', 0.0), ('W', (-1, 0), 0, 'r', 0.25), ('NE', (S2, -S
 def cands(st):
     c = st['poly'].centroid; out = []
     for name, d, ang, al, pref in CAND:
-        rows, w, h = layout(st, wrap=True) if ang == 0 else layout(st, wrap=len(st['name']) > 24)
+        if 'only' in st and name not in st['only']: continue
+        rows, w, h = layout(st, wrap=True) if ang == 0 else layout(st, wrap=len(st['name']) > 24 and 'only' not in st)
         ext = max((x - c.x) * d[0] + (y - c.y) * d[1] for x, y in st['poly'].exterior.coords) + GAP
         ax, ay = c.x + d[0] * ext, c.y + d[1] * ext
         if len(al) == 2:
@@ -211,7 +298,7 @@ def ll_geom(l):
     ls = LineString(l['pts']); w = sum(tw(i, FB, LLF) for i in l['items']) + LLF * 0.45 * (len(l['items']) - 1)
     mid = ls.interpolate(0.5, normalized=True); a = ls.interpolate(max(0, ls.length / 2 - w / 2)); b = ls.interpolate(min(ls.length, ls.length / 2 + w / 2))
     return LineString([a, b]).buffer(LLF * 0.75, cap_style=2, single_sided=False) if a.distance(b) > 0 else mid.buffer(LLF)
-obst = [LineString(p).buffer(LW / 2 + 0.6, cap_style=2) for n in segs for p in segs[n]] + [p.buffer(0.5) for p in polys]
+obst = [LineString(p).buffer(LW / 2 + 0.6, cap_style=2) for n in segs for p in segs[n]] + [p.buffer(0.5) for p in polys] + [b.exterior.buffer(1) for b in boxes]
 otree = STRtree(obst)
 llg = [ll_geom(l) for l in linelabels]; lltree = STRtree(llg) if llg else None
 if LABEL_MODE == 'key':
@@ -243,7 +330,6 @@ def placed_near(st, c):
     return res
 # spatial index over stations (by generous envelope of all their candidates)
 lstations = stations_l
-from shapely.ops import unary_union
 ltree = STRtree([unary_union([c['geom'] for c in s['c']]).envelope for s in lstations])
 order = sorted(stations_l, key=lambda s: (sum(1 for c in s['c'] if c['static'] < 3), -len(s['term']), -s['deg']))
 for st in order: st['sel'] = min(st['c'], key=lambda c: dyn(st, c))
@@ -263,7 +349,9 @@ if llg:
     linelabels = [l for l, k in zip(linelabels, keepll) if k]
 # ---------- emit svg
 E = []
-geoms = [p for p in polys] + [s['sel']['geom'] for s in stations_l] + [LineString(p) for n in segs for p in segs[n]]
+for c in cuts:  # final inset frame: the reserved box grown to whatever the tail's labels need
+    if 'box' in c: c['box'] = box(*unary_union([c['box']] + [s['sel']['geom'].buffer(FS) for s in c['st'] + [c['ghost']] if s.get('sel')]).bounds)
+geoms = [p for p in polys] + [s['sel']['geom'] for s in stations_l] + [LineString(p) for n in segs for p in segs[n]] + [c['box'] for c in cuts if 'box' in c]
 minx = min(g.bounds[0] for g in geoms); miny = min(g.bounds[1] for g in geoms)
 maxx = max(g.bounds[2] for g in geoms); maxy = max(g.bounds[3] for g in geoms)
 # legend block
@@ -289,6 +377,11 @@ E.append(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx:.1f} {vy:.1f} {v
 E.append(f'<style>.lb text{{paint-order:stroke;stroke:#fff;stroke-width:{FS*0.28:.2f}px;stroke-linejoin:round;fill:#16181d}}.chip text,.leg .chip text{{stroke:none}}.dim{{opacity:.08}}.ln,.lb,.chip{{transition:opacity .15s}}</style>')
 E.append(f'<rect class="bg" x="{vx:.1f}" y="{vy:.1f}" width="{vw:.1f}" height="{vh:.1f}" fill="#fff"/>')
 pl = lambda p: ' '.join(f'{x:.1f},{y:.1f}' for x, y in p)
+for c in cuts:
+    if 'box' not in c: continue
+    x0, y0, x1, y1 = c['box'].bounds; t = c['cfg'].get('title', '')
+    E.append(f'<g class="inset" data-l="{" ".join(c["L"])}"><rect class="box" x="{x0:.1f}" y="{y0:.1f}" width="{x1-x0:.1f}" height="{y1-y0:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
+             f'<text class="it" x="{x0+FS*(1+3.6*len(c["L"])):.1f}" y="{y0+FS*2.25:.1f}" font-size="{FS*1.3:.1f}" font-weight="800" fill="#16181d">{esc(t)}</text></g>')
 E.append(f'<g class="casing" fill="none" stroke="#fff" stroke-width="{LW+1.0:.2f}" stroke-linecap="round" stroke-linejoin="round">')
 for n in names:
     for p in segs.get(n, []): E.append(f'<polyline points="{pl(p)}"/>')
@@ -297,6 +390,8 @@ for n in names:
     E.append(f'<g class="ln" data-l="{n}" fill="none" stroke="#{col[n]}" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-linejoin="round">')
     for p in segs.get(n, []): E.append(f'<polyline points="{pl(p)}"/>')
     E.append('</g>')
+for c in cuts:
+    for nm, p in c['stub']: E.append(f'<g class="ln" data-l="{nm}" fill="none" stroke="#{col[nm]}" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-dasharray="{LW*0.1:.2f} {LW*1.6:.2f}"><polyline points="{pl(p)}"/></g>')
 E.append(f'<g class="stops" fill="#fff" stroke="#16181d" stroke-width="{LW*0.42:.2f}" stroke-linejoin="round">')
 for s in stations:
     E.append(f'<polygon class="st" data-l="{" ".join(s["lines"])}" points="{pl(s["poly"].exterior.coords)}"/>')
@@ -326,8 +421,10 @@ for s in stations_l:
                 E.append(chip(x, y + r['h'] * 0.1, w, n)); x += w + GAP * 0.6
         y += r['h']
     E.append('</g>')
+for c in cuts:
+    for k_, nm in enumerate(c['L'] if 'box' in c else []): E.append(chip(c['box'].bounds[0] + FS * (1 + 3.6 * k_), c['box'].bounds[1] + FS * 0.9, FS * 3.2, nm, h=FS * 1.8, fs=FS * 1.25))
 # legend
-lx, ly = spot
+lx, ly = spot; body = len(E)
 E.append(f'<g class="leg"><text x="{lx:.1f}" y="{ly+LF*2.2:.1f}" font-size="{LF*2.3:.1f}" font-weight="800" fill="#16181d">{esc(TITLE)}</text>')
 E.append(f'<text x="{lx:.1f}" y="{ly+LF*4.3:.1f}" font-size="{LF*0.95:.1f}" fill="#5b6270">{esc(SUB)}</text>')
 for i, n in enumerate(names):
@@ -336,6 +433,98 @@ for i, n in enumerate(names):
     E.append(f'<text class="lt" data-l="{n}" x="{cx+LF*3.9:.1f}" y="{cy+LF*1.0:.1f}" font-size="{LF:.1f}" fill="#16181d">{esc(ltxt[n])}</text>')
 E.append('</g></svg>')
 open(OUT, 'w', encoding='utf-8').write('\n'.join(E))
+
+# ---------- print poster (<out>.poster.svg): same drawing on a sheet of POSTER_RATIO (height/width, default A1 portrait).
+# Title bar with an accent rule; the line list and the key go into the map's empty corners (`place`); the height the map
+# leaves over becomes a band under it with a magnifier of the centre (env ZOOM); credits in the footer
+LF2 = LF * float(os.environ.get('POSTER_TEXT', 1.4)); pcolw = max(tw(ltxt[n], FR, LF2) for n in names) + LF2 * 5; prowh = LF2 * 1.75  # poster text is larger than the page's
+HT, FT, MX = LF2 * 6.5, LF2 * 3.5, FS * 3; RATIO = float(os.environ.get('POSTER_RATIO', 841 / 594)); BG_ = FS * 3
+def wrap(t, width, f, size):
+    out = ['']
+    for w_ in t.split():
+        if out[-1] and tw(out[-1] + ' ' + w_, f, size) > width: out.append(w_)
+        else: out[-1] = (out[-1] + ' ' + w_).strip()
+    return out
+placed = []; ptree = STRtree(geoms)
+def place(w, h, at):  # free w x h spot inside the map's bounds, nearest to corner `at` (tl/tr/bl/br), or None
+    step = FS * 2; gap = FS * 2
+    xs = [minx + i * step for i in range(int((maxx - minx - w) / step) + 1)]; ys = [miny + i * step for i in range(int((maxy - miny - h) / step) + 1)]
+    d = lambda x, y: abs(x - (minx if 'l' in at else maxx - w)) + abs(y - (miny if 't' in at else maxy - h))
+    for x, y in sorted(((x, y) for x in xs for y in ys), key=lambda q: d(*q)):
+        b_ = box(x - gap, y - gap, x + w + gap, y + h + gap)
+        if not any(geoms[i].intersects(b_) for i in ptree.query(b_)) and not any(o.intersects(b_) for o in placed):
+            placed.append(box(x, y, x + w, y + h)); return x, y
+# line list panel
+pw_, ph_ = ncol * pcolw + LF2, LF2 * 3.9 + nrow * prowh
+plx, ply = place(pw_, ph_, os.environ.get('LEGEND_AT', 'tr')) or (lx - LF2, ly - LF2)
+Pl = [f'<rect x="{plx:.1f}" y="{ply:.1f}" width="{pw_:.1f}" height="{ph_:.1f}" rx="{FS:.1f}" fill="#f3f4f6" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
+      f'<text x="{plx+LF2:.1f}" y="{ply+LF2*2.1:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Linie</text>']
+for i, n in enumerate(names):
+    cx = plx + LF2 + (i // nrow) * pcolw; cy = ply + LF2 * 3.4 + (i % nrow) * prowh
+    Pl.append(chip(cx, cy, LF2 * 3.2, n, h=LF2 * 1.35, fs=LF2 * 0.95))
+    Pl.append(f'<text x="{cx+LF2*3.9:.1f}" y="{cy+LF2*1.0:.1f}" font-size="{LF2:.1f}" fill="#16181d">{esc(ltxt[n])}</text>')
+# key + notes block
+ZOOM = json.loads(os.environ.get('ZOOM', 'null'))
+zc = [s_['poly'].centroid for s_ in stations if ZOOM and s_['name'] in ZOOM['stations']]
+SB = (min(q.x for q in zc) - FS * 5, min(q.y for q in zc) - FS * 5, max(q.x for q in zc) + FS * 5, max(q.y for q in zc) + FS * 5) if zc else None
+KEY = [(lambda x, y: f'<circle cx="{x+LF2:.1f}" cy="{y:.1f}" r="{LF2*0.45:.1f}" fill="#fff" stroke="#16181d" stroke-width="{LW*0.42:.2f}"/>', 'przystanek'),
+       (lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{LF2*0.4:.1f}" fill="#fff" stroke="#16181d" stroke-width="{LW*0.42:.2f}"/>', 'węzeł przesiadkowy'),
+       (lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{LF2*0.3:.1f}" fill="#16181d"/><text x="{x+LF2:.1f}" y="{y:.1f}" font-size="{LF2*0.8:.1f}" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="#fff">12</text>', 'krańcówka linii'),
+       (lambda x, y: f'<text x="{x+LF2:.1f}" y="{y+LF2*0.35:.1f}" font-size="{LF2*0.9:.1f}" font-weight="700" text-anchor="middle" fill="#16181d">4 8</text>', 'numery linii przy wiązce')]
+if cuts: KEY.append((lambda x, y: f'<line x1="{x:.1f}" x2="{x+LF2*2:.1f}" y1="{y:.1f}" y2="{y:.1f}" stroke="#16181d" stroke-width="{LW:.2f}" stroke-linecap="round" stroke-dasharray="{LW*0.1:.2f} {LW*1.6:.2f}"/>', 'ciąg dalszy linii w ramce'))
+if SB: KEY.append((lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{FS*0.4:.1f}" fill="none" stroke="#c8102e" stroke-width="{FS*0.25:.2f}" stroke-dasharray="{FS*0.8:.1f} {FS*0.5:.1f}"/>', 'obszar powiększenia (pod schematem)'))
+NOTES = ['Schemat pokazuje główne warianty tras w dzień roboczy: warianty obsługiwane przez co najmniej 25% kursów linii '
+         'w danym kierunku. Linie z mniej niż 6 kursami pominięto. Odległości nie są w skali.',
+         'Układ oktylinearny policzony automatycznie z rozkładu GTFS ZDiT Łódź programem LOOM (Uniwersytet we Fryburgu); '
+         'etykiety, kolory i oprawa: GISBoost.',
+         'Wersja interaktywna z wyróżnianiem linii i listą zmian rozkładu: gisboost.github.io/mapy-analizy/schemat-linii-lodz']
+kw = pw_; kr = (len(KEY) + 1) // 2
+nl = [wrap(t, kw - LF2 * 2, FR, LF2 * 0.95) for t in NOTES]
+kh = LF2 * 3.2 + kr * LF2 * 2.2 + LF2 * 1.2 + sum(len(l) * LF2 * 1.35 + LF2 * 0.8 for l in nl)
+kp = place(kw, kh, os.environ.get('KEY_AT', 'tl'))
+Pk = []
+if kp:
+    x0_, y0_ = kp; y = y0_ + LF2 * 2.1
+    Pk.append(f'<text x="{x0_+LF2:.1f}" y="{y:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">Jak czytać schemat</text>')
+    for i, (sym, t) in enumerate(KEY):
+        x_ = x0_ + LF2 + (i % 2) * (kw - LF2) / 2; y_ = y + LF2 * 2.2 * (1 + i // 2)
+        Pk.append(sym(x_, y_) + f'<text x="{x_+LF2*2.8:.1f}" y="{y_+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" fill="#16181d">{esc(t)}</text>')
+    y += LF2 * 2.2 * kr + LF2 * 1.2
+    for l in nl:
+        for ln in l: y += LF2 * 1.35; Pk.append(f'<text x="{x0_+LF2:.1f}" y="{y:.1f}" font-size="{LF2*0.95:.1f}" fill="#5b6270">{esc(ln)}</text>')
+        y += LF2 * 0.8
+else: print('poster: no room for the key')
+# sheet: width of the drawing, height from RATIO; what the map does not fill becomes the magnifier band
+PW = vw + 2 * MX; BH = PW * RATIO - (vh + HT + FT)
+if BH < LF2 * 20 or not SB: BH = 0; PW = max(PW, (vh + HT + FT) / RATIO)  # no band: pad the sides
+PH = PW * RATIO; X0, Y0 = vx - (PW - vw) / 2, vy - HT; xl, xr = X0 + MX + FS * 2, X0 + PW - MX - FS * 2
+P = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{X0:.1f} {Y0:.1f} {PW:.1f} {PH:.1f}" width="{PW:.0f}" height="{PH:.0f}" font-family="{FONT}">',
+     E[1], f'<rect class="bg" x="{X0:.1f}" y="{Y0:.1f}" width="{PW:.1f}" height="{PH:.1f}" fill="#fff"/>', f'<g id="{PFX}main">'] + E[3:body] + ['</g>']
+t1, _, t2 = TITLE.partition(' — '); by = Y0 + LF2 * 4
+P.append(f'<g class="poster"><circle cx="{xl+LF2*1.1:.1f}" cy="{by-LF2*1.05:.1f}" r="{LF2*0.95:.1f}" fill="#fff" stroke="#c8102e" stroke-width="{LF2*0.5:.1f}"/>'
+         f'<text x="{xl+LF2*3:.1f}" y="{by:.1f}" font-size="{LF2*3:.1f}" font-weight="800" fill="#16181d">{esc(t1)}'
+         f'<tspan dx="{LF2*0.9:.1f}" font-size="{LF2*1.9:.1f}" font-weight="600">{esc(t2)}</tspan></text>'
+         f'<text x="{xr:.1f}" y="{by:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">{esc(SUB)}</text>'
+         f'<line x1="{xl:.1f}" x2="{xr:.1f}" y1="{Y0+HT-LF2*1.2:.1f}" y2="{Y0+HT-LF2*1.2:.1f}" stroke="#c8102e" stroke-width="{LF2*0.3:.1f}"/>')
+P += Pl + Pk
+if BH:  # magnifier across the band, region centred on the named stations, never cropping them
+    zh = LF2 * 2.6; zx, zy, zw = xl, vy + vh + BG_ / 2, xr - xl; zhh = BH - BG_ - zh
+    k = min(ZOOM.get('k', 2.5), zw / (SB[2] - SB[0]), zhh / (SB[3] - SB[1])); cx_, cy_ = (SB[0] + SB[2]) / 2, (SB[1] + SB[3]) / 2
+    R = (cx_ - zw / k / 2, cy_ - zhh / k / 2, cx_ + zw / k / 2, cy_ + zhh / k / 2)
+    P.insert(P.index(f'<g id="{PFX}main">'), f'<rect x="{R[0]:.1f}" y="{R[1]:.1f}" width="{R[2]-R[0]:.1f}" height="{R[3]-R[1]:.1f}" rx="{FS*0.6:.1f}" fill="none" stroke="#c8102e" stroke-width="{FS*0.3:.2f}" stroke-dasharray="{FS*0.8:.1f} {FS*0.5:.1f}"/>')
+    P.append(f'<clipPath id="{PFX}zc"><rect x="{zx:.1f}" y="{zy+zh:.1f}" width="{zw:.1f}" height="{zhh:.1f}"/></clipPath>'
+             f'<rect x="{zx:.1f}" y="{zy:.1f}" width="{zw:.1f}" height="{zhh+zh:.1f}" rx="{FS:.1f}" fill="#fff" stroke="#c8102e" stroke-width="{FS*0.25:.2f}"/>'
+             f'<text x="{zx+FS*1.2:.1f}" y="{zy+zh*0.7:.1f}" font-size="{LF2*1.3:.1f}" font-weight="800" fill="#16181d">{esc(ZOOM.get("title", "Centrum"))}'
+             f'<tspan font-weight="500" fill="#5b6270"> · powiększenie ×{f"{k:.1f}".replace(".", ",")} · obszar w czerwonej ramce na schemacie</tspan></text>'
+             f'<g clip-path="url(#{PFX}zc)"><use href="#{PFX}main" transform="translate({zx - R[0]*k:.1f},{zy + zh - R[1]*k:.1f}) scale({k:.3f})"/>'
+             + ''.join(f'<rect x="{zx+(q[0]-R[0])*k-FS:.1f}" y="{zy+zh+(q[1]-R[1])*k-FS:.1f}" width="{(q[2]-q[0])*k+2*FS:.1f}" height="{(q[3]-q[1])*k+2*FS:.1f}" fill="#fff"/>'
+                       for q in [c['box'].bounds for c in cuts if 'box' in c]) + '</g>')  # insets don't belong in the magnifier
+    print('zoom', f'x{k:.2f}', 'box', f'{zw:.0f}x{zhh:.0f}')
+fy = Y0 + PH - FT + LF2 * 0.6; ky = fy + LF2 * 1.8
+P.append(f'<line x1="{xl:.1f}" x2="{xr:.1f}" y1="{fy:.1f}" y2="{fy:.1f}" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
+         f'<text x="{xr:.1f}" y="{ky+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">dane: GTFS ZDiT Łódź · układ: LOOM (Uniwersytet we Fryburgu) · '
+         f'opracowanie: GISBoost · <tspan font-weight="700" fill="#16181d">gisboost.github.io/mapy-analizy/schemat-linii-lodz</tspan></text></g></svg>')
+open(OUT.replace('.svg', '.poster.svg'), 'w', encoding='utf-8').write('\n'.join(P))
 json.dump([dict(n=n, c=col[n], t=txtcol(col[n]), a=clean(info[n]['from']), b=clean(info[n]['to']), k=info[n]['trips']) for n in names],
           open(OUT.replace('.svg', '.lines.json'), 'w', encoding='utf-8'), ensure_ascii=False)
 print('wrote', OUT, f'{vw:.0f}x{vh:.0f}')

@@ -23,12 +23,26 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
    (stan „przed” dostaje kolory stanu „po” z `colors/<m>.json`; nowe tylko dla linii, których
    „po” nie ma). Czcionka: Inter z `$FONT_DIR` (domyślnie `/usr/share/fonts/opentype/inter`,
    pakiet `fonts-inter`).
+   Wycinki (env `CUTS`, JSON): „ogon” za przystankiem `cut` obsługiwany dokładnie przez linie `lines` idzie do ramki
+   w rogu `at` mapy (bl/tl/br/tr; `below` = pod mapą) jako prosta wiązka z etykietami pod 45°; przy `cut` zostaje
+   kropkowany odcinek. Z `"box": false` ogon zostaje na miejscu, ściśnięty `k` razy w stronę `cut`. Tramwaje:
+   `[{"lines":["41"],"cut":"Chocianowice IKEA","title":"do Pabianic","at":"bl"},
+   {"lines":["43"],"cut":"Legionów-Włókniarzy","title":"do Konstantynowa Łódzkiego","at":"bl"},
+   {"lines":["45"],"cut":"Zgierska-Helenówek-pętla","k":0.5,"box":false}]`.
+   Obok `<out>.svg` (strona) powstaje `<out>.poster.svg` (druk, `pdf.py` bierze go, jeśli jest): arkusz o proporcji
+   `POSTER_RATIO` (domyślnie A1 pionowo, 841/594), pasek tytułu, lista linii i objaśnienia w pustych rogach mapy
+   (`LEGEND_AT`, `KEY_AT`, domyślnie tr i tl), a wysokość, której mapa nie wypełnia, idzie na pas z lupą pod mapą.
+   Lupa (env `ZOOM`): `{"stations":[…],"k":2.2,"title":"Centrum"}` — wycinek wokół podanych przystanków (`<use>`
+   głównego rysunku) na całą szerokość pasa, zaznaczony na mapie czerwoną przerywaną ramką; ramki wycinków są w lupie
+   zasłonięte. Tramwaje: Piotrkowska Centrum, Kościuszki-Zamenhofa, Mickiewicza-Żeromskiego, Piłsudskiego-Kilińskiego,
+   Piotrkowska-Brzeźna, Kościuszki-Struga, Piłsudskiego-Sienkiewicza, Żwirki-Piotrkowska, Kościuszki-Mickiewicza.
 4. `diff.py <gtfs_przed> <dzień> <gtfs_po> <dzień> <diff.json>` — różnice z samego GTFS:
    linie dodane, usunięte, ze zmienioną trasą (inna sekwencja nazw przystanków najczęstszego
    wariantu w którymś kierunku) i ze zmienioną liczbą kursów.
 5. `build_page.py <WORK> page_tpl.html <diff.json> ../index.html` — strona z oboma stanami
    (czyta `$WORK/out<SUF>/<m>.svg` i `.lines.json`).
 6. `pdf.py <WORK> <SUF> ../druk` — SVG i PDF do druku (headless Chrome, `CHROME=ścieżka`).
+   pdf.py zapisuje też wersję ciemną `<nazwa><SUF>_ciemny.{svg,pdf}` (kolory jak w ciemnym motywie strony), `jpg.py` robi z niej JPG, a strona podmienia linki do pobrania zależnie od motywu.
    `jpg.py ../druk [2500]` — podgląd JPG każdego SVG z `druk/` (dłuższy bok w px, Chrome + Pillow).
    `verify.py [katalog_svg]` — kontrola linii i krańcówek względem GTFS (env `WORK`, `SUF`).
    `gate.py <svg> <gtfs_dir>` — bramka objazdów: odcinki rysowane ≥1,4× dłużej niż cięciwa i linie
@@ -78,6 +92,10 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
   dzień 8.10.2026), nieprzeliczane; ich `lines.json` odtworzono z metadanych strony. Autobusy
   w obu stanach przeliczone 9.10.2026 z czterema węzłami Fabrycznej, `hubsnap.py`, `fisheye.py` (MOVE + dwie soczewki)
   i `fixends.py`.
+- Tramwaje 10.10.2026: stan „po” od nowa obecnym `run.sh` z `FISHEYE=` (stary układ nie odtwarza się na tej maszynie),
+  stan „przed” z dotychczasowego `octi.json`. Próbowane i odrzucone: soczewka na centrum + `octi --geo-pen 1` (Piotrkowska
+  pionowo, ale Pabianicka/Paderewskiego robią się poziome wbrew geografii), `--diag-pen 1.5`, `-g 75%`, `--geo-pen 3`.
+  `tl.svg` (`transitmap -l`) ma czasem szersze płótno niż `tm.svg`; `render.py` przelicza numery linii przez `latlng-box`. Autobusy i nocne bez zmian (bez plakatu, tylko wersje ciemne).
 - LOOM w WSL (Ubuntu 24.04, cmake + g++); `src/topo/tests/ContractTest.cpp` skompilowany
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.

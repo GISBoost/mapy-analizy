@@ -79,6 +79,8 @@ svg.map .stops{fill:var(--sheet);stroke:var(--sheet-ink)}
 svg.map .lb text{paint-order:stroke;stroke:var(--sheet);stroke-width:2.5px;stroke-linejoin:round;fill:var(--sheet-ink)}
 svg.map .ll{stroke:var(--sheet)!important}
 svg.map .leg text{fill:var(--sheet-ink)}
+svg.map .inset .box{fill:var(--bg);stroke:var(--rule)}
+svg.map .inset text{fill:var(--sheet-ink)}
 svg.map .leg text:nth-of-type(2){fill:var(--sheet-muted)}
 svg.map .ln{stroke:var(--c)}
 svg.map .lln{fill:var(--c)}
@@ -261,9 +263,13 @@ const mid=()=>{const r=stage.getBoundingClientRect(); return [r.left+r.width/2,r
 document.getElementById('zin').onclick=()=>zoomAt(0.7,...mid());
 document.getElementById('zout').onclick=()=>zoomAt(1/0.7,...mid());
 document.getElementById('zfit').onclick=()=>{st[cur].vb=st[cur].home.slice(); apply(cur)};
+// download links point to the dark (_ciemny) files when the effective theme is dark
+const dlSync=()=>{const d=(document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
+  document.querySelectorAll('footer.note a[href^="druk/"]').forEach(a=>a.setAttribute('href',a.getAttribute('href').replace(/(_ciemny)?\.(pdf|svg|jpg)$/,(_,c,e)=>(d?'_ciemny':'')+'.'+e)))};
 document.getElementById('theme').onclick=()=>{const r=document.documentElement, cur_=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'), n=cur_==='dark'?'light':'dark';
-  r.setAttribute('data-theme',n); try{localStorage.setItem('lodz-theme',n)}catch(e){}};
-setLangChangeHandler(()=>show(mapk,state));
+  r.setAttribute('data-theme',n); try{localStorage.setItem('lodz-theme',n)}catch(e){} dlSync()};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',dlSync); document.addEventListener('DOMContentLoaded',dlSync); // after i18n.js fills the footer
+setLangChangeHandler(()=>{show(mapk,state); dlSync()}); // i18n re-renders the footer, so re-apply the links
 let first='tram', fs=''; try{const v=localStorage.getItem('lodz-map'), w=localStorage.getItem('lodz-state'); if(v&&st[v]) first=v; if(w==='_przed') fs=w}catch(e){}
 show(first,fs);
 </script>
