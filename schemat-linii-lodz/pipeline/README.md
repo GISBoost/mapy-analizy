@@ -62,7 +62,8 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
    linie dodane, usunięte, ze zmienioną trasą (inna sekwencja nazw przystanków najczęstszego
    wariantu w którymś kierunku) i ze zmienioną liczbą kursów.
 5. `build_page.py <WORK> page_tpl.html <diff.json> ../index.html` — strona z oboma stanami
-   (czyta `$WORK/out<SUF>/<m>.svg` i `.lines.json`).
+   (czyta `$WORK/out<SUF>/<m>.svg` i `.lines.json`). Schematy zapisuje do `../mapy/<m><SUF>.svg`, a odcinki
+   linii z jednej grupy scala w jedną ścieżkę (`<path>`; ten sam wygląd, ok. 3 razy mniej węzłów DOM).
 6. `pdf.py <WORK> <SUF> ../druk` — SVG i PDF do druku (headless Chrome, `CHROME=ścieżka`).
    pdf.py zapisuje też wersję ciemną `<nazwa><SUF>_ciemny.{svg,pdf}` (kolory jak w ciemnym motywie strony), `jpg.py` robi z niej JPG, a strona podmienia linki do pobrania zależnie od motywu.
    `jpg.py ../druk [2500]` — podgląd JPG każdego SVG z `druk/` (dłuższy bok w px, Chrome + Pillow).

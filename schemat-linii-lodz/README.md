@@ -3,7 +3,7 @@
 Schemat linii tramwajowych, autobusowych i nocnych Łodzi w dwóch stanach rozkładu — **od
 5.10.2026** i **przed 5.10.2026** (przełącznik w nagłówku) — z listą zmian między nimi
 (zakładka „Zmiany” w panelu bocznym; kliknięcie wyróżnia linię). Sześć statycznych schematów SVG
-w jednym `index.html`, z zoomem, wyróżnianiem linii i motywem jasnym/ciemnym (przycisk
+(każdy wczytywany dopiero po wybraniu zakładki), z zoomem, wyróżnianiem linii i motywem jasnym/ciemnym (przycisk
 „Motyw"; ciemny motyw idzie przez ten sam atrybut `data-theme` co tokeny `gisboost-1.css`,
 więc belka huba przełącza się razem ze schematem).
 
@@ -11,8 +11,10 @@ Strona: `https://gisboost.github.io/mapy-analizy/schemat-linii-lodz/`
 
 ## Zawartość
 
-- `index.html`: gotowa strona, wynik `pipeline/build_page.py`; wszystko w jednym pliku
-  (SVG, lista linii, skrypt), poza `i18n.js` (PL/EN).
+- `index.html`: gotowa strona, wynik `pipeline/build_page.py` (lista linii, różnice, skrypt) oraz `i18n.js` (PL/EN).
+- `mapy/`: sześć schematów SVG strony (`<m>.svg`, `<m>_przed.svg`), też z `build_page.py`. Strona pobiera
+  schemat przy pierwszym otwarciu zakładki, więc nie działa otwarta z dysku (`file://`), tylko z serwera.
+  Przeciąganie i zoom przesuwają gotowy obraz (CSS `transform`), a `viewBox` zmienia się po zakończeniu gestu.
 - `druk/`: PDF i SVG do druku: tramwaje (szerokość 594 mm), autobusy (1189 mm), nocne (841 mm);
   stan sprzed 5.10 z sufiksem `_przed`. Do szybkiego podglądu także JPG (2500 px po dłuższym boku).
 - `pipeline/`: skrypty, którymi to powstało (opis niżej).

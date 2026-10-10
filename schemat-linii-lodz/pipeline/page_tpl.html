@@ -72,7 +72,7 @@ aside{background:var(--panel);border-right:1px solid var(--rule);display:flex;fl
 .stage{position:relative;min-width:0;min-height:0;background:var(--sheet);overflow:hidden;touch-action:none;cursor:grab}
 .stage.drag{cursor:grabbing}
 .pane{position:absolute;inset:0}
-svg.map{width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+svg.map{width:100%;height:100%;display:block;overflow:visible;user-select:none;-webkit-user-select:none}  /* visible: no blank edge while a gesture moves it */
 svg.map .bg{fill:var(--sheet)}
 svg.map .casing{stroke:var(--sheet)}
 svg.map .stops{fill:var(--sheet);stroke:var(--sheet-ink)}
@@ -99,8 +99,6 @@ svg.map .chip text,svg.map .leg .chip text{stroke:none;fill:var(--t)!important}
 :root[data-theme="dark"] svg.map .chip rect{fill:var(--cd)}
 :root[data-theme="dark"] svg.map .chip text{fill:var(--td)!important}
 :root[data-theme="dark"] .chipb{background:var(--cd);color:var(--td)}
-svg.map .dim{opacity:.13}
-svg.map .ln,svg.map .lb,svg.map .chip,svg.map .st{transition:opacity .15s}
 svg.map .ln{cursor:pointer}
 .zoom{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:4px}
 .zoom button{width:36px;height:36px;font:600 18px var(--body);color:var(--fg);background:var(--panel);border:1px solid var(--rule);border-radius:6px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
@@ -126,7 +124,6 @@ button:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-of
 footer.note{flex:none;padding:6px 16px;font-size:12px;color:var(--muted);background:var(--panel);border-top:1px solid var(--rule)}
 footer.note a{color:inherit}
 @media (max-width:760px){footer.note{padding:5px 16px calc(5px + env(safe-area-inset-bottom));white-space:nowrap;overflow-x:auto}}
-@media (prefers-reduced-motion:reduce){svg.map *{transition:none!important}}
 </style>
 </head>
 <body>
@@ -169,24 +166,35 @@ footer.note a{color:inherit}
 </footer>
 <script src="i18n.js"></script>
 <script>
-const META=/*META*/, DIFF=/*DIFF*/;
+const META=/*META*/, DIFF=/*DIFF*/, SVGS=/*SVGS*/;
 const stage=document.getElementById('stage'), list=document.getElementById('lines'), clearBtn=document.getElementById('clear'), chl=document.getElementById('changes');
 // cur = pane key = map + state ('' = from 5.10.2026, '_przed' = before)
 const st={}; let cur='tram', mapk='tram', state='', view='lines';
-for(const k of Object.keys(META)){
-  const svg=document.getElementById('svg-'+k); const vb=svg.getAttribute('viewBox').split(/\s+/).map(Number);
-  st[k]={svg,home:vb.slice(),vb:vb.slice(),sel:new Set(),
-    els:[...svg.querySelectorAll('[data-l]')].map(e=>[e,(e.getAttribute('data-l')||'').split(' ')])};
-}
-function apply(k){const s=st[k]; s.svg.setAttribute('viewBox',s.vb.map(v=>v.toFixed(2)).join(' '));}
+for(const k of Object.keys(META)) st[k]={sel:new Set()};
+// a diagram is fetched when its tab is first opened (s.svg stays unset until then)
+function load(k){const s=st[k], p=document.getElementById('pane-'+k);
+  return s.ready||(s.ready=fetch(SVGS[k]).then(r=>{if(!r.ok) throw new Error(r.status); return r.text()}).then(txt=>{
+    p.innerHTML=txt; s.svg=p.querySelector('svg'); const vb=s.svg.getAttribute('viewBox').split(/\s+/).map(Number); s.home=vb.slice(); s.vb=vb.slice();
+  }).catch(e=>{s.ready=null; p.textContent=t('loadErr'); throw e}));}
+let tmr=0;
+function apply(k){const s=st[k]; clearTimeout(tmr); s.svg.style.transform=''; s.svg.style.willChange=''; s.svg.setAttribute('viewBox',s.vb.map(v=>v.toFixed(2)).join(' '));}
+// during a gesture the drawing of the committed viewBox is only moved and scaled (CSS transform, no repaint of the
+// whole map per frame); the viewBox catches up when the gesture ends
+function move(k){const s=st[k], r=stage.getBoundingClientRect(), v=s.vb;
+  s.vb=s.svg.getAttribute('viewBox').split(/\s+/).map(Number); const k0=scaleOf(s), [x0,y0]=pt(s,r.left,r.top);
+  s.vb=v; const k1=scaleOf(s), [x1,y1]=pt(s,r.left,r.top);
+  Object.assign(s.svg.style,{willChange:'transform',transformOrigin:'0 0',transform:`translate(${(x0-x1)/k1}px,${(y0-y1)/k1}px) scale(${k0/k1})`});
+  clearTimeout(tmr); if(!ptrs.size) tmr=setTimeout(()=>apply(k),250);}  // wheel and buttons: after a pause
+// highlight: one generated rule set dims every element of the diagram except the selected lines' ones
+const selCss=document.head.appendChild(document.createElement('style'));
 function paint(k){
-  const s=st[k], any=s.sel.size>0;
-  for(const [e,ls] of s.els) e.classList.toggle('dim', any && !ls.some(l=>s.sel.has(l)));
+  const s=st[k], any=s.sel.size>0, id='#svg-'+CSS.escape(k);
+  selCss.textContent=any?`${id} [data-l]{opacity:.13} ${[...s.sel].map(l=>`${id} [data-l~="${CSS.escape(l)}"]`).join(',')}{opacity:1}`:'';
   for(const li of list.children) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l));
   for(const li of chl.querySelectorAll('li.ch')) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l));
   clearBtn.disabled=!any;
 }
-function fitSel(){const s=st[cur]; if(!s.sel.size) return; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+function fitSel(){const s=st[cur]; if(!s.svg||!s.sel.size) return; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   for(const g of s.svg.querySelectorAll('g.ln')){ if(!s.sel.has(g.getAttribute('data-l'))) continue; const b=g.getBBox(); if(!b.width&&!b.height) continue;
     x0=Math.min(x0,b.x); y0=Math.min(y0,b.y); x1=Math.max(x1,b.x+b.width); y1=Math.max(y1,b.y+b.height);}
   if(x1<x0) return; const m=Math.max(x1-x0,y1-y0)*0.12+60; s.vb=[x0-m,y0-m,x1-x0+2*m,y1-y0+2*m]; apply(cur);}
@@ -216,10 +224,10 @@ function buildChanges(){
     w.textContent=r.kinds.map(k=>k==='added'?t('chAdded',{b:r.k1}):k==='removed'?t('chRemoved',{a:r.k0}):k==='route'?t('chRoute',{p:r.plus.length,m:r.minus.length}):t('chTrips',{a:r.k0,b:r.k1})).join(' · ');
     if(r.kinds.includes('route')) li.title=(r.plus.length?'+ '+r.plus.join(', '):'')+(r.plus.length&&r.minus.length?'\n':'')+(r.minus.length?'− '+r.minus.join(', '):'');
     const sm=document.createElement('small'); sm.textContent=r.a+' – '+r.b; w.append(sm);
-    const go=()=>{ // highlight on the active diagram; switch state only if the line isn't drawn there
+    const go=async()=>{ // highlight on the active diagram; switch state only if the line isn't drawn there
       let s=state; if(!has(mapk+s,r.n)){const o=s?'':'_przed'; if(has(mapk+o,r.n)) s=o;}
       if(s!==state) show(mapk,s);
-      if(has(cur,r.n)){st[cur].sel=new Set([r.n]); paint(cur); fitSel();}};
+      if(has(cur,r.n)){const k=cur; st[k].sel=new Set([r.n]); paint(k); await load(k); if(k===cur) fitSel();}};
     li.append(chip(m),w); li.onclick=go; li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
     chl.append(li);
   }
@@ -228,14 +236,14 @@ function setView(v){view=v;
   for(const b of document.querySelectorAll('.atab')) b.setAttribute('aria-selected', b.dataset.v===v);
   list.hidden=v!=='lines'; chl.hidden=v!=='changes';}
 function show(m,s){
-  const prev=st[cur], k=m+s;
+  const prev=st[cur], k=m+s; if(prev.svg&&prev.svg.style.transform) apply(cur);
   if(m===mapk&&k!==cur) st[k].sel=new Set([...prev.sel].filter(l=>has(k,l)));  // keep the selection across states
   mapk=m; state=s; cur=k;
   for(const b of document.querySelectorAll('.tab')){b.setAttribute('aria-selected', b.dataset.map===m); b.querySelector('.cnt').textContent=META[b.dataset.map+s].length;}
   for(const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', b.dataset.state===s);
   const me=document.getElementById('meta'); me.dataset.i18n=s?'metaBefore':'meta'; me.textContent=t(me.dataset.i18n);
   for(const key of Object.keys(st)) document.getElementById('pane-'+key).hidden = key!==k;
-  buildList(k); buildChanges(); paint(k);
+  buildList(k); buildChanges(); paint(k); load(k).catch(()=>{});
   try{localStorage.setItem('lodz-map',m); localStorage.setItem('lodz-state',s)}catch(e){}
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.map,state));
@@ -246,23 +254,23 @@ clearBtn.onclick=()=>{st[cur].sel.clear(); paint(cur)};
 function scaleOf(s){const r=stage.getBoundingClientRect(); return Math.max(s.vb[2]/r.width, s.vb[3]/r.height);}
 function pt(s,cx,cy){const r=stage.getBoundingClientRect(), k=scaleOf(s);
   const ox=s.vb[0]+(s.vb[2]-r.width*k)/2, oy=s.vb[1]+(s.vb[3]-r.height*k)/2; return [ox+(cx-r.left)*k, oy+(cy-r.top)*k];}
-function zoomAt(f,cx,cy){const s=st[cur]; const nw=s.vb[2]*f; if(nw>s.home[2]*1.5||nw<s.home[2]/60) return;
-  const [px,py]=pt(s,cx,cy); s.vb=[px-(px-s.vb[0])*f, py-(py-s.vb[1])*f, s.vb[2]*f, s.vb[3]*f]; apply(cur);}
+function zoomAt(f,cx,cy){const s=st[cur]; if(!s.svg) return; const nw=s.vb[2]*f; if(nw>s.home[2]*1.5||nw<s.home[2]/60) return;
+  const [px,py]=pt(s,cx,cy); s.vb=[px-(px-s.vb[0])*f, py-(py-s.vb[1])*f, s.vb[2]*f, s.vb[3]*f]; move(cur);}
 stage.addEventListener('wheel',e=>{e.preventDefault(); zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
 const ptrs=new Map(); let moved=0, pinch=0;
-stage.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom'))return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
+stage.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom')||!st[cur].svg)return; clearTimeout(tmr); ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
   if(ptrs.size===2){const a=[...ptrs.values()]; pinch=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);}});
 stage.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId))return; const p=ptrs.get(e.pointerId), s=st[cur];
-  if(ptrs.size===1){const k=scaleOf(s); s.vb[0]-=(e.clientX-p[0])*k; s.vb[1]-=(e.clientY-p[1])*k; moved+=Math.abs(e.clientX-p[0])+Math.abs(e.clientY-p[1]); apply(cur);}
+  if(ptrs.size===1){const k=scaleOf(s); s.vb[0]-=(e.clientX-p[0])*k; s.vb[1]-=(e.clientY-p[1])*k; moved+=Math.abs(e.clientX-p[0])+Math.abs(e.clientY-p[1]); move(cur);}
   ptrs.set(e.pointerId,[e.clientX,e.clientY]);
   if(ptrs.size===2){const a=[...ptrs.values()], d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]); if(pinch>0&&d>0){zoomAt(pinch/d,(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2); moved+=5;} pinch=d;}});
-function up(e){ if(!ptrs.has(e.pointerId))return; ptrs.delete(e.pointerId); stage.classList.remove('drag');
+function up(e){ if(!ptrs.has(e.pointerId))return; ptrs.delete(e.pointerId); stage.classList.remove('drag'); if(!ptrs.size&&st[cur].svg.style.transform) apply(cur);
   if(moved<5&&e.type==='pointerup'){const el=document.elementFromPoint(e.clientX,e.clientY); const g=el&&el.closest&&el.closest('.ln,.chip'); if(g) toggle(g.getAttribute('data-l'));}}
 stage.addEventListener('pointerup',up); stage.addEventListener('pointercancel',up);
 const mid=()=>{const r=stage.getBoundingClientRect(); return [r.left+r.width/2,r.top+r.height/2]};
 document.getElementById('zin').onclick=()=>zoomAt(0.7,...mid());
 document.getElementById('zout').onclick=()=>zoomAt(1/0.7,...mid());
-document.getElementById('zfit').onclick=()=>{st[cur].vb=st[cur].home.slice(); apply(cur)};
+document.getElementById('zfit').onclick=()=>{const s=st[cur]; if(s.svg){s.vb=s.home.slice(); apply(cur)}};
 // download links point to the dark (_ciemny) files when the effective theme is dark
 const dlSync=()=>{const d=(document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
   document.querySelectorAll('footer.note a[href^="druk/"]').forEach(a=>a.setAttribute('href',a.getAttribute('href').replace(/(_ciemny)?\.(pdf|svg|jpg)$/,(_,c,e)=>(d?'_ciemny':'')+'.'+e)))};
