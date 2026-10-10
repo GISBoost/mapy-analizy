@@ -51,6 +51,13 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
   Jaracza-Piotrkowska, Zamenhofa-Piotrkowska, Struga-Piotrkowska, Tuwima-Kilińskiego (EC1 Centr. Nauki),
   Żeromskiego-pl. Barlickiego, Gdańska-1 Maja. Tramwaje: Piotrkowska Centrum, Kościuszki-Zamenhofa, Mickiewicza-Żeromskiego, Piłsudskiego-Kilińskiego,
    Piotrkowska-Brzeźna, Kościuszki-Struga, Piłsudskiego-Sienkiewicza, Żwirki-Piotrkowska, Kościuszki-Mickiewicza.
+   Nocne: A1 pionowo (domyślne `POSTER_RATIO`), `CUT_GAP=3`, wycinki w trybie prostym:
+   `[{"lines":["N1A"],"cut":"Rojna-Rydzowa","title":"do Aleksandrowa Łódzkiego","at":"tl"},
+   {"lines":["N5B"],"cut":"Rokicińska-Hetmańska NŻ","title":"do Andrespola","at":"br"}]` (każdy ogon zabierał 16%
+   powierzchni schematu, razem 22,6×13,7 → 15,3×13,7 km), lupa `k` 3 (render zmniejsza, gdy nie mieści) na
+   Zachodnia-Legionów, Gdańska-1 Maja, Więckowskiego-Zachodnia, Próchnika-Piotrkowska, Jaracza-Piotrkowska,
+   Zamenhofa-Piotrkowska, Struga-Piotrkowska, Kościuszki-Mickiewicza, Rodziny Poznańskich-Dw. Łódź Fabryczna,
+   Kilińskiego-Narutowicza. `LEGEND_AT=band` wymusza listę linii w pasie/kolumnie (próba A1 poziomo, odrzucona: lupa ×1,1).
 4. `diff.py <gtfs_przed> <dzień> <gtfs_po> <dzień> <diff.json>` — różnice z samego GTFS:
    linie dodane, usunięte, ze zmienioną trasą (inna sekwencja nazw przystanków najczęstszego
    wariantu w którymś kierunku) i ze zmienioną liczbą kursów.
@@ -111,6 +118,11 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
   stan „przed” z dotychczasowego `octi.json`. Próbowane i odrzucone: soczewka na centrum + `octi --geo-pen 1` (Piotrkowska
   pionowo, ale Pabianicka/Paderewskiego robią się poziome wbrew geografii), `--diag-pen 1.5`, `-g 75%`, `--geo-pen 3`.
   `tl.svg` (`transitmap -l`) ma czasem szersze płótno niż `tm.svg`; `render.py` przelicza numery linii przez `latlng-box`. Autobusy i nocne bez zmian (bez plakatu, tylko wersje ciemne).
+- Nocne 10.10.2026: oba stany od nowa (`run.sh night bus`, `TOPO_D=150`, z `fixends`/`hubsnap`), potem z `loom.json`
+  soczewka `FISHEYE='2.5 650 19.4687 51.7703, 1.5 2500'` i `octi --geo-pen 1`, żeby wiązka Zamenhofa – Kościuszki-Mickiewicza
+  – Kościuszki-Radwańska szła pionowo jak w terenie. Porównane: domyślne octi, `--geo-pen` 0,5/1/2/3, `--diag-pen 1.5`,
+  `-g 75%`, sama soczewka, `--geo-pen 1 -g 75%` (najmniejsza dystorcja: błąd kierunku 22,6°, przesunięcie 0,29 km;
+  wybrana soczewka + geo-pen ma 29,5° i 0,47 km, ale więcej miejsca w centrum).
 - LOOM w WSL (Ubuntu 24.04, cmake + g++); `src/topo/tests/ContractTest.cpp` skompilowany
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.

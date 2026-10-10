@@ -39,7 +39,7 @@ def emit(s, base, wmm):  # writes <DST>/<base>.svg and prints <DST>/<base>.pdf
 if __name__=='__main__':
     W, SUF, DST = sys.argv[1:4]
     CHROME = os.environ.get('CHROME', 'chromium')
-    for m,name,wmm in [('tram','lodz_tramwaje',594),('bus','lodz_autobusy',1189),('night','lodz_nocne',841)]:
+    for m,name,wmm in [('tram','lodz_tramwaje',594),('bus','lodz_autobusy',1189),('night','lodz_nocne',594)]:
         f=f'{W}/out{SUF}/{m}'; s=open(f+'.poster.svg' if os.path.exists(f+'.poster.svg') else f+'.svg',encoding='utf-8').read()  # framed poster when render.py made one
         emit(s,name+SUF,wmm)
         emit(dark_svg(s),name+SUF+'_ciemny',wmm)

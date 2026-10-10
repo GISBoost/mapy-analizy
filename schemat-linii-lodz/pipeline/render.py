@@ -514,7 +514,8 @@ def legend(nc):
         out.append(f'<text x="{cx+LF2*3.9:.1f}" y="{cy+LF2*1.0:.1f}" font-size="{LF2:.1f}" fill="#16181d">{esc(ltxt[n])}</text>')
     return w, h, out
 mv = lambda q, els: [f'<g transform="translate({q[0]:.1f},{q[1]:.1f})">'] + els + ['</g>']
-pw_, ph_, Pl = legend(ncol); lp = place(pw_, ph_, os.environ.get('LEGEND_AT', 'tr')); band = []
+LA = os.environ.get('LEGEND_AT', 'tr')  # 'band': straight to the band / side column, even if a corner is free
+pw_, ph_, Pl = legend(ncol); lp = None if LA == 'band' else place(pw_, ph_, LA); band = []
 if lp: Pl = mv(lp, Pl)
 else: pw_, ph_, Pl = legend(int(os.environ.get('BAND_COLS', 2))); band.append((ph_, Pl)); Pl = []
 # key + notes block
