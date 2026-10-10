@@ -128,11 +128,12 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.
 
-## Warstwa orientacyjna (prototyp, 10.10.2026)
+## Warstwa orientacyjna (10.10.2026)
 
 Opcjonalne tło schematu: kolej, granica Łodzi (strefa biletowa 1 | 2), parki i lasy, nazwy pięciu dzielnic, ul. Piotrkowska
 z pl. Wolności oraz piktogramy przy nazwach przystanków (stacja kolejowa w promieniu 350 m, duże szpitale, Manufaktura).
-Przetestowana na tramwajach, autobusach i nocnych, stan „po”; pliki w `druk/` i na stronie są jeszcze bez niej.
+Jest na stronie i w `druk/`, na wszystkich sześciu schematach (oba stany). Render: `LANDMARKS=<work>/landmarks.json
+RAIL_STYLE=double`, na autobusach dodatkowo `PIOTRKOWSKA=0`; ustawienia map bez zmian (jak wyżej).
 
 - `landmarks.py <work>/landmarks.json`: pobiera dane z OpenStreetMap (Overpass API) do katalogu roboczego; surowa odpowiedź
   zostaje obok (`*.osm.json`), więc kolejne uruchomienie nie odpytuje serwera. Dane nie trafiają do repozytorium.
@@ -152,4 +153,7 @@ Przetestowana na tramwajach, autobusach i nocnych, stan „po”; pliki w `druk/
 - Kolej: tory pasażerskie (relacje `route=train`) sklejone w jedną linię na korytarz, przecięte na stacjach i rozjazdach
   (węzły bliższe niż 350 m łączone), każdy odcinek narysowany jako skos + prosta (kąty 45/90°), do granicy miasta.
 - Parki i granica: wielokąty uproszczone i dociągnięte do siatki, boki tylko co 45/90°; parki z zaokrąglonymi narożnikami.
-- Kolory warstwy w wersji ciemnej: tabela `NEUT` w `pdf.py`.
+- Kolory warstwy w wersji ciemnej: tabela `NEUT` w `pdf.py`. `build_page.py` robi z niej reguły CSS ciemnego motywu strony
+  (kolory warstwy są atrybutami, więc reguły dopasowują je po wartości). Po kliknięciu linii tło nie przygasa.
+- Ramka boczna przeniesiona do kolumny plakatu (autobusy: „do Andrespola”) zostawia w starym miejscu łatę, na której
+  warstwa jest narysowana ponownie (`<use>` grupy `bgl`), żeby tło strefy 2 i parki się nie urywały.

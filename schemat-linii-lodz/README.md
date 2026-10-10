@@ -25,6 +25,8 @@ Strona: `https://gisboost.github.io/mapy-analizy/schemat-linii-lodz/`
   repo [easy-GTFS-RT](https://github.com/GISBoost/easy-GTFS-RT), dzień roboczy **8.10.2026**.
 - Przed 5.10.2026: release `lodz-realized-2026-10-02-phone` (`feed_start_date` 20261001),
   dzień roboczy **1.10.2026** (czwartek, jak 8.10).
+- Tło orientacyjne (kolej, granica Łodzi, parki i lasy, szpitale, lotnisko): © autorzy OpenStreetMap,
+  licencja [ODbL](https://www.openstreetmap.org/copyright); pobierane przez `pipeline/landmarks.py`.
 
 ## Metoda
 

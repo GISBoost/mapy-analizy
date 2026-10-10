@@ -695,7 +695,7 @@ E.append(f'<style>.lb text{{paint-order:stroke;stroke:#fff;stroke-width:{FS*0.28
 E.append(f'<rect class="bg" x="{vx:.1f}" y="{vy:.1f}" width="{vw:.1f}" height="{vh:.1f}" fill="#fff"/>')
 pl = lambda p: ' '.join(f'{x:.1f},{y:.1f}' for x, y in p)
 if LM:  # orientation layer under everything else
-    E.append(f'<clipPath id="{PFX}bc"><rect x="{gb[0]-M:.1f}" y="{gb[1]-M:.1f}" width="{gb[2]-gb[0]+2*M:.1f}" height="{gb[3]-gb[1]+2*M:.1f}"/></clipPath><g class="bgl" clip-path="url(#{PFX}bc)">')
+    E.append(f'<clipPath id="{PFX}bc"><rect x="{gb[0]-M:.1f}" y="{gb[1]-M:.1f}" width="{gb[2]-gb[0]+2*M:.1f}" height="{gb[3]-gb[1]+2*M:.1f}"/></clipPath><g class="bgl" id="{PFX}bgl" clip-path="url(#{PFX}bc)">')
     ring_ = lambda g: 'M' + ' L'.join(f'{x:.1f} {y:.1f}' for x, y in g.exterior.coords) + 'Z'
     if cityd is not None:  # outside the city (fare zone 2) a tint; the boundary a thin line of its own colour
         X_, Y_ = vx - 5e4, vy - 5e4
@@ -882,7 +882,8 @@ if SIDE:  # column: legend and key from the top, the magnifier under them (at mo
     yb = Y0 + PH - FT - BG_ / 2  # side insets from the column's bottom up: a white patch over the original, a clipped copy
     for b in sideb:
         x0_, y0_, x1_, y1_ = b.bounds; tx, ty = xr - (x1_ - x0_), yb - (y1_ - y0_); yb = ty - BG_
-        P.insert(P.index(f'<g id="{PFX}main">') + body - 1, f'<rect x="{x0_-FS:.1f}" y="{y0_-FS:.1f}" width="{x1_-x0_+2*FS:.1f}" height="{y1_-y0_+2*FS:.1f}" fill="#fff"/>')
+        pr = f'x="{x0_-FS:.1f}" y="{y0_-FS:.1f}" width="{x1_-x0_+2*FS:.1f}" height="{y1_-y0_+2*FS:.1f}"'  # the patch shows the orientation layer again
+        P.insert(P.index(f'<g id="{PFX}main">') + body - 1, f'<rect {pr} fill="#fff"/>' + (f'<clipPath id="{PFX}pc{len(P)}"><rect {pr}/></clipPath><g clip-path="url(#{PFX}pc{len(P)})"><use href="#{PFX}bgl"/></g>' if LM else ''))
         P.append(f'<clipPath id="{PFX}sc{len(P)}"><rect x="{x0_:.1f}" y="{y0_:.1f}" width="{x1_-x0_:.1f}" height="{y1_-y0_:.1f}"/></clipPath>'
                  f'<g transform="translate({tx-x0_:.1f},{ty-y0_:.1f})"><g clip-path="url(#{PFX}sc{len(P)})"><use href="#{PFX}main"/></g></g>')
     zx, zy, zw = cx0, by_, pw_; zhh = min(yb - zy - zh, zw * float(os.environ.get('ZOOM_H', 1.0)))
@@ -908,7 +909,7 @@ if (BH or SIDE) and SB:
     print('zoom', f'x{k:.2f}', 'box', f'{zw:.0f}x{zhh:.0f}')
 fy = Y0 + PH - FT + LF2 * 0.6; ky = fy + LF2 * 1.8
 P.append(f'<line x1="{xl:.1f}" x2="{xr:.1f}" y1="{fy:.1f}" y2="{fy:.1f}" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
-         f'<text x="{xr:.1f}" y="{ky+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">dane: GTFS ZDiT Łódź · układ: LOOM (Uniwersytet we Fryburgu) · '
+         f'<text x="{xr:.1f}" y="{ky+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">dane: GTFS ZDiT Łódź{", tło: © autorzy OpenStreetMap (ODbL)" if LM else ""} · układ: LOOM (Uniwersytet we Fryburgu) · '
          f'opracowanie: GISBoost · <tspan font-weight="700" fill="#16181d">gisboost.github.io/mapy-analizy/schemat-linii-lodz</tspan></text></g></svg>')
 open(OUT.replace('.svg', '.poster.svg'), 'w', encoding='utf-8').write('\n'.join(P))
 json.dump([dict(n=n, c=col[n], t=txtcol(col[n]), a=clean(info[n]['from']), b=clean(info[n]['to']), k=info[n]['trips']) for n in names],

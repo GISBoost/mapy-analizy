@@ -16,6 +16,11 @@ def darkv(h):
 def merge(s):  # all polylines of a group -> one path: subpaths keep their own caps, the look is the same, far fewer DOM nodes
     def g(m): return m.group(1) + '<path d="' + ''.join('M' + p.replace(' ', 'L') for p in re.findall(r'<polyline points="([^"]+)"/>', m.group(2))) + '"/>\n' + m.group(3)
     return re.sub(r'(<g [^>]*>\n)((?:<polyline points="[^"]+"/>\n)+)(</g>)', g, s)
+from pdf import NEUT  # light -> dark colours of the print downloads; the orientation layer's ones also theme the page
+BASE={'#fff','#ffffff','#16181d','#5b6270','#f3f4f6','#d5d9e0','#c8102e','#111'}  # these the page themes by class
+def lmcss():  # dark theme of the orientation layer: its colours are attributes, so they are matched by value
+    r=[f'svg.map [{a}="{k}" i]{{{a}:{v}}}' for k,v in NEUT.items() if k not in BASE for a in ('fill','stroke')]+[f'svg.map .lb.rl text{{fill:{NEUT["#7a818d"]}}}']
+    return '@media (prefers-color-scheme: dark){'+''.join(':root:not([data-theme="light"]) '+x for x in r)+'}\n'+''.join(':root[data-theme="dark"] '+x for x in r)
 tc=lambda h: '#111' if lum(h)>165 else '#fff'
 def themed(s,cols):
     v=lambda n: f'--c:#{cols[n]};--cd:#{darkv(cols[n])};--t:{tc(cols[n])};--td:{tc(darkv(cols[n]))}'
@@ -43,5 +48,5 @@ for k,s in svgs.items():
 panes=''.join(f'<div class="pane" id="pane-{k}" {"" if k=="tram" else "hidden"}></div>' for k in svgs)
 diff=json.load(open(DIFF,encoding='utf-8'))
 html=(open(TPL,encoding='utf-8').read().replace('/*TABS*/',tabs).replace('<!--PANES-->',panes)
-      .replace('/*META*/',json.dumps(meta,ensure_ascii=False)).replace('/*SVGS*/',json.dumps(urls)).replace('/*DIFF*/',json.dumps(diff,ensure_ascii=False)))
+      .replace('/*META*/',json.dumps(meta,ensure_ascii=False)).replace('/*SVGS*/',json.dumps(urls)).replace('/*LMCSS*/',lmcss()).replace('/*DIFF*/',json.dumps(diff,ensure_ascii=False)))
 open(OUT,'w',encoding='utf-8',newline='\n').write(html); print(OUT, len(html)//1024,'KB')

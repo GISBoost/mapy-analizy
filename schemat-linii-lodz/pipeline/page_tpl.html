@@ -100,6 +100,12 @@ svg.map .chip text,svg.map .leg .chip text{stroke:none;fill:var(--t)!important}
 :root[data-theme="dark"] svg.map .chip text{fill:var(--td)!important}
 :root[data-theme="dark"] .chipb{background:var(--cd);color:var(--td)}
 svg.map .ln{cursor:pointer}
+/* orientation layer (render.py LANDMARKS): railway station names grey, zone-2 insets keep their tint, white parts follow the sheet */
+svg.map .lb.rl text{fill:#7a818d}
+svg.map .inset .box[fill="#f1eef7" i]{fill:#f1eef7}
+svg.map .bgl [fill="#fff"],svg.map .ic [fill="#fff"]{fill:var(--sheet)}
+svg.map .bgl [stroke="#fff"],svg.map .ic [stroke="#fff"]{stroke:var(--sheet)}
+/*LMCSS*/
 .zoom{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:4px}
 .zoom button{width:36px;height:36px;font:600 18px var(--body);color:var(--fg);background:var(--panel);border:1px solid var(--rule);border-radius:6px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .hint{position:absolute;left:16px;bottom:16px;font-size:12px;color:var(--muted);background:var(--panel);opacity:.92;padding:4px 8px;border-radius:4px}
@@ -155,7 +161,7 @@ footer.note a{color:inherit}
   </div>
 </main>
 <footer class="note" data-i18n-html="footerHtml">
-  <a href="../">GISBoost</a> · dane: GTFS ZDiT Łódź · układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · do druku:
+  <a href="../">GISBoost</a> · dane: GTFS ZDiT Łódź, tło: © <a href="https://www.openstreetmap.org/copyright">autorzy OpenStreetMap</a> · układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · do druku:
   tramwaje <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>/<a href="druk/lodz_tramwaje.jpg">JPG</a>,
   autobusy <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>/<a href="druk/lodz_autobusy.jpg">JPG</a>,
   nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>;
