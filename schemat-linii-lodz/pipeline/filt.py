@@ -39,8 +39,11 @@ t=t.join(st.groupby('trip_id').stop_id.agg('|'.join).rename('pat'),on='trip_id')
 cnt=t.groupby('route_id').size(); rare=set(cnt[cnt<6].index)
 t=t[~t.route_id.isin(rare)]
 # trips from/to a depot ('Nowe Sady-zajezdnia NOWE SADY') are runs in and out of service: F1/72B/91C/60C have 20-40% of them,
-# enough for the 25% rule, and the depot showed up as their terminus; dropped unless a direction has nothing else (97A/97B)
-sn0=dict(zip(stops.stop_id,stops.stop_name)); depot=lambda p: any(re.search(r'-zajezdnia [A-ZŁ ]+$',sn0[x]) for x in (p.split('|')[0],p.split('|')[-1]))
+# enough for the 25% rule, and the depot showed up as their terminus; dropped unless a direction has nothing else (97A/97B).
+# Trams: runs through a depot track have a technical stop 'Telefoniczna- ET-1' / 'Pabianicka- ET-2' anywhere on the way
+# (operator apps show them as '12 ET-1 Stoki'); 'Telefoniczna Zajezdnia' itself is a public loop (18 ends there) and stays
+sn0=dict(zip(stops.stop_id,stops.stop_name))
+depot=lambda p: (q:=p.split('|')) and (any(re.search(r'-zajezdnia [A-ZŁ ]+$',sn0[x]) for x in (q[0],q[-1])) or any(re.search(r'ET-\d',sn0[x]) for x in q))
 tn=t.groupby('route_id').size()  # trip counts still include depot runs
 t['dep']=t.pat.map(depot); t=t[~t.dep|t.groupby(['route_id','direction_id']).dep.transform('all')]
 keep=[]
