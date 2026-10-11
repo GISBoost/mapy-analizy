@@ -123,6 +123,12 @@ więc rysujemy ją jako cztery węzły połączone pierścieniem:
 Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 `topo -d 150` scala przystanki do 150 m w jeden węzeł, chip stoi we właściwym miejscu.
 
+`gtfs_fix_shapes.py <gtfs.zip|katalog> <wynik.zip>` — feed ZDiT podany wprost do `gtfs2graph` (także we wtyczce QGIS
+[loom_qgis](https://github.com/transportforcairo/loom_qgis)) przerywa wczytywanie: część kursów (tramwaj 43, kilkanaście
+linii autobusowych) ma `shape_id` bez wpisu w `shapes.txt`. Skrypt usuwa takie kursy, gdy linia ma inne z kształtem,
+a pozostałym czyści `shape_id` (feed z 5.10.2026: 104 usunięte, 4 bez kształtu). `filt.py` sam czyści `shape_id`
+bez kształtu (po wyborze wariantów), więc potok tego nie potrzebuje.
+
 `mk.sh`/`fin.sh` łączą kroki 2–3 i robią podgląd PNG (`shot.py`, Playwright) — env:
 `PY`, `SUB` i (tylko `fin.sh`) `COLORS`.
 
