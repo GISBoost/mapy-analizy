@@ -10,6 +10,7 @@ python3 $(dirname $0)/hubsnap.py $O/$m.topo.json ${HUB_R:-300} 2>> $O/$m.logfix 
 $B/loom < $O/$m.topo.json > $O/$m.loom.json 2> $O/$m.log3 || { tail -3 $O/$m.log3; exit 1; }
 OIN=$O/$m.loom.json; FISHEYE=${FISHEYE-2.5 650 19.4687 51.7703, 1.5 2500}; if [ -n "$FISHEYE" ]; then python3 $(dirname $0)/fisheye.py $OIN $O/$m.fish.json "$FISHEYE" || exit 1; OIN=$O/$m.fish.json; fi
 $B/octi "$@" < $OIN > $O/$m.octi.json 2> $O/$m.log4 || { tail -3 $O/$m.log4; exit 1; }
+python3 $(dirname $0)/serving.py $O/$m.octi.json $O/$m.loom.json $W/data$SUF/$m 2>> $O/$m.logfix || { tail -3 $O/$m.logfix; exit 1; }
 $B/transitmap --line-width ${LWID:-30} --line-spacing ${LSP:-7} --outline-width 0 < $O/$m.octi.json > $O/$m.tm.svg 2> $O/$m.log5 || { tail -3 $O/$m.log5; exit 1; }
 $B/transitmap --line-width ${LWID:-30} --line-spacing ${LSP:-7} --outline-width 0 -l < $O/$m.octi.json > $O/$m.tl.svg 2>/dev/null
 ls -la $O/$m.tm.svg

@@ -48,5 +48,6 @@ for k,s in svgs.items():
 panes=''.join(f'<div class="pane" id="pane-{k}" {"" if k=="tram" else "hidden"}></div>' for k in svgs)
 diff=json.load(open(DIFF,encoding='utf-8'))
 html=(open(TPL,encoding='utf-8').read().replace('/*TABS*/',tabs).replace('<!--PANES-->',panes)
-      .replace('/*META*/',json.dumps(meta,ensure_ascii=False)).replace('/*SVGS*/',json.dumps(urls)).replace('/*LMCSS*/',lmcss()).replace('/*DIFF*/',json.dumps(diff,ensure_ascii=False)))
+      .replace('/*META*/',json.dumps(meta,ensure_ascii=False)).replace('/*SVGS*/',json.dumps(urls)).replace('/*LMCSS*/',lmcss()).replace('/*DIFF*/',json.dumps(diff,ensure_ascii=False))
+      .replace('src="i18n.js"',f'src="i18n.js?v={hashlib.sha1(open(os.path.join(os.path.dirname(OUT),"i18n.js"),"rb").read()).hexdigest()[:8]}"'))  # new strings reach cached pages too
 open(OUT,'w',encoding='utf-8',newline='\n').write(html); print(OUT, len(html)//1024,'KB')

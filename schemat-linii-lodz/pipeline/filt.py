@@ -26,7 +26,9 @@ for ids in HUBS:
     stops.loc[stops.stop_id==rep,['stop_lon','stop_lat']]=['%.6f'%m.lo.mean(),'%.6f'%m.la.mean()]
     print('hub',m[m.stop_id==rep].stop_name.iloc[0],list(m.stop_id))
 used=used[~used.stop_id.isin(hub)]
-for h,hs in used[used.stop_name.str.startswith('Dw. Łódź ')].groupby('stop_name'):
+# HUB_SKIP: stations whose street stops stay apart - at Chojny 69/70/72 stop on Kilińskiego and 75 on Śląska, not at the station
+SKIP=set(json.loads(os.environ.get('HUB_SKIP','["Dw. Łódź Chojny"]')))
+for h,hs in used[used.stop_name.str.startswith('Dw. Łódź ')&~used.stop_name.isin(SKIP)].groupby('stop_name'):
     near=lambda z: min(((z.lo-x)*69000)**2+((z.la-y)*111320)**2 for x,y in zip(hs.lo,hs.la))**.5<=HUB_M
     m=pd.concat([hs,used[used.stop_name.str.endswith('-'+h)&used.apply(near,axis=1)]])
     rep=hs.stop_id.iloc[0]; hub.update({i:rep for i in m.stop_id})
@@ -36,13 +38,18 @@ st['stop_id']=st.stop_id.replace(hub); st=st[st.stop_id!=st.groupby('trip_id').s
 t=t.join(st.groupby('trip_id').stop_id.agg('|'.join).rename('pat'),on='trip_id')
 cnt=t.groupby('route_id').size(); rare=set(cnt[cnt<6].index)
 t=t[~t.route_id.isin(rare)]
+# trips from/to a depot ('Nowe Sady-zajezdnia NOWE SADY') are runs in and out of service: F1/72B/91C/60C have 20-40% of them,
+# enough for the 25% rule, and the depot showed up as their terminus; dropped unless a direction has nothing else (97A/97B)
+sn0=dict(zip(stops.stop_id,stops.stop_name)); depot=lambda p: any(re.search(r'-zajezdnia [A-ZŁ ]+$',sn0[x]) for x in (p.split('|')[0],p.split('|')[-1]))
+tn=t.groupby('route_id').size()  # trip counts still include depot runs
+t['dep']=t.pat.map(depot); t=t[~t.dep|t.groupby(['route_id','direction_id']).dep.transform('all')]
 keep=[]
 for (rid,d),g in t.groupby(['route_id','direction_id']):
     vc=g.pat.value_counts(); n=len(g)
     ok=[p for p,c in vc.items() if c/n>=0.25] or [vc.index[0]]
     for p in ok: keep.append(g[g.pat==p].trip_id.iloc[0])   # one representative trip per kept pattern
 tfull=t.copy()
-t=t[t.trip_id.isin(keep)].drop(columns='pat')
+t=t[t.trip_id.isin(keep)].drop(columns=['pat','dep'])
 r=r[r.route_id.isin(t.route_id)].copy()
 key=lambda s_:(int(re.sub(r'\D','',s_) or 999),s_)
 names=sorted(r.route_short_name,key=key)
@@ -64,7 +71,7 @@ for rid,g in tfull.groupby('route_id'):
             if c/len(gd)>=0.25 or pp==vc.index[0]:
                 q=pp.split('|')
                 for sid in (q[0],q[-1]): ends.setdefault(sn[sid],[sn[sid],float(slon[sid]),float(slat[sid])])
-    info[rn[rid]]={'idx':idx[rn[rid]],'from':sn[p[0]],'to':sn[p[-1]],'trips':int(len(g)),'pairs':sorted(pairs),'ends':list(ends.values())}
+    info[rn[rid]]={'idx':idx[rn[rid]],'from':sn[p[0]],'to':sn[p[-1]],'trips':int(tn[rid]),'pairs':sorted(pairs),'ends':list(ends.values())}
 st=st[st.trip_id.isin(t.trip_id)].drop(columns='ss')
 stops=stops[stops.stop_id.isin(st.stop_id)]
 sh=sh[sh.shape_id.isin(t.shape_id)]

@@ -67,7 +67,9 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
 6. `pdf.py <WORK> <SUF> ../druk` — SVG i PDF do druku (headless Chrome, `CHROME=ścieżka`).
    pdf.py zapisuje też wersję ciemną `<nazwa><SUF>_ciemny.{svg,pdf}` (kolory jak w ciemnym motywie strony), `jpg.py` robi z niej JPG, a strona podmienia linki do pobrania zależnie od motywu.
    `jpg.py ../druk [2500]` — podgląd JPG każdego SVG z `druk/` (dłuższy bok w px, Chrome + Pillow).
-   `verify.py [katalog_svg]` — kontrola linii i krańcówek względem GTFS (env `WORK`, `SUF`).
+   `verify.py [katalog_svg]` — kontrola linii i krańcówek względem GTFS (env `WORK`, `SUF`, `MAPS`) oraz linii przy
+   przystankach: każda linia z podpisu przystanku musi w rozkładzie stawać na przystanku o jednej z nazw podpisu (kolejność
+   ulic bez znaczenia). Zostają zgłoszenia ze sklejeń `topo` (np. rondo z przystankami na dwóch ulicach).
    `gate.py <svg> <gtfs_dir>` — bramka objazdów: odcinki rysowane ≥1,4× dłużej niż cięciwa i linie
    ≥1,5× dłuższe od mediany (rysunek/GTFS). `octi` bywa pechowy (np. pętla 75A/B przez Starową
    Górę, objazd 64A/Z6 przez Zagajnikową) — wtedy przelicz układ i obejrzyj zgłoszone miejsca.
@@ -76,7 +78,21 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
 `run.sh` między `topo` a `loom` woła `fixends.py`: `topo` potrafi zgubić linię z ostatnich krawędzi
 przed krańcówką (59/86 kończyły się 1 km przed Pomorską-Edwarda); skrypt dokleja ją po najkrótszej
 ścieżce do przystanku najbliższego krańcówce z rozkładu (log w `out$SUF/<m>.logfix`).
-`filt.py` pomija przystanek „przejazd techniczny” (87A/87B), bo to nie przystanek dla pasażerów.
+`filt.py` pomija przystanek „przejazd techniczny” (87A/87B), bo to nie przystanek dla pasażerów, oraz zjazdy i wyjazdy
+z zajezdni (kurs zaczyna się lub kończy na „…-zajezdnia NOWE SADY/LIMANOWSKIEGO”): F1, 72B, 91C, 60C, 85A i nocne
+N1B/N3B/N5B miały ich 20–40%, więc reguła 25% rysowała zajezdnię jako krańcówkę. Zostają, gdy kierunek nie ma innych
+kursów (97A/97B). Liczba kursów w `lines.json` nadal je obejmuje.
+
+**Kto gdzie staje** (`serving.py`, w `run.sh` po `octi`): `topo`/`loom` gubią, które linie tylko przejeżdżają przez węzeł
+(a `hubsnap.py` czyścił to przy każdym „Dw. Łódź”: 50A/50B/68 na Leszczowej, tramwaje 4/9/19 przy Fabrycznej, 2/6/8/13/16 na
+pętli Żabieniec). Skrypt przypisuje każdy przystanek rysowanych kursów linii do węzła z tą linią (najbliższy o tej samej
+nazwie, a gdy takiego nie ma, najbliższy w ogóle; położenia z `loom.json`) i zapisuje w `octi.json` `not_serving` oraz
+`stop_names` (nazwa → linie). Koniec linii zawsze jest jej przystankiem. `transitmap` rysuje wtedy symbol przystanku tylko
+na liniach, które na nim stają. `render.py` z `stop_names`: węzeł sklejony z kilku przystanków dostaje nazwę tego, na którym
+staje więcej linii (Kilińskiego-Dw. Łódź Chojny zamiast Śląska 28 dla N3), a krańcówka sklejona z przystankiem przelotowym
+innej ulicy ma obie nazwy („Rokicińska-Lermontowa / Widzew Augustów”, „Aleksandrowska-Szczecińska / Teofilów”).
+`LABELS` (env, JSON `{nazwa: podpis}`) poprawia ręcznie sklejenia, których nie da się nazwać z danych; tramwaje:
+`{"Północna":"Północna / Nowomiejska"}`. Na stronie legenda mówi, że przystanki bliżej niż ok. 150 m są jednym punktem.
 
 ### Dworce i centrum (Fabryczna)
 LOOM nie grupuje przystanków (`gtfs2graph` robi węzeł z każdego `stop_id`, `parent_station` ignoruje),
@@ -85,11 +101,12 @@ pętli (51/53/61/85: pl. Dąbrowskiego → Rodziny Poznańskich wsch. → dworze
 więc rysujemy ją jako cztery węzły połączone pierścieniem:
 - `filt.py` — **węzły**: `HUBS` (env, JSON z listami `stop_id`) — domyślnie dworzec (2999, 2995, 2998), Rodziny
   Poznańskich zach. (2989–2992) i wsch. (3015, 3002, 3003), pl. Dąbrowskiego (769, 763 Narutowicza + 760 Sterlinga,
-  bo `topo -d 150` i tak by je skleił). ID są te same w feedach z 2.10 i 5.10.2026. Pozostałe dworce (Widzew, Kaliska,
-  Chojny): „Dw. Łódź X” + każdy „Ulica-Dw. Łódź X” do 250 m w jeden przystanek w środku ciężkości.
+  bo `topo -d 150` i tak by je skleił). ID są te same w feedach z 2.10 i 5.10.2026. Pozostałe dworce (Widzew, Kaliska):
+  „Dw. Łódź X” + każdy „Ulica-Dw. Łódź X” do 250 m w jeden przystanek w środku ciężkości. `HUB_SKIP` (env, JSON z nazwami;
+  domyślnie `["Dw. Łódź Chojny"]`) wyłącza to: przy Chojnach 69/70/72 stają na Kilińskiego, a 75 na Śląskiej, nie na dworcu.
 - `hubsnap.py` (w `run.sh` po `fixends.py`) — węzeł pomocniczy `topo` trafia do najbliższego przystanku i jest
   wciągany, tylko gdy to dworzec do `HUB_R` m (300); równoległe krawędzie scalane. Dworcom zdejmuje `not_serving`
-  (inaczej symbol rysuje się tylko na jednej linii) i nadaje unikalne `station_id` bliźniakom o tej samej nazwie
+  (`serving.py` liczy je potem od nowa z rozkładu) i nadaje unikalne `station_id` bliźniakom o tej samej nazwie
   (`render.py` przypisuje krańcówki po `station_id`, oba „Rodziny Poznańskich” dostawały „Dw. Łódź Fabryczna”).
 - `fisheye.py` (w `run.sh` przed `octi`) — najpierw `MOVE` (env, JSON `[lon, lat, nowy_lon, nowy_lat]`): cztery węzły
   ręcznie w romb 300 m od dworca (S, W, E, N; w realu W–dworzec–E leżą na jednej prostej i `octi` robi z nich jeden pęk).
@@ -127,6 +144,14 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 - LOOM w WSL (Ubuntu 24.04, cmake + g++); `src/topo/tests/ContractTest.cpp` skompilowany
   z `-O0` (`make tests/ContractTest.cpp.o CXX_FLAGS='-O0 -fopenmp -w'` w `build/src/topo`),
   bez libzip — GTFS podawany jako katalog. Python (pandas, shapely, PIL) na Windows z `-X utf8`.
+
+- 11.10.2026 (uwagi użytkowników): autobusy i nocne w obu stanach od nowa z `filt.py` z `HUB_SKIP` i bez kursów
+  zjazdowych, potem `serving.py`. Warianty z `loom.json` (soczewka × `--geo-pen`), wybrane po bramce, konfliktach etykiet,
+  niedopasowanych przystankach i zrzutach: autobusy po i przed `FISHEYE="2.2 650 19.4687 51.7703, 1.5 2500"`; nocne po
+  `"2.0 600 19.4687 51.7703, 1.5 2500"` z `--geo-pen 1` (7 konfliktów zamiast 17), nocne przed `"2.5 700 19.4687 51.7703,
+  1.5 2500"` z `--geo-pen 1`. Tramwaje: dotychczasowy `octi.json` + `serving.py` (układ bez zmian). Przy Chojnach pętla
+  jednokierunkowa 69/70/72 i 75 (Broniewskiego–Śląska–Kilińskiego–Rzgowska) nadal daje supeł; próba ze sklejeniem
+  Kilińskiego i Śląskiej w jeden węzeł go nie usunęła.
 
 ## Warstwa orientacyjna (10.10.2026)
 

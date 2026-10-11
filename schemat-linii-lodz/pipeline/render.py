@@ -86,7 +86,7 @@ nodes = {}; adj = {}; egeo = {}
 for f in feats:
     if f['geometry']['type'] == 'Point':
         p = f['properties']; nodes[p['id']] = dict(sid=p.get('station_id'), xy=proj(*f['geometry']['coordinates']), label=p.get('station_label', ''),
-                                                   ns=set(p.get('not_serving', [])), edges=[])
+                                                   ns=set(p.get('not_serving', [])), edges=[], stops={clean0(k): set(v) for k, v in p.get('stop_names', {}).items()})
 for f in feats:
     if f['geometry']['type'] == 'LineString':
         p = f['properties']; ls = {l['id']: l['label'] for l in p['lines']}
@@ -100,22 +100,26 @@ def clean(s):
 # ---------- termini from the timetable: nearest station (geographic graph) that the line actually reaches
 term_by_sid = {}; name_by_sid = {}
 if GEO:
-    gf = json.load(open(GEO))['features']; gn = {}
+    gf = json.load(open(GEO))['features']; gn = {}; drawn_sid = {nd['sid'] for nd in nodes.values()}
     for f in gf:
         if f['geometry']['type'] == 'Point' and f['properties'].get('station_id'):
-            gn[f['properties']['id']] = dict(sid=f['properties']['station_id'], ll=f['geometry']['coordinates'], lines=set())
+            gn[f['properties']['id']] = dict(sid=f['properties']['station_id'], ll=f['geometry']['coordinates'], lines=set(), lab=f['properties'].get('station_label', ''))
     for f in gf:
         if f['geometry']['type'] == 'LineString':
             p = f['properties']
             for e in (p['from'], p['to']):
                 if e in gn: gn[e]['lines'] |= {l['label'] for l in p['lines']}
+    olines = {}  # lines at a node as drawn: octi can fold a dropped twin's edges into the kept one
+    for nd in nodes.values(): olines.setdefault(nd['sid'], set()).update(l for _, ls in nd['edges'] for l in ls.values())
+    for g in gn.values(): g['lines'] |= olines.get(g['sid'], set())
     for n in names:
         for nm, lo, la in info[n].get('ends', []):
-            best = None
-            for g in gn.values():
-                if n not in g['lines']: continue
+            cand = []  # drawn nodes of the line within 700 m; the terminus' own stop first (not a neighbour 50 m off)
+            for g in gn.values():  # only nodes octi kept (it can drop one of two same-named twins: Retkinia Kusocińskiego)
+                if n not in g['lines'] or g['sid'] not in drawn_sid: continue
                 d = math.hypot((g['ll'][0] - lo) * 69000, (g['ll'][1] - la) * 111000)
-                if best is None or d < best[0]: best = (d, g['sid'])
+                if d < 700: cand.append((g['lab'] != nm, d, g['sid']))
+            best = min(cand)[1:] if cand else None
             if best and best[0] < 700:
                 term_by_sid.setdefault(best[1], []).append(n); name_by_sid.setdefault(best[1], []).append(clean0(nm))
             else: print('terminus not placed:', n, nm, best)
@@ -134,6 +138,11 @@ for _it in range(6):
     ax_, bx_ = np.polyfit(A[:, 0], Bx, 1); ay_, by_ = np.polyfit(A[:, 1], By, 1)
     for nd in nodes.values(): nd['xy'] = (ax_ * nd['xy'][0] + bx_, ay_ * nd['xy'][1] + by_)
     for e in egeo: egeo[e] = [(ax_ * x + bx_, ay_ * y + by_) for x, y in egeo[e]]
+W_ = lambda v: set(re.split(r'[\s-]+', v.lower()))
+def tname(own, t, ss, serve):  # a terminus merged into a through stop of another street keeps both names: lines passing by
+    # do not stop at the loop (3/10A end at Widzew Augustów, 9/10B stop at Rokicińska-Lermontowa); one name inside the other
+    # (Zgierska-Helenówek / Zgierska-Helenówek-pętla): terminus name only
+    return f'{own} / {t}' if ss and serve - ss.get(t, set()) and not (W_(own) <= W_(t) or W_(t) <= W_(own)) else t
 stations = []
 _c = []
 for nid, nd in nodes.items():
@@ -154,14 +163,20 @@ for nid, nd in nodes.items():
             cnt[lab] = cnt.get(lab, 0) + 1
             if lid not in nd['ns']: serve.add(lab)
     term = sorted([l for l, c in cnt.items() if c == 1 and l in col], key=nkey)
-    nm_ = clean(nd['label'])
+    nm_ = clean(nd['label']); ss_ = nd['stops']  # stop names merged into this node -> lines stopping there (serving.py)
+    if ss_:  # topo kept one of the merged names: take the one more lines stop at (N3 at Kilińskiego-Dw. Łódź Chojny, not Śląska 28)
+        b_ = max(ss_, key=lambda k: len(ss_[k]))
+        if ss_[b_] > ss_.get(nm_, set()): nm_ = clean(b_)
     if GEO:
         term = sorted(set(term_by_sid.get(nd['sid'], [])), key=nkey)
         if term:
             cands_ = name_by_sid[nd['sid']]
-            if nm_ not in cands_: nm_ = max(set(cands_), key=cands_.count)
+            if nm_ not in cands_:
+                nm_ = tname(nm_, max(set(cands_), key=cands_.count), ss_, serve)
     stations.append(dict(id=nid, poly=polys[i], name=nm_, term=term, lines=sorted(serve & set(col), key=nkey),
                          deg=len(nd['edges']), nbs=[b for b, _ in nd['edges']]))
+LABELS = json.loads(os.environ.get('LABELS', '{}'))  # {drawn name: shown name} for merges the data cannot name (tram 17: Północna + Nowomiejska)
+for s_ in stations: s_['name'] = LABELS.get(s_['name'], s_['name'])
 # a node that lost its polygon to a nearer node (transitmap drew both as one symbol) hands its termini to that station
 if GEO:
     by_poly = {_np[s['id']]: s for s in stations}
@@ -170,7 +185,7 @@ if GEO:
         P = Point(nd['xy']); i = int(tree.nearest(P))
         if i in by_poly and polys[i].distance(P) < 60:
             s = by_poly[i]; extra = set(term_by_sid[nd['sid']]) - set(s['term'])
-            if not s['term']: s['name'] = max(set(name_by_sid[nd['sid']]), key=name_by_sid[nd['sid']].count)
+            if not s['term']: s['name'] = tname(s['name'], max(set(name_by_sid[nd['sid']]), key=name_by_sid[nd['sid']].count), nodes[s['id']]['stops'], set(s['lines']))
             s['term'] = sorted(set(s['term']) | extra, key=nkey)
             print('termini moved:', nd['label'], '->', s['name'], sorted(extra, key=nkey))
 print('stations', len(stations), 'polys', len(polys), 'lines', len(col))
@@ -513,7 +528,8 @@ CH = FS * 0.95; CF = FS * 0.68; LH = FS * 1.12; GAP = FS * 0.35; ICS = FS * 1.05
 def layout(st, wrap):
     bold = bool(st['term']) or st['deg'] > 2; f = FB if bold else FR; fs = FS * (1.08 if st['term'] else 0.85 if st.get('rail') else 1.0)
     name = st['name']; lines = [name]
-    if wrap and len(name) > 13 and '-' in name:
+    if wrap and ' / ' in name: k = name.index(' / '); lines = [name[:k + 2], name[k + 3:]]
+    elif wrap and len(name) > 13 and '-' in name:
         i = min((j for j, ch in enumerate(name) if ch == '-'), key=lambda j: abs(j - len(name) / 2))
         lines = [name[:i + 1], name[i + 1:]]
     elif wrap and len(name) > 16 and ' ' in name:
