@@ -1,0 +1,229 @@
+r002|0.32 12.2 52|7s|-g 70% --geo-pen 0.25 --nd-move-pen 1 --diag-pen 0.25 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r000|0.08 9.5 92|13s|-g 45% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r003|0.27 8.4 211|14s|-g 40% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.25 --pen-45 3 --pen-90 1.5 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r006|0.13 10.9 70|2s|-g 70% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 1 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r005|0.21 9.5 125|4s|-g 55% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.75 --pen-45 2 --pen-90 1.5 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r008|0.27 9.9 111|2s|-g 60% --geo-pen 2 --nd-move-pen 2 --diag-pen 0.75 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r007|0.17 9.8 118|4s|-g 60% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.75 --pen-45 2 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r009|0.47 14.7 36|9s|-g 55% --geo-pen 0.25 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r004|0.21 9.3 96|29s|-g 25% --geo-pen 0.25 --nd-move-pen 5 --diag-pen 0.25 --pen-45 2 --pen-90 3 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r012|0.25 10.2 73|4s|-g 60% --geo-pen 1.5 --nd-move-pen 1 --diag-pen 1 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r001|0.16 7.7 205|48s|-g 20% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 1 --pen-45 1 --pen-90 1.5 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r011|0.29 7.8 195|21s|-g 30% --geo-pen 1 --nd-move-pen 3 --diag-pen 1 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r015|0.36 15.2 32|1s|-g 60% --geo-pen 0 --nd-move-pen 3 --diag-pen 1 --pen-45 5 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r016|0.24 13.2 72|2s|-g 80% --geo-pen 3 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r017|0.49 14.2 34|2s|-g 45% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r014|0.29 10.3 99|10s|-g 40% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r013|0.22 8.8 118|19s|-g 30% --geo-pen 0.25 --nd-move-pen 1 --diag-pen 0.5 --pen-45 2 --pen-90 1.5 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r010|0.21 6.6 367|42s|-g 20% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.5 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r019|0.20 9.1 153|5s|-g 55% --geo-pen 5 --nd-move-pen 3 --diag-pen 1 --pen-45 3 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r021|0.47 12.8 45|3s|-g 80% --geo-pen 0.25 --nd-move-pen 2 --diag-pen 0.75 --pen-45 2 --pen-90 2 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r018|0.14 7.7 210|13s|-g 35% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.75 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r022|0.21 12.7 83|5s|-g 70% --geo-pen 1 --nd-move-pen 1 --diag-pen 1 --pen-45 2 --pen-90 1.5 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r020|0.27 9.3 220|11s|-g 40% --geo-pen 5 --nd-move-pen 1 --diag-pen 0.25 --pen-45 2 --pen-90 2 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r023|0.25 19.3 52|7s|-g 20% --geo-pen 0 --nd-move-pen 2 --diag-pen 1 --pen-45 3 --pen-90 1.5 --pen-135 2 --density-pen 10 --max-grid-dist 5
+r024|0.21 11.2 127|8s|-g 45% --geo-pen 2 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r026|0.32 9.6 108|6s|-g 50% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 5 --pen-90 2 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r027|0.27 11.1 69|5s|-g 50% --geo-pen 0.25 --nd-move-pen 1 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r028|0.25 10.6 113|4s|-g 70% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r025|0.14 7.9 193|12s|-g 35% --geo-pen 5 --nd-move-pen 5 --diag-pen 0.25 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r029|0.29 10.4 82|7s|-g 50% --geo-pen 1 --nd-move-pen 1 --diag-pen 0.25 --pen-45 3 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r031|0.45 11.6 60|5s|-g 60% --geo-pen 0.5 --nd-move-pen 5 --diag-pen 0.25 --pen-45 5 --pen-90 1.5 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r033|0.40 15.4 37|1s|-g 60% --geo-pen 0 --nd-move-pen 1 --diag-pen 0.5 --pen-45 3 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r030|0.22 10.3 138|11s|-g 40% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.25 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r035|0.32 10.3 81|6s|-g 60% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.5 --pen-45 5 --pen-90 1.5 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r036|0.33 10.6 126|6s|-g 55% --geo-pen 2 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r032|FAIL|-g 30% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r038|0.47 12.1 63|5s|-g 55% --geo-pen 0.5 --nd-move-pen 1 --diag-pen 0.5 --pen-45 5 --pen-90 3 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r039|FAIL|-g 45% --geo-pen 2 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 1 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r037|0.25 7.5 254|16s|-g 30% --geo-pen 2 --nd-move-pen 1 --diag-pen 0.75 --pen-45 2 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r034|0.18 8.0 274|23s|-g 25% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.5 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r041|0.24 9.4 121|10s|-g 40% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 3 --pen-90 1.5 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r044|0.38 10.7 78|9s|-g 40% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.25 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r042|0.19 7.9 239|17s|-g 30% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 3 --pen-90 1 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r045|0.27 10.2 90|3s|-g 60% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 3 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r046|0.32 12.3 52|3s|-g 80% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.5 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r047|FAIL|-g 45% --geo-pen 0 --nd-move-pen 2 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r043|0.22 8.5 205|24s|-g 25% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 3 --pen-90 1 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r040|0.24 6.7 364|35s|-g 20% --geo-pen 3 --nd-move-pen 2 --diag-pen 0.75 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r051|0.32 11.5 72|2s|-g 70% --geo-pen 1 --nd-move-pen 2 --diag-pen 0.25 --pen-45 5 --pen-90 1.5 --pen-135 0.5 --density-pen 10 --max-grid-dist 5
+r048|0.14 9.4 192|12s|-g 35% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 1 --pen-45 5 --pen-90 3 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r049|0.18 7.8 224|12s|-g 35% --geo-pen 2 --nd-move-pen 1 --diag-pen 0.5 --pen-45 5 --pen-90 2 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r053|0.32 10.4 79|8s|-g 45% --geo-pen 0.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 5 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 3
+r050|FAIL|-g 25% --geo-pen 1.5 --nd-move-pen 3 --diag-pen 0.5 --pen-45 1 --pen-90 1 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r056|FAIL|-g 55% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 0.5 --pen-45 1 --pen-90 3 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r057|FAIL|-g 80% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 1 --pen-90 1.5 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r058|0.25 8.5 161|6s|-g 50% --geo-pen 5 --nd-move-pen 5 --diag-pen 0.25 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 10 --max-grid-dist 3
+r054|0.37 21.7 39|26s|-g 35% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r059|0.02 11.4 68|6s|-g 55% --geo-pen 0.25 --nd-move-pen 5 --diag-pen 0.25 --pen-45 1 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r052|0.23 6.9 324|37s|-g 20% --geo-pen 1.5 --nd-move-pen 2 --diag-pen 0.75 --pen-45 3 --pen-90 1.5 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r060|0.26 8.5 156|16s|-g 35% --geo-pen 1 --nd-move-pen 1 --diag-pen 1 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r055|FAIL|-g 20% --geo-pen 1.5 --nd-move-pen 2 --diag-pen 0.5 --pen-45 1 --pen-90 1.5 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r063|0.32 9.4 109|10s|-g 40% --geo-pen 1.5 --nd-move-pen 3 --diag-pen 1 --pen-45 5 --pen-90 1 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r065|FAIL|-g 50% --geo-pen 1 --nd-move-pen 1 --diag-pen 0.25 --pen-45 1 --pen-90 1.5 --pen-135 2 --density-pen 10 --max-grid-dist 5
+r064|0.25 9.8 268|24s|-g 25% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 5 --pen-90 1 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r061|0.20 8.3 167|41s|-g 20% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 3 --pen-90 2 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r067|0.44 16.8 43|2s|-g 30% --geo-pen 0 --nd-move-pen 3 --diag-pen 1 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r062|0.21 9.2 396|33s|-g 20% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 1 --pen-45 3 --pen-90 1 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r070|0.24 12.4 44|4s|-g 70% --geo-pen 0.25 --nd-move-pen 2 --diag-pen 1 --pen-45 3 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r066|0.23 8.8 178|16s|-g 30% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 2 --pen-90 3 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r071|0.32 12.4 46|2s|-g 80% --geo-pen 1.5 --nd-move-pen 1 --diag-pen 0.5 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r068|0.22 8.9 150|8s|-g 45% --geo-pen 3 --nd-move-pen 2 --diag-pen 0.25 --pen-45 3 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r073|0.18 11.6 65|4s|-g 70% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 1 --pen-45 1 --pen-90 1.5 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r072|0.22 9.1 171|7s|-g 45% --geo-pen 3 --nd-move-pen 0.5 --diag-pen 1 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r076|0.20 9.2 125|4s|-g 55% --geo-pen 2 --nd-move-pen 3 --diag-pen 1 --pen-45 2 --pen-90 1.5 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r075|0.21 10.2 146|5s|-g 55% --geo-pen 3 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r074|0.10 10.1 84|8s|-g 45% --geo-pen 1.5 --nd-move-pen 2 --diag-pen 0.75 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r078|0.30 9.7 133|5s|-g 50% --geo-pen 3 --nd-move-pen 3 --diag-pen 0.5 --pen-45 5 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r077|0.50 11.2 53|6s|-g 45% --geo-pen 0.25 --nd-move-pen 2 --diag-pen 0.5 --pen-45 3 --pen-90 2 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r069|0.23 7.4 237|22s|-g 25% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 3 --pen-90 2 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r080|0.26 10.8 93|3s|-g 80% --geo-pen 5 --nd-move-pen 3 --diag-pen 0.75 --pen-45 1 --pen-90 1.5 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r079|0.23 7.8 203|8s|-g 40% --geo-pen 2 --nd-move-pen 1 --diag-pen 0.5 --pen-45 1 --pen-90 2 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r081|0.31 14.5 102|4s|-g 70% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 5 --pen-90 3 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r082|0.43 10.0 86|11s|-g 35% --geo-pen 0.5 --nd-move-pen 1 --diag-pen 0.25 --pen-45 5 --pen-90 1 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r083|0.19 8.6 123|14s|-g 30% --geo-pen 1 --nd-move-pen 5 --diag-pen 0.25 --pen-45 3 --pen-90 1.5 --pen-135 2 --density-pen 10 --max-grid-dist 5
+r084|0.18 8.7 116|18s|-g 25% --geo-pen 0.25 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 2 --pen-90 3 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r087|0.31 8.7 145|8s|-g 40% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.75 --pen-45 2 --pen-90 3 --pen-135 0.5 --density-pen 10 --max-grid-dist 5
+r088|0.22 8.5 179|5s|-g 45% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.25 --pen-45 3 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r090|0.39 13.3 40|3s|-g 70% --geo-pen 0.5 --nd-move-pen 1 --diag-pen 1 --pen-45 5 --pen-90 1 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r089|0.23 9.4 108|8s|-g 40% --geo-pen 1 --nd-move-pen 1 --diag-pen 1 --pen-45 2 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r085|0.20 7.1 271|29s|-g 20% --geo-pen 1.5 --nd-move-pen 3 --diag-pen 0.75 --pen-45 3 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r093|0.32 12.1 79|2s|-g 80% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 5 --pen-90 2 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r092|0.22 8.7 156|5s|-g 50% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r086|0.22 6.6 345|31s|-g 20% --geo-pen 3 --nd-move-pen 2 --diag-pen 0.25 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r095|FAIL|-g 50% --geo-pen 2 --nd-move-pen 2 --diag-pen 1 --pen-45 1 --pen-90 1 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r097|0.24 12.8 84|3s|-g 80% --geo-pen 3 --nd-move-pen 0.5 --diag-pen 1 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r096|0.22 8.3 182|6s|-g 45% --geo-pen 5 --nd-move-pen 1 --diag-pen 0.75 --pen-45 3 --pen-90 3 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r099|0.23 8.4 155|6s|-g 45% --geo-pen 1.5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r098|0.31 10.2 83|9s|-g 35% --geo-pen 0.25 --nd-move-pen 5 --diag-pen 0.75 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r094|0.35 24.0 43|25s|-g 25% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 1 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r100|0.27 9.7 128|6s|-g 55% --geo-pen 3 --nd-move-pen 2 --diag-pen 1 --pen-45 5 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r102|0.22 10.3 86|3s|-g 60% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r101|0.32 9.7 92|9s|-g 40% --geo-pen 0.5 --nd-move-pen 5 --diag-pen 0.5 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 10 --max-grid-dist 3
+r103|0.22 10.4 118|4s|-g 60% --geo-pen 2 --nd-move-pen 1 --diag-pen 1 --pen-45 1 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r091|0.26 8.4 172|36s|-g 20% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 1 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r105|0.13 11.1 66|3s|-g 70% --geo-pen 1 --nd-move-pen 5 --diag-pen 0.25 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r107|0.36 8.5 147|7s|-g 40% --geo-pen 1 --nd-move-pen 2 --diag-pen 0.25 --pen-45 5 --pen-90 2 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r106|0.27 8.1 172|7s|-g 40% --geo-pen 1.5 --nd-move-pen 1 --diag-pen 1 --pen-45 2 --pen-90 1.5 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r108|0.31 19.7 95|7s|-g 80% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r110|FAIL|-g 45% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.75 --pen-45 1 --pen-90 1 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r104|0.20 6.9 329|20s|-g 25% --geo-pen 3 --nd-move-pen 3 --diag-pen 1 --pen-45 2 --pen-90 1.5 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r113|FAIL|-g 55% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 1 --pen-45 1 --pen-90 3 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r114|0.50 13.3 41|2s|-g 80% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.75 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 10 --max-grid-dist 5
+r109|FAIL|-g 20% --geo-pen 1.5 --nd-move-pen 1 --diag-pen 0.25 --pen-45 1 --pen-90 1.5 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r111|0.20 6.8 299|28s|-g 20% --geo-pen 2 --nd-move-pen 2 --diag-pen 0.5 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r116|0.28 10.7 120|4s|-g 50% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.25 --pen-45 5 --pen-90 1.5 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r117|0.28 8.8 148|5s|-g 50% --geo-pen 2 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r112|0.24 6.8 344|29s|-g 20% --geo-pen 2 --nd-move-pen 3 --diag-pen 0.75 --pen-45 2 --pen-90 2 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r120|FAIL|-g 45% --geo-pen 0 --nd-move-pen 5 --diag-pen 1 --pen-45 1 --pen-90 1.5 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r121|0.06 10.8 65|3s|-g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r122|0.16 12.0 100|5s|-g 45% --geo-pen 0.25 --nd-move-pen 1 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 2 --density-pen 0 --max-grid-dist 5
+r115|0.26 7.0 317|32s|-g 20% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.75 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r118|0.22 7.2 251|18s|-g 25% --geo-pen 2 --nd-move-pen 5 --diag-pen 0.5 --pen-45 2 --pen-90 2 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r119|0.24 8.3 140|18s|-g 25% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 1 --pen-45 2 --pen-90 2 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r124|0.32 9.1 134|5s|-g 50% --geo-pen 2 --nd-move-pen 3 --diag-pen 1 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r127|FAIL|-g 80% --geo-pen 0.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 1 --pen-90 1 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r125|0.14 7.8 241|9s|-g 35% --geo-pen 5 --nd-move-pen 5 --diag-pen 1 --pen-45 2 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r129|0.32 12.1 54|1s|-g 80% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 3 --pen-90 1.5 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r123|0.22 7.1 287|19s|-g 25% --geo-pen 3 --nd-move-pen 5 --diag-pen 1 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r126|FAIL|-g 30% --geo-pen 2 --nd-move-pen 3 --diag-pen 0.75 --pen-45 1 --pen-90 3 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r131|0.45 15.5 34|2s|-g 45% --geo-pen 0 --nd-move-pen 1 --diag-pen 0.5 --pen-45 5 --pen-90 1.5 --pen-135 2 --density-pen 10 --max-grid-dist 5
+r133|0.25 10.0 78|3s|-g 60% --geo-pen 3 --nd-move-pen 2 --diag-pen 0.75 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r132|0.13 10.6 70|5s|-g 50% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 1 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r135|0.30 17.4 61|3s|-g 80% --geo-pen 2 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 2 --pen-90 1.5 --pen-135 1 --density-pen 20 --max-grid-dist 5
+r130|0.30 8.3 176|13s|-g 30% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 1 --pen-45 2 --pen-90 2 --pen-135 2 --density-pen 5 --max-grid-dist 5
+r134|0.08 10.3 71|7s|-g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r136|0.29 12.1 68|4s|-g 60% --geo-pen 2 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 1.5 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r137|0.40 13.7 48|5s|-g 20% --geo-pen 0 --nd-move-pen 5 --diag-pen 0.75 --pen-45 3 --pen-90 1 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r139|0.43 15.7 45|2s|-g 30% --geo-pen 0 --nd-move-pen 1 --diag-pen 0.5 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r138|0.09 9.5 93|5s|-g 50% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.5 --pen-45 2 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r141|0.49 15.4 45|4s|-g 30% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r140|0.23 11.2 75|6s|-g 50% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r143|FAIL|-g 60% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 1 --pen-90 3 --pen-135 2 --density-pen 0 --max-grid-dist 5
+r128|0.26 8.2 159|32s|-g 20% --geo-pen 0.25 --nd-move-pen 5 --diag-pen 0.25 --pen-45 2 --pen-90 1.5 --pen-135 1 --density-pen 10 --max-grid-dist 3
+r145|0.45 16.6 28|2s|-g 80% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 3 --pen-90 1 --pen-135 1 --density-pen 20 --max-grid-dist 5
+r144|0.21 10.4 170|5s|-g 50% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 1 --pen-45 2 --pen-90 1.5 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r148|0.45 15.4 34|1s|-g 60% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 1 --pen-45 2 --pen-90 2 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r149|0.16 11.1 64|2s|-g 70% --geo-pen 0.5 --nd-move-pen 1 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r146|0.27 9.2 145|9s|-g 40% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 2 --pen-90 2 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r147|0.08 10.1 80|8s|-g 45% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.75 --pen-45 2 --pen-90 3 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r152|0.46 15.5 54|4s|-g 25% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 3 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r153|0.32 12.1 53|2s|-g 80% --geo-pen 1 --nd-move-pen 2 --diag-pen 0.75 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r154|0.24 9.3 125|7s|-g 40% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r150|0.28 21.6 36|20s|-g 30% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 2 --pen-90 1 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r142|0.25 8.1 187|34s|-g 20% --geo-pen 0.25 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 2 --pen-90 3 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r151|0.24 7.4 310|20s|-g 25% --geo-pen 2 --nd-move-pen 1 --diag-pen 0.25 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r158|0.24 12.0 60|3s|-g 70% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 0.5 --pen-45 2 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r157|0.21 13.3 133|6s|-g 45% --geo-pen 5 --nd-move-pen 0.5 --diag-pen 1 --pen-45 2 --pen-90 3 --pen-135 2 --density-pen 10 --max-grid-dist 5
+r160|0.45 16.6 27|1s|-g 80% --geo-pen 0 --nd-move-pen 2 --diag-pen 0.5 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r161|FAIL|-g 80% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 1 --pen-90 2 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r159|0.32 11.7 62|6s|-g 55% --geo-pen 0.25 --nd-move-pen 2 --diag-pen 0.75 --pen-45 1 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r162|0.27 11.5 80|4s|-g 55% --geo-pen 2 --nd-move-pen 1 --diag-pen 1 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r163|0.20 10.1 130|5s|-g 45% --geo-pen 5 --nd-move-pen 1 --diag-pen 0.5 --pen-45 3 --pen-90 2 --pen-135 2 --density-pen 5 --max-grid-dist 3
+r156|0.27 7.7 217|21s|-g 25% --geo-pen 1.5 --nd-move-pen 1 --diag-pen 1 --pen-45 1 --pen-90 1.5 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r166|0.19 9.5 129|4s|-g 50% --geo-pen 1.5 --nd-move-pen 1 --diag-pen 0.25 --pen-45 1 --pen-90 2 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r164|0.10 8.0 172|10s|-g 35% --geo-pen 2 --nd-move-pen 5 --diag-pen 0.75 --pen-45 2 --pen-90 1.5 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r155|0.17 6.9 284|31s|-g 20% --geo-pen 3 --nd-move-pen 5 --diag-pen 0.25 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 0 --max-grid-dist 3
+r167|0.48 14.5 47|4s|-g 20% --geo-pen 0 --nd-move-pen 3 --diag-pen 1 --pen-45 2 --pen-90 2 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r169|0.50 14.2 38|2s|-g 80% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 1 --pen-45 3 --pen-90 2 --pen-135 2 --density-pen 0 --max-grid-dist 5
+r168|0.32 9.0 203|7s|-g 40% --geo-pen 3 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r171|0.50 11.9 67|3s|-g 60% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r173|0.49 16.2 30|1s|-g 55% --geo-pen 0 --nd-move-pen 2 --diag-pen 0.75 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r172|0.22 10.7 78|4s|-g 60% --geo-pen 1 --nd-move-pen 1 --diag-pen 0.5 --pen-45 3 --pen-90 1 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r174|0.13 11.7 62|4s|-g 60% --geo-pen 0.25 --nd-move-pen 5 --diag-pen 0.75 --pen-45 1 --pen-90 2 --pen-135 1 --density-pen 20 --max-grid-dist 5
+r165|0.34 8.9 181|22s|-g 25% --geo-pen 0.5 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 1.5 --pen-135 0.5 --density-pen 10 --max-grid-dist 5
+r170|0.14 8.6 201|11s|-g 35% --geo-pen 3 --nd-move-pen 1 --diag-pen 0.75 --pen-45 5 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r175|0.47 15.1 36|6s|-g 20% --geo-pen 0 --nd-move-pen 0.5 --diag-pen 1 --pen-45 5 --pen-90 2 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r178|0.23 10.3 88|7s|-g 40% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.75 --pen-45 2 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r179|0.24 10.2 87|5s|-g 50% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 3 --pen-90 2 --pen-135 0.5 --density-pen 10 --max-grid-dist 5
+r176|0.22 7.9 197|11s|-g 35% --geo-pen 1.5 --nd-move-pen 3 --diag-pen 0.5 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r180|0.20 9.3 142|5s|-g 55% --geo-pen 5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 3 --pen-90 1.5 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r182|0.23 10.2 79|7s|-g 40% --geo-pen 0.25 --nd-move-pen 5 --diag-pen 0.5 --pen-45 2 --pen-90 1.5 --pen-135 1 --density-pen 10 --max-grid-dist 3
+r177|0.18 7.9 161|20s|-g 25% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r184|0.52 11.9 59|4s|-g 60% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 2 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r183|0.14 7.4 247|9s|-g 35% --geo-pen 3 --nd-move-pen 5 --diag-pen 0.5 --pen-45 1 --pen-90 2 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r185|0.21 8.9 157|4s|-g 55% --geo-pen 5 --nd-move-pen 5 --diag-pen 0.25 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 20 --max-grid-dist 3
+r186|0.38 10.9 71|5s|-g 55% --geo-pen 0.5 --nd-move-pen 5 --diag-pen 0.25 --pen-45 2 --pen-90 2 --pen-135 1 --density-pen 20 --max-grid-dist 5
+r187|FAIL|-g 55% --geo-pen 2 --nd-move-pen 3 --diag-pen 1 --pen-45 1 --pen-90 1.5 --pen-135 2 --density-pen 10 --max-grid-dist 3
+r181|0.20 7.1 310|20s|-g 25% --geo-pen 2 --nd-move-pen 1 --diag-pen 0.75 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r188|0.36 16.2 52|5s|-g 20% --geo-pen 0 --nd-move-pen 2 --diag-pen 0.25 --pen-45 5 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r189|0.32 10.5 71|6s|-g 50% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r190|0.12 9.3 119|6s|-g 50% --geo-pen 2 --nd-move-pen 3 --diag-pen 0.75 --pen-45 1 --pen-90 2 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r193|0.36 19.3 33|1s|-g 60% --geo-pen 0 --nd-move-pen 3 --diag-pen 0.75 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r194|0.42 15.2 28|1s|-g 70% --geo-pen 0 --nd-move-pen 5 --diag-pen 1 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r191|0.09 9.9 104|6s|-g 50% --geo-pen 2 --nd-move-pen 5 --diag-pen 0.75 --pen-45 3 --pen-90 1.5 --pen-135 2 --density-pen 20 --max-grid-dist 3
+r195|0.56 14.3 69|4s|-g 80% --geo-pen 0.5 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r192|0.23 9.1 127|8s|-g 45% --geo-pen 1 --nd-move-pen 2 --diag-pen 0.75 --pen-45 2 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r199|0.26 12.4 94|2s|-g 80% --geo-pen 5 --nd-move-pen 1 --diag-pen 0.5 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+r198|0.51 12.0 51|5s|-g 55% --geo-pen 0.25 --nd-move-pen 0.5 --diag-pen 1 --pen-45 2 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 3
+r201|FAIL|-g 30% --geo-pen 0 --nd-move-pen 2 --diag-pen 0.5 --pen-45 1 --pen-90 2 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r202|0.32 11.6 76|2s|-g 80% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r196|0.25 7.9 182|15s|-g 30% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.75 --pen-45 3 --pen-90 1.5 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r204|0.28 12.9 54|5s|-g 55% --geo-pen 0.5 --nd-move-pen 1 --diag-pen 0.25 --pen-45 3 --pen-90 1.5 --pen-135 2 --density-pen 20 --max-grid-dist 5
+r203|0.32 8.9 127|8s|-g 40% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.5 --pen-45 5 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5
+r205|0.22 8.7 170|5s|-g 50% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.75 --pen-45 3 --pen-90 2 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r200|0.33 9.1 179|19s|-g 25% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 0.5 --pen-45 5 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r207|0.21 10.7 96|4s|-g 55% --geo-pen 1.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 3 --pen-90 2 --pen-135 1 --density-pen 5 --max-grid-dist 3
+r206|0.22 7.7 185|12s|-g 30% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 1 --pen-45 2 --pen-90 3 --pen-135 1 --density-pen 20 --max-grid-dist 3
+r197|0.24 6.7 360|31s|-g 20% --geo-pen 3 --nd-move-pen 5 --diag-pen 0.25 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 20 --max-grid-dist 5
+r210|0.28 20.4 48|2s|-g 70% --geo-pen 0 --nd-move-pen 3 --diag-pen 1 --pen-45 1 --pen-90 2 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r208|0.28 9.8 92|9s|-g 40% --geo-pen 0.5 --nd-move-pen 5 --diag-pen 0.5 --pen-45 3 --pen-90 3 --pen-135 1 --density-pen 0 --max-grid-dist 5
+r209|0.14 10.0 90|8s|-g 50% --geo-pen 1 --nd-move-pen 1 --diag-pen 0.75 --pen-45 1 --pen-90 3 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r211|0.26 11.0 87|4s|-g 70% --geo-pen 1.5 --nd-move-pen 5 --diag-pen 0.75 --pen-45 5 --pen-90 1.5 --pen-135 0.5 --density-pen 5 --max-grid-dist 3
+r214|0.26 16.3 29|1s|-g 70% --geo-pen 0 --nd-move-pen 2 --diag-pen 0.75 --pen-45 1 --pen-90 1 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+r215|0.24 11.8 59|4s|-g 70% --geo-pen 1 --nd-move-pen 2 --diag-pen 0.75 --pen-45 5 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5
+r217|0.12 9.5 110|3s|-g 60% --geo-pen 2 --nd-move-pen 3 --diag-pen 1 --pen-45 1 --pen-90 3 --pen-135 0.5 --density-pen 0 --max-grid-dist 5
+r218|0.22 9.5 118|5s|-g 45% --geo-pen 1 --nd-move-pen 0.5 --diag-pen 1 --pen-45 2 --pen-90 3 --pen-135 0.5 --density-pen 10 --max-grid-dist 3
+r212|0.19 8.8 119|20s|-g 25% --geo-pen 0.5 --nd-move-pen 2 --diag-pen 0.75 --pen-45 3 --pen-90 3 --pen-135 2 --density-pen 5 --max-grid-dist 3
+b_octihanan_50|0.30 11.9 85|2s|-b octihanan -g 50% --geo-pen 1
+b_octihanan_100|0.47 15.6 41|2s|-b octihanan -g 100% --geo-pen 1
+r219|0.27 10.0 98|10s|-g 35% --geo-pen 0.5 --nd-move-pen 0.5 --diag-pen 0.75 --pen-45 3 --pen-90 1 --pen-135 2 --density-pen 0 --max-grid-dist 3
+b_orthoradial_100|0.57 28.0 64|2s|-b orthoradial -g 100% --geo-pen 1
+b_orthoradial_50|0.44 17.2 109|4s|-b orthoradial -g 50% --geo-pen 1
+r213|0.23 6.8 365|29s|-g 20% --geo-pen 5 --nd-move-pen 2 --diag-pen 0.25 --pen-45 3 --pen-90 3 --pen-135 0.5 --density-pen 5 --max-grid-dist 5
+b_ortholinear_50|0.14 13.4 125|4s|-b ortholinear -g 50% --geo-pen 1
+b_ortholinear_100|0.30 19.8 59|3s|-b ortholinear -g 100% --geo-pen 1
+b_quadtree_50|0.19 19.8 60|1s|-b quadtree -g 50% --geo-pen 1
+b_quadtree_100|0.46 21.5 37|1s|-b quadtree -g 100% --geo-pen 1
+r216|0.25 6.9 335|29s|-g 20% --geo-pen 2 --nd-move-pen 1 --diag-pen 0.5 --pen-45 5 --pen-90 1 --pen-135 0.5 --density-pen 0 --max-grid-dist 3
+ALLDONE
