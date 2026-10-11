@@ -28,7 +28,7 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
    kropkowany odcinek. Z `"box": false` ogon zostaje na miejscu, ściśnięty `k` razy w stronę `cut`. Tramwaje:
    `[{"lines":["41"],"cut":"Chocianowice IKEA","title":"do Pabianic","at":"bl"},
    {"lines":["43"],"cut":"Legionów-Włókniarzy","title":"do Konstantynowa Łódzkiego","at":"bl"},
-   {"lines":["45"],"cut":"Zgierska-Helenówek-pętla","k":0.5,"box":false}]` (z `CUT_GAP=3`).
+   {"lines":["45"],"cut":"Zgierska-Helenówek","k":0.5,"box":false}]` (z `CUT_GAP=3`).
   Z `"shape":"keep"` i `"to":[…]` ogon może mieć pętle i rozgałęzienia: do ramki idą wszystkie fragmenty za
   przystankami `cut` (może być lista: kilka miejsc wyjazdu z miasta) jeżdżone tylko przez `lines`, które dochodzą do
   przystanku z nazwą zawierającą coś z `to`; rysunek octi zostaje, osie ściśnięte `k` razy, wiązki i znaczki w
@@ -118,6 +118,8 @@ więc rysujemy ją jako cztery węzły połączone pierścieniem:
   Opublikowane: stan „po” `FISHEYE="2.2 650 19.4687 51.7703, 1.5 2500"`, stan „przed” `"2.5 700 19.4687 51.7703, 1.5 2500"`.
   Szybka iteracja: sam `fisheye.py` + `octi` + `transitmap` na gotowym `loom.json` (~20 s).
 - `fixends.py` łata krańcówki dalsze niż 120 m od linii (`topo` gubił też ostatnie 230 m linii 61 do dworca).
+  Gdy `topo` zgubił sam przystanek końcowy, `fixends.py` wstawia go z powrotem na jego miejscu z krótką krawędzią od
+  najbliższego przystanku (linia 1: Kilińskiego-Mochnackiego, 480 m za Dąbrowskiego; pętla Helenówek osobno od przystanku 45).
 Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 `topo -d 150` scala przystanki do 150 m w jeden węzeł, chip stoi we właściwym miejscu.
 
@@ -152,6 +154,11 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
   1.5 2500"` z `--geo-pen 1`. Tramwaje: dotychczasowy `octi.json` + `serving.py` (układ bez zmian). Przy Chojnach pętla
   jednokierunkowa 69/70/72 i 75 (Broniewskiego–Śląska–Kilińskiego–Rzgowska) nadal daje supeł; próba ze sklejeniem
   Kilińskiego i Śląskiej w jeden węzeł go nie usunęła.
+
+- 11.10.2026, po drugiej rundzie uwag: tramwaje w obu stanach od nowa (`run.sh tram tram`, `TOPO_D=150`, `FISHEYE=`) z poprawką
+  `fixends.py`; wycinek 45 zaczepiony o „Zgierska-Helenówek”. Test promienia `topo -d` 150/100/75 m: przy 75 m tramwaje
+  rozdzielają Widzew Augustów i Lermontowa, ale rondo Lotników Lwowskich jest nieczytelne; autobusy przy 100 i 75 m tracą
+  podpisy kilkunastu przystanków. Zostaje 150 m. N4B i N9 kursują tylko w weekendy; lista linii nocnych o tym mówi.
 
 ## Warstwa orientacyjna (10.10.2026)
 

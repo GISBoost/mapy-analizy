@@ -2,7 +2,8 @@
 # topo sometimes drops a line from the last edges before its terminus (seen at turnaround loops,
 # e.g. 59/86 at Pomorska-Edwarda), so the line ends ~1 km early. For every timetable terminus
 # farther than MIN m from the line's own nodes, add the line along the shortest graph path from
-# its nearest dead end to the station closest to the terminus (if that path is < MAX m).
+# its nearest dead end to the station closest to the terminus (if that path is < MAX m). If topo dropped the terminus
+# stop itself, it is added back at its own place.
 import json, sys, math, heapq
 MIN, MAX = 120, 3000  # MIN below topo -d 150; Fabryczna's 61 lost its last 230 m
 TOPO, META = sys.argv[1], sys.argv[2]
@@ -45,5 +46,14 @@ for n, v in info.items():
             if not any(l['label'] == n for l in e['properties']['lines']):
                 e['properties']['lines'].append({x: ref[x] for x in ('color', 'id', 'label')})
         fixed += 1; print(f'fixends: {n} -> {nm}: +{len(best[1])} edges, {best[0]:.0f} m', file=sys.stderr)
+        if dist(pos[tgt], (lo, la)) >= MIN:  # topo dropped the terminus stop itself (1 at Kilińskiego-Mochnackiego, 400 m past
+            # the Dąbrowskiego corner): put it back as a station at its own place, with a stub edge from the nearest station
+            nid = f'fx{fixed}'; pos[nid] = [lo, la]; stn.add(nid)
+            g['features'].append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [lo, la]},
+                                  'properties': {'id': nid, 'station_id': f'fx{fixed}', 'station_label': nm}})
+            e = {'type': 'Feature', 'geometry': {'type': 'LineString', 'coordinates': [pos[tgt], [lo, la]]},
+                 'properties': {'id': nid + 'e', 'from': tgt, 'to': nid, 'lines': [{x: ref[x] for x in ('color', 'id', 'label')}]}}
+            g['features'].append(e); edges.append(e); adj.setdefault(tgt, []).append((nid, dist(pos[tgt], (lo, la)), e))
+            print(f'fixends: {n} -> {nm}: stop re-added {dist(pos[tgt], (lo, la)):.0f} m from the nearest station', file=sys.stderr)
 json.dump(g, open(TOPO, 'w', encoding='utf-8'), ensure_ascii=False)
 print(f'fixends: {fixed} ends re-attached', file=sys.stderr)
