@@ -76,3 +76,112 @@ Nowe wpisy dopisuj na końcu, z datą.
 
 - Wygładzanie w metrach zamiast w pikselach, jak w LOOM: ta sama geometria na każdym zoomie.
 - Przebiegi z OSM (pfaedle albo relacje OSM) zamiast kształtów z GTFS: to usunęłoby fale z geometrii `topo`.
+
+## Dziennik pracy: błędy, pułapki i niejasności (12.10.2026)
+
+Wszystko, na co trafiłem przy trzech rundach poprawek, a czego nie ma wyżej.
+
+### Błędy w kodzie i ich przyczyny
+
+1. **„Nie udało się wczytać mapy” po przepisaniu `geo.js`.**
+   - W konsoli było `TypeError: this[e] is not a function` w `_initTooltipInteractions`.
+   - Przyczyna: na markerze ustawiłem własne pole `m.on = true`, które nadpisało metodę Leafleta `on()`.
+   - Naprawa: zmiana nazwy na `m.lit`.
+   - Zasada: na warstwach Leafleta nie twórz pól o nazwach jego metod (`on`, `off`, `fire`, `remove`, `options`...).
+2. **Wyróżnienie linii trwało ok. 485 ms**, bo przebudowywało wszystkie tooltipy przystanków.
+   - Naprawa: podział na `stops()` (budowa, tylko w `draw()`) i `paintStops()` (sam styl przy zmianie wyboru).
+   - Teraz ok. 6 ms.
+3. **Wiązki były lustrzanym odbiciem kolejności z LOOM.**
+   - Na węzłach było 121 przecięć linii, po odwróceniu znaku przesunięcia 48. Liczone skryptem, nie na oko.
+   - LOOM podaje linie od lewej względem kierunku krawędzi w układzie geograficznym (y w górę), a ekran ma y w dół.
+4. **Pastylki przystanków chowały się pod wyróżnioną linią.**
+   - Na canvasie kolejność rysowania to kolejność dodawania warstw, a `paintLines()` daje wyróżnionym liniom
+     `bringToFront()`.
+   - Naprawa: po nich `bringToFront()` także na pastylkach.
+5. **Wywrotka na telefonie i na małym zoomie:** `TypeError: Cannot read properties of undefined (reading 'x') at dir`.
+   - Krawędź krótsza niż piksel po wygładzeniu i Douglas-Peuckerze miała 1 punkt.
+   - Naprawa: `if (px.length < 2) px.push(px[0])`.
+6. **`Map container is already initialized`** przy próbie przebudowania mapy na żywej stronie z konsoli
+   (`GeoMap(...)` drugi raz na tym samym `div`).
+   - Do takich eksperymentów podmień kontener na świeży: `o.replaceWith(o.cloneNode(false))`.
+   - Na stronie przełączanie danych powinno używać istniejącej mapy, nie tworzyć nowej.
+
+### Pułapki środowiska i narzędzi
+
+- **Serwer.** Port 8791 był zajęty przez serwer z innej sesji, więc `preview_start` się nie udał. Ten serwer serwował
+  jednak właściwy katalog. Sprawdzaj go przez `curl -s localhost:8791/schemat-linii-gzm/ | grep -o 'geo.js?v=[a-f0-9]*'`
+  i porównaj hash z `index.html`. Zgodny hash oznacza aktualną wersję.
+- **Panel przeglądarki aplikacji.** Zrzuty kończyły się „Screenshot timed out after 5s”, panel był za wąski na
+  widok desktopowy, a `file://` nie działa bez otwartego folderu projektu. Dlatego zbudowałem headless harness (`shot.py`).
+- **Harness `shot.py`.**
+  - Kopiuje stronę do katalogu tymczasowego, dokleja skrypt sterujący i robi zrzut Chrome z
+    `--allow-file-access-from-files` (bez tego `fetch` danych z `file://` nie działa).
+  - Pastylki przy wyróżnieniu czasem nie wychodzą na zrzucie, a na żywej stronie działają.
+  - Równoległe uruchomienia dzielą ten sam katalog `h/`: zrzuty wychodzą wtedy z przesuniętym widokiem.
+    Do kolaży porównawczych uruchamiaj je po kolei.
+  - Zmienne: `GEO` (który `geo.js` skopiować), `Q` (dodatkowe parametry URL).
+  - Logi konsoli: flagi `--enable-logging=stderr --v=0` i szukanie linii `DBG` w stderr.
+- **Artykuł o LOOM (PDF).** WebFetch nie umiał go przeczytać (skompresowane strumienie). W tym środowisku nie ma
+  `pdftotext` w WSL ani `fitz`/`pypdf` w Pythonie. Zamiast artykułu czytałem kod źródłowy LOOM
+  (`~/loom/src` w WSL) i to dało więcej konkretów.
+- **Opcje narzędzi LOOM** (z `--help`):
+  - `topo --smooth` (domyślnie 0);
+  - `transitmap --smoothing` (domyślnie 1);
+  - `--render-engine svg|mvt`, `-z` zoomy MVT;
+  - `--line-width` 20, `--line-spacing` 10, `--outline-width` 1.
+- **Przebudowa strony** po każdej zmianie `geo.js` (wstawia nowy `?v=`):
+  `cd C:\Users\Michal\Desktop\easy\schemat-gzm-dane; py -3 -X utf8 ../mapy-analizy/schemat-linii-gzm/pipeline/build_page.py . ../mapy-analizy/schemat-linii-gzm/pipeline/page_tpl.html ../mapy-analizy/schemat-linii-gzm/index.html`.
+  Ostrzeżenie git „LF will be replaced by CRLF” jest nieszkodliwe.
+- **Heredoki w Git Bash.** Przy dłuższych edycjach Pythonem przez heredoc łatwo o
+  `SyntaxError: unterminated string literal`. Bezpieczniej: `<<'EOF'` (z apostrofami) i asercja `count(a) == 1`
+  przed każdą podmianą tekstu.
+
+### Styl kafli LOOM (zdekodowane MVT ze strony loom.cs.uni-freiburg.de)
+
+- Strona LOOM nie dostaje gotowych kolorów ani grubości w stylu mapy. Bierze geometrię i właściwości z kafli
+  (`transitmap --render-engine=mvt`), a styl nakłada w przeglądarce.
+- Warstwa linii:
+  - czarna obwódka o szerokości w+2, zakończenie `butt`;
+  - na niej linia w kolorze o szerokości w, zakończenie `round`;
+  - z14: w = 3, odstęp osi 5; z16: w = 4, odstęp 7.
+- Obwódki sąsiednich linii stykają się, więc linie wyglądają, jakby leżały „obok siebie” z cienką ciemną kreską
+  między nimi. Wcześniej mieliśmy szersze odstępy i jasną obwódkę, stąd wrażenie rozdzielonych linii.
+- U nas: `pitch = w + 1`, obwódka w+2 `#16181d`, szerokość ok. 75% dawnej (z16 = 6 px).
+- Do dekodowania kafli wystarczył mały dekoder protobuf w Pythonie (bez bibliotek).
+
+### Liczby z danych GZM (do porównań)
+
+- `tram_geo.json` (po `dropEyes`): 411 krawędzi, 385 węzłów, 312 węzłów stopnia 2, w tym 303 przystanki.
+- Węzły stopnia 2:
+  - 304: te same linie w tej samej kolejności;
+  - 3: te same linie w innej kolejności;
+  - 5: inne linie.
+- Po `chainEdges` zostaje ok. 110 krawędzi.
+- Końce linii (`ends` z jednym wpisem): bez grupowania 38 na każdym zoomie, z grupowaniem z11 50, z14 46, z16 38.
+  Wszystkie dodatkowe końce to krańcówki z pętlami (Zawodzie, Bytom Plac Sikorskiego, Plac Miarki).
+- „Oczka”: 7 miejsc (np. Plac Wolności). Zwinięcie przesuwa linię o 50–150 m na sąsiednią ulicę.
+
+### Niejasności i decyzje, których nie byłem pewien
+
+- **Próg „partnera” linii na węźle.** Na początku cos > 0,3 (do ok. 72°). To łapało odgałęzienia i dawało
+  bezsensowne niedopasowania. Zmieniłem na 0,8.
+- **Waga linii dochodzącej w regresji izotonicznej** (0,05): dobrana na oko na Rondzie i Rynku. Większa waga
+  wypycha sąsiadów, mniejsza nic nie zmienia.
+- **Promień grupowania.** Kryterium „krawędź < suma promieni cięcia” jest analogią do nakładania się przekrojów
+  w LOOM, a nie kopią ich algorytmu. Łańcuch krótkich krawędzi może dać dużą grupę (w Katowicach na z13 do 8 węzłów).
+  Łuk przez taką grupę zna tylko styczne na brzegach.
+- **Pastylka krańcówki w grupie** (Bytom Plac Sikorskiego, z14) bywa wydłużona, bo jej końce to najbliższe punkty
+  łuków różnych linii. Nie poprawiałem.
+- **Etykiety.** W gęstym centrum Katowic na z14 część nazw jest tylko w tooltipie, bo żadna z 4 pozycji się nie mieści.
+  Tooltipy Leafleta mają w CSS margines ok. 6 px, co trzeba doliczyć przy przesunięciach.
+- **Skrzyżowania z kolejności `loom`** (T6 / T13 nad Rondem) zostają. Nie sprawdzałem, czy inna kolejność z
+  `loom` (np. bez `--no-prune` czy z innymi karami) dałaby ich mniej. Wymagałoby to ponownego uruchomienia `loom`
+  na zarchiwizowanym `topo`.
+
+### Poza GZM
+
+- Przy pisaniu promptu dla Łodzi (`schemat-linii-lodz/PROMPT_mapa-geograficzna.md`) wyszło, że:
+  - `serving.py` w `schemat-linii-lodz/pipeline/` jest starszy niż wersja w skillu;
+  - `*.loom.json` Łodzi powstał po `hubsnap.py`, który zmienia `topo.json` w miejscu;
+  - w Łodzi nie ma pliku `*_geo.json`, trzeba go zrobić tak jak `3_geo.json` w GZM.
+- Nieśledzone pliki `schemat-linii-lodz/*.jpg|pdf|png` należą do innej pracy. Zostawiałem je poza commitami.
