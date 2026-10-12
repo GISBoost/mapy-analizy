@@ -1,6 +1,6 @@
 // Geographic variant of the diagram: the lines on an OpenStreetMap basemap (Leaflet). Loaded on first use by index.html.
 // Drawn like the diagram: smoothed centrelines, bundles of parallel lines in loom's order with a dark 1 px outline (as loom's tiles), stops as pills
-// across the lines that stop there, termini named with their line chips. A click on a line (or on the list) highlights it.
+// across the lines that stop there (boxes where lines cross), termini named with their line chips. A click on a line (or on the list) highlights it.
 window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_export.py); S = {sel: Set, pick(line), meta: {line: {a, b, d (dark colour)}}}
   dropEyes(D);
   // junctions (3+ edges): the only through stops named between z15 and z17, where naming every stop crowds the map
@@ -16,7 +16,7 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
   let touched = false; for (const t of ['pointerdown', 'wheel', 'keydown']) el.addEventListener(t, () => { touched = true; }, { passive: true });
   new ResizeObserver(() => { if (!el.clientWidth) return; map.invalidateSize(); lock(); if (!touched) map.fitBounds(bounds); }).observe(el);
   const cv = L.canvas({ padding: 0.3, tolerance: 5 }), grp = L.layerGroup().addTo(map), stopGrp = L.layerGroup().addTo(map);
-  let byLine = {}, markers = [], nodePos = {}, hits = null, look = {}, drawnZ = null;
+  let byLine = {}, markers = [], nodePos = {}, lineDir = {}, hits = null, look = {}, drawnZ = null;  // lineDir: node|line -> axis of travel there
   const SIGMA = 16;  // px: how much the centrelines are smoothed (more = rounder)
   const width = z => z <= 10 ? 1.5 : z <= 11 ? 2.3 : z <= 12 ? 2.9 : z <= 13 ? 3.6 : z <= 14 ? 4.5 : z <= 15 ? 5.3 : 6;
   const P = (x, y) => L.point(x, y), lerp = (a, b, t) => P(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
@@ -50,7 +50,7 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
   function draw() {
     const z = drawnZ = map.getZoom(), w = width(z), pitch = w + 1;  // as loom's tiles: every line with a 1 px dark outline, the outlines of neighbours touching
     look = { dark: dark() }; look.cas = '#16181d'; look.bg = look.dark ? getComputedStyle(el).backgroundColor : '#ececec';
-    grp.clearLayers(); byLine = {}; nodePos = {};
+    grp.clearLayers(); byLine = {}; nodePos = {}; lineDir = {};
     const key = q => q[0] + ',' + q[1], last = a => a[a.length - 1];
     // loom lists an edge's lines from the left of its direction (geographically, y up); flipping it adds ~70 crossings at the nodes
     const E = D.edges.map(e => { const px = smooth(dp(e.p.map(q => map.project(L.latLng(q[1], q[0]), z)), 1.2), SIGMA), n = e.l.length;
@@ -84,7 +84,7 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
     const near = (o, q) => { let bi = 1, bt = 0, bd = Infinity; for (let i = 1; i < o.px.length; i++) { const a = o.px[i - 1], b = o.px[i], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
       const t = Math.min(Math.max(((q.x - a.x) * dx + (q.y - a.y) * dy) / l2, 0), 1), d = Math.hypot(a.x + dx * t - q.x, a.y + dy * t - q.y); if (d < bd) { bd = d; bi = i; bt = t; } } return [bi, bt]; };
     for (const o of E) for (const k of o.e.mid || []) { const [x, y] = k.split(',').map(Number), [i, t] = near(o, map.project(L.latLng(y, x), z));
-      o.e.l.forEach((ln, j) => { nodePos[k + '|' + ln] = lerp(o.off[j][i - 1], o.off[j][i], t); }); }
+      const a = o.px[i - 1], b = o.px[i]; o.e.l.forEach((ln, j) => { nodePos[k + '|' + ln] = lerp(o.off[j][i - 1], o.off[j][i], t); lineDir[k + '|' + ln] = [b.x - a.x, b.y - a.y]; }); }
     // every node gets a radius: the bundles are cut that far before it and each line's ends are joined by a curve inside it (as in loom).
     // A node where the bundles just continue (same lines, same places) only needs a short one to round the corner.
     const sideVec = (o, k, j) => { const i = j ? o.px.length - 1 : 0, c = o.off[k][i]; return [c.x - o.px[i].x, c.y - o.px[i].y]; };
@@ -112,18 +112,18 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
     }
     for (const id in ends) {
       const L_ = ends[id], ln = id.slice(id.lastIndexOf('|') + 1);
-      if (L_.length === 1) { segs.push({ ln, pts: L_[0].rest }); (conn[id] = conn[id] || []).push(L_[0].rest); nodePos[id] = L_[0].tip; continue; }  // the line ends here
+      if (L_.length === 1) { segs.push({ ln, pts: L_[0].rest }); (conn[id] = conn[id] || []).push(L_[0].rest); nodePos[id] = L_[0].tip; lineDir[id] = L_[0].d; continue; }  // the line ends here
       // join every end to the one it continues into most straight (a branch of the same line gets its own curve)
       const done = new Set(); let best = -2;
       L_.forEach((a, i) => { let m = -1, s = -2; L_.forEach((b, j) => { if (j !== i) { const v = -(a.d[0] * b.d[0] + a.d[1] * b.d[1]); if (v > s) { s = v; m = j; } } });
         const pk = Math.min(i, m) + ',' + Math.max(i, m); if (done.has(pk)) return; done.add(pk);
         const b = L_[m], h = Math.hypot(b.p.x - a.p.x, b.p.y - a.p.y) * 0.42, c1 = P(a.p.x + a.d[0] * h, a.p.y + a.d[1] * h), c2 = P(b.p.x + b.d[0] * h, b.p.y + b.d[1] * h), pts = [];
         for (let t = 0; t <= 1.0001; t += 1 / 12) { const u = 1 - t; pts.push(P(u * u * u * a.p.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * b.p.x, u * u * u * a.p.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * b.p.y)); }
-        segs.push({ ln, pts }); (conn[id] = conn[id] || []).push(pts); if (s > best) { best = s; nodePos[id] = pts[6]; } });
+        segs.push({ ln, pts }); (conn[id] = conn[id] || []).push(pts); if (s > best) { best = s; nodePos[id] = pts[6]; lineDir[id] = [a.d[0] - b.d[0], a.d[1] - b.d[1]]; } });
     }
     const mem = {}; for (const k in inc) (mem[ck(k)] = mem[ck(k)] || []).push(k);
     for (const id in conn) { const r = id.slice(0, id.lastIndexOf('|')), ln = id.slice(id.lastIndexOf('|') + 1); if (mem[r].length < 2) continue;
-      for (const k of mem[r]) { const [x, y] = k.split(',').map(Number), q = map.project(L.latLng(y, x), z); let bd = Infinity;
+      for (const k of mem[r]) { const [x, y] = k.split(',').map(Number), q = map.project(L.latLng(y, x), z); let bd = Infinity; lineDir[k + '|' + ln] = lineDir[id];
         for (const pts of conn[id]) for (const p of pts) { const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; nodePos[k + '|' + ln] = p; } } } }
     // two passes, all casings under all lines, so no outline cuts into a neighbouring line where pieces meet
     const ll = p => p.map(q => map.unproject(q, z));
@@ -162,9 +162,9 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
     for (const d of D.stops) {
       const term = d.t.length > 0; if (z < 12 && !term) continue;
       const m = L.circleMarker([0, 0], { renderer: cv, radius: Math.max(th / 2, 4), stroke: false, fillOpacity: 0, interactive: true });
-      m.d = d; m.key = d.ll[0] + ',' + d.ll[1]; m.pill = [['#16181d', th], ['#fff', th - 2.6]].map(([c, wt]) => L.polyline([[0, 0], [0, 0]], { renderer: cv, color: c, weight: wt, lineCap: 'round', interactive: false }).addTo(stopGrp));
-      const [A, B] = pillEnds(m, d.l), c = lerp(A, B, .5); m.setLatLng(map.unproject(c, z)).addTo(stopGrp); markers.push(m);
-      const r = { x0: Math.min(A.x, B.x) - th / 2, x1: Math.max(A.x, B.x) + th / 2, y0: Math.min(A.y, B.y) - th / 2, y1: Math.max(A.y, B.y) + th / 2 }; boxes.push(r);
+      m.d = d; m.key = d.ll[0] + ',' + d.ll[1]; m.th = th; m.pill = [['#16181d', th], ['#fff', th - 2.6]].map(([c, wt]) => L.polyline([[0, 0], [0, 0]], { renderer: cv, color: c, weight: wt, lineCap: 'round', interactive: false }).addTo(stopGrp));
+      m.hub = L.polygon([], { renderer: cv, color: '#16181d', weight: 1.4, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(stopGrp);
+      const r = shape(m, d.l), c = P((r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2); m.setLatLng(map.unproject(c, z)).addTo(stopGrp); markers.push(m); boxes.push(r);
       if (term && z >= 11 || (z >= 17 || z >= 15 && deg[m.key] > 2) && inView(c)) labels.push({ m, d, c, r, term });
       else m.bindTooltip(`<b>${d.n}</b><br>${d.l.map(chip).join('')}`, { direction: 'top', className: 'stl' });
     }
@@ -186,16 +186,34 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
       else m.bindTooltip(`<b>${d.n}</b><br>${d.l.map(chip).join('')}`, { direction: 'top', className: 'stl' });
     }
   }
-  function pillEnds(m, lines) {  // the two farthest places of the given lines at the stop (layer pixels)
-    const z = map.getZoom(); let v = lines.map(ln => nodePos[m.key + '|' + ln]).filter(Boolean);
+  // a stop where the given lines all travel along one axis (straight, diagonal or turning together) is a pill across them;
+  // where they cross (one line goes up, another sideways: a transfer between directions) it is a rounded box, as on loom's maps.
+  // Returns the shape's box in layer pixels.
+  function shape(m, lines) {
+    const z = map.getZoom(), h = m.th / 2; let v = lines.map(ln => nodePos[m.key + '|' + ln]).filter(Boolean);
     if (!v.length) v = [map.project(L.latLng(m.d.ll[1], m.d.ll[0]), z)];
-    const far = (o, l) => l.reduce((a, q) => Math.hypot(q.x - o.x, q.y - o.y) > Math.hypot(a.x - o.x, a.y - o.y) ? q : a, o), A = far(v[0], v);
-    m.pill.forEach(q => q.setLatLngs([map.unproject(A, z), map.unproject(far(A, v), z)])); return [A, far(A, v)];
+    const ax = lines.map(ln => lineDir[m.key + '|' + ln]).filter(Boolean).map(([x, y]) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; });
+    const par = (a, b) => Math.abs(a[0] * b[0] + a[1] * b[1]) > 0.866;  // within 30 degrees, either way
+    if (ax.every(a => ax.every(b => par(a, b)))) {
+      m.hub.setLatLngs([]);
+      const far = (o, l) => l.reduce((a, q) => Math.hypot(q.x - o.x, q.y - o.y) > Math.hypot(a.x - o.x, a.y - o.y) ? q : a, o), A = far(v[0], v), B = far(A, v);
+      m.pill.forEach(q => q.setLatLngs([map.unproject(A, z), map.unproject(B, z)]));
+      return { x0: Math.min(A.x, B.x) - h, x1: Math.max(A.x, B.x) + h, y0: Math.min(A.y, B.y) - h, y1: Math.max(A.y, B.y) + h };
+    }
+    m.pill.forEach(q => q.setLatLngs([]));
+    const u = ax.reduce((b, a) => ax.filter(x => par(x, a)).length > ax.filter(x => par(x, b)).length ? a : b, ax[0]), n = [-u[1], u[0]];  // the axis most lines share
+    const S_ = v.map(p => p.x * u[0] + p.y * u[1]), T_ = v.map(p => p.x * n[0] + p.y * n[1]), g = h - 0.7;
+    const s0 = Math.min(...S_) - g, s1 = Math.max(...S_) + g, t0 = Math.min(...T_) - g, t1 = Math.max(...T_) + g, rr = Math.min(g, (s1 - s0) / 2, (t1 - t0) / 2), pts = [];
+    for (const [cs, ct, a0] of [[s1 - rr, t1 - rr, 0], [s0 + rr, t1 - rr, 90], [s0 + rr, t0 + rr, 180], [s1 - rr, t0 + rr, 270]])
+      for (let a = a0; a <= a0 + 90; a += 30) { const ss = cs + rr * Math.cos(a * Math.PI / 180), tt = ct + rr * Math.sin(a * Math.PI / 180); pts.push(P(ss * u[0] + tt * n[0], ss * u[1] + tt * n[1])); }
+    m.hub.setLatLngs(pts.map(p => map.unproject(p, z)));
+    return { x0: Math.min(...pts.map(p => p.x)), x1: Math.max(...pts.map(p => p.x)), y0: Math.min(...pts.map(p => p.y)), y1: Math.max(...pts.map(p => p.y)) };
   }
   function paintStops() {  // with a selection a pill spans only the selected lines; stops none of them serves fade out
     const any = S.sel.size > 0;
     for (const m of markers) { const sel = m.d.l.filter(x => S.sel.has(x)), on = !any || sel.length > 0;
-      pillEnds(m, any && on ? sel : m.d.l); for (const q of m.pill) q.setStyle({ opacity: on ? 1 : .2 }).bringToFront();  // above a highlighted line
+      shape(m, any && on ? sel : m.d.l); for (const q of m.pill) q.setStyle({ opacity: on ? 1 : .2 }).bringToFront();  // above a highlighted line
+      m.hub.setStyle({ opacity: on ? 1 : .2, fillOpacity: on ? 1 : .2 }).bringToFront();
       const t = m.getTooltip(); if (t && t.options.permanent && t.getElement()) t.getElement().style.opacity = on ? 1 : .25; }
   }
   function repaint() { paintLines(); paintStops(); }

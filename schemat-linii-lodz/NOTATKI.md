@@ -89,3 +89,16 @@ zostają, bo zmiana kolejności zmieniłaby też schemat.
    Łagiewnicka-Rondo Powstańców, Piłsudskiego-Śmigłego-Rydza i kilka innych; mediana 6 m. Nie poprawione: wymaga osobnego
    przebiegu `topo` z mniejszym promieniem tylko dla mapy (kolejność linii może się wtedy różnić od schematu).
 5. Przełącznik: „Mapa” zamiast „Mapa geograficzna” (EN „Map”).
+
+## 12.10.2026: węzły przesiadkowe jako prostokąty
+
+- **Objaw:** ukośne pastylki na skrzyżowaniach (Przybyszewskiego-Kilińskiego, Piłsudskiego-Kilińskiego).
+- **Przyczyna:** pastylka to zawsze odcinek między dwoma najdalszymi liniami na przystanku. Na skrzyżowaniu jedna leży w wiązce
+  pionowej, druga w poziomej, więc odcinek wychodzi po przekątnej.
+- **Poprawka:** `draw()` zapisuje dla każdej linii oś jazdy na przystanku (`lineDir`: styczna osi na przystanku w środku krawędzi,
+  a w węźle kierunek wejście → wyjście łuku albo kierunek krawędzi na krańcówce). `shape()`: gdy osie wszystkich linii przystanku
+  są w granicach 30° (prosto, skos, cała wiązka skręca razem), zostaje pastylka; gdy się krzyżują, rysowany jest zaokrąglony
+  prostokąt (jak na mapach LOOM, np. Freiburg Berliner Platz) wokół miejsc linii, ustawiony wzdłuż osi, którą dzieli najwięcej linii.
+  Przy wyróżnieniu kształt liczony jest tylko z wybranych linii (jedna linia = pastylka).
+- Kościuszki-Mickiewicza zostaje pastylką: stają tam tylko linie z Kościuszki (2, 3, 6, 7, 11); linie z Mickiewicza stają na
+  Piotrkowskiej Centrum.
