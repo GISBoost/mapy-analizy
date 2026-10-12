@@ -175,8 +175,10 @@ Wszystko, na co trafiłem przy trzech rundach poprawek, a czego nie ma wyżej.
 - **Etykiety.** W gęstym centrum Katowic na z14 część nazw jest tylko w tooltipie, bo żadna z 4 pozycji się nie mieści.
   Tooltipy Leafleta mają w CSS margines ok. 6 px, co trzeba doliczyć przy przesunięciach.
 - **Skrzyżowania z kolejności `loom`** (T6 / T13 nad Rondem) zostają. Nie sprawdzałem, czy inna kolejność z
-  `loom` (np. bez `--no-prune` czy z innymi karami) dałaby ich mniej. Wymagałoby to ponownego uruchomienia `loom`
-  na zarchiwizowanym `topo`.
+  `loom` dałaby ich mniej. Do sprawdzenia są: metoda `-m` (domyślnie `comb-no-ilp`, `ilp` wymaga solvera glpk,
+  cbc albo gurobi), kary `--same-seg-cross-pen` (4), `--diff-seg-cross-pen` (1), `--in-stat-cross-pen-*`,
+  `--sep-pen` (3), `--no-untangle` i `--no-prune`. Wymaga to ponownego uruchomienia `loom` na zarchiwizowanym `topo`,
+  a nowa kolejność zmieni też schemat, jeśli przeliczysz `octi`.
 
 ### Poza GZM
 
