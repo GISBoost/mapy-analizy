@@ -159,3 +159,29 @@ zostają, bo zmiana kolejności zmieniłaby też schemat.
     Leafleta i podpisy, jak przedtem.
 - **Zostaje:** splot na Zachodniej/Północnej (linia 17 przecina wiązkę, żeby skręcić na wschód). To kolejność z `loom`,
   jest krótszy niż przedtem. Zmiana wymaga przeliczenia LOOM.
+
+## 12.10.2026: druga wersja, geometria z kafli `transitmap` (gałąź `lodz-map-transitmap-tiles`)
+
+- **Uwaga autora** po wersji z frontami w `geo.js`: poprawa niewielka, część linii nadal dziwnie odsunięta, a na oddaleniu
+  znikają przystanki (na mapie LOOM Londynu są widoczne). Prośba o wersję „z kafli”, na osobnej gałęzi.
+- **Jak:**
+  - `pipeline/geo_tiles.sh` (WSL) uruchamia `transitmap --render-engine mvt` osobno dla z11–z17. Grubość linii w px:
+    1,5 / 2 / 3 / 3,5 / 4 / 4,5 / 5. Obwódka 1 px, odstęp −1 px, czyli obwódki sąsiadów nachodzą na siebie jak dotąd.
+    Wejście to `out_TF150/tram.geo.json` (`loom.json` po `serving.py`, z `not_serving`).
+  - `pipeline/geo_tiles.py` dekoduje kafle (`pipeline/mvt.py`, sama biblioteka standardowa) i przycina każdy kawałek linii
+    do jego kafla, bo kafle zachodzą na siebie o bufor. Obwódek nie zapisuje (ta sama geometria, szersza). Stacje zapisuje raz.
+    Wynik idzie do `mapy/tram_geo.json` jako klucz `z`; punkty to ćwiartki piksela danego zoomu (siatka kafla).
+  - `geo.js` rysuje te linie i stacje tak, jak są. Na połówkach zoomu i powyżej z17 skaluje geometrię i grubość zoomu niżej,
+    jak kafle. Podpisy, krańcówki, tooltipy i wyróżnianie zostały, a przystanki łączy po `station_id` (227 z 227).
+- **Kafle LOOM (Londyn, z dekodowania):** linia 2 / 3 / 4 px na z12 / z13 / z16, obwódka 1 px. Kafle są dla z6–z17.
+- **Sprawdzone:**
+  - każda z 25 linii jest na każdym zoomie z11–z17;
+  - stacje: z11 131, z13 211, z15–17 227 z 227. `transitmap` chowa mniejszy z nakładających się przystanków, krańcówki są zawsze;
+  - konsola bez błędów; wyróżnienie linii działa; ciemny motyw;
+  - czas rysowania 27–103 ms na z11,5–z17.
+  - Splot na Zachodniej/Północnej zniknął: `transitmap` rozwiązuje go w samym węźle.
+- **Podpisy:** przy przystankach widocznych od z11 podpisy krańcówek nie mieściły się między symbolami przystanków.
+  Dlatego przystanki przelotowe są dla podpisów przeszkodą miękką, jak linie, a twarde są tylko inne podpisy i krańcówki.
+- **Koszt:** `tram_geo.json` ma ok. 1 MB zamiast ok. 100 KB (na stronie gzip). Gdyby to przeszkadzało: osobny plik na zoom.
+- **Bez zmian względem `transitmap`:** „oczka” (oba kierunki na osobnych ulicach) są rysowane jako dwie wiązki. `dropEyes`
+  działał tylko w naszym rysowaniu.
