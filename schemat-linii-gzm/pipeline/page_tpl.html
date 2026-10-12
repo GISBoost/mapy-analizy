@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>GZM – schemat linii tramwajowych — GISBoost</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Schemat linii tramwajowych Górnośląsko-Zagłębiowskiej Metropolii z rozkładu na środę 16.09.2026 — interaktywny, z wyróżnianiem linii, do druku jako PDF/SVG. GTFS ZTM GZM, układ LOOM.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="GZM – schemat linii tramwajowych — GISBoost">
+<meta property="og:description" content="Schemat linii tramwajowych Górnośląsko-Zagłębiowskiej Metropolii z rozkładu na środę 16.09.2026 — interaktywny, z wyróżnianiem linii, do druku jako PDF/SVG. GTFS ZTM GZM, układ LOOM.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/schemat-linii-gzm/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GZM – schemat linii tramwajowych — GISBoost">
+<meta name="twitter:description" content="Schemat linii tramwajowych Górnośląsko-Zagłębiowskiej Metropolii z rozkładu na środę 16.09.2026 — interaktywny, z wyróżnianiem linii, do druku jako PDF/SVG. GTFS ZTM GZM, układ LOOM.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<script>try{const v=localStorage.getItem('gzm-theme'); if(v==='dark'||v==='light') document.documentElement.setAttribute('data-theme',v)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@500;700;800&family=Overpass:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+/* layout: one-screen map desk — signage bar on top, line index rail on the left, the sheet fills the rest */
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --fg:#14171c; --muted:#5a6272; --rule:#d5d9e0; --accent:#c8102e; --sheet:#ffffff; --sheet-ink:#16181d; --sheet-muted:#5b6270;
+  --sdisplay:'Overpass','Inter',system-ui,sans-serif; --body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#0c0e12; --panel:#191c22; --fg:#eceef2; --muted:#9aa2b1; --rule:#2c313a; --accent:#ff5a6e; --sheet:#12151a; --sheet-ink:#e8eaee; --sheet-muted:#98a0ae; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#0c0e12; --panel:#191c22; --fg:#eceef2; --muted:#9aa2b1; --rule:#2c313a; --accent:#ff5a6e; --sheet:#12151a; --sheet-ink:#e8eaee; --sheet-muted:#98a0ae; color-scheme:dark }
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;display:flex;flex-direction:column;overflow:hidden}
+.topbar{flex:none}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--rule)}
+h1{font-family:var(--sdisplay);font-weight:800;font-size:19px;margin:0;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
+h1::before{content:"";width:14px;height:14px;border-radius:50%;border:4px solid var(--accent);background:var(--panel);box-sizing:border-box}
+.tabs{display:flex;gap:4px}
+.tab{font:600 14px var(--sdisplay);color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;padding:6px 10px 4px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tab .cnt{font:500 11px var(--body);margin-left:6px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meta{margin-left:auto;color:var(--muted);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:5px;overflow:hidden}
+.seg button{font:600 12px var(--body);color:var(--muted);background:var(--panel);border:0;padding:5px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+.atabs{display:flex;gap:4px}
+.atab{font:600 12px var(--sdisplay);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:2px 2px 3px;cursor:pointer}
+.atab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+#changes{list-style:none;margin:0;padding:6px 8px 12px;overflow:auto;flex:1}
+#changes .note{font-size:11px;color:var(--muted);line-height:1.4;padding:4px 8px 8px;cursor:default}
+#changes li.ch{display:grid;grid-template-columns:46px minmax(0,1fr);align-items:center;gap:10px;padding:5px 8px;border-radius:5px;cursor:pointer}
+#changes li.ch:hover{background:var(--bg)}
+#changes li.ch[aria-pressed="true"]{background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--fg)}
+#changes .what{font-size:12px;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+#changes .what small{display:block;color:var(--muted);font-size:11px}
+@media (max-width:760px){#theme{margin-left:auto}}
+main{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr)}
+aside{background:var(--panel);border-right:1px solid var(--rule);display:flex;flex-direction:column;min-height:0;min-width:0}
+.ahead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;border-bottom:1px solid var(--rule)}
+.ahead b{font:600 12px var(--sdisplay);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.btn{font:500 12px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:4px 9px;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+#lines{list-style:none;margin:0;padding:6px 8px 12px;overflow:auto;flex:1}
+#lines li{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:center;gap:10px;padding:5px 8px;border-radius:5px;cursor:pointer}
+#lines li:hover{background:var(--bg)}
+#lines li[aria-pressed="true"]{background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--fg)}
+#lines li.note{display:block;font-size:11px;color:var(--muted);line-height:1.4;cursor:default;background:none;box-shadow:none}
+.chipb{font:700 12px var(--body);text-align:center;border-radius:4px;padding:3px 0;font-variant-numeric:tabular-nums}
+.route{font-size:12px;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+.k{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stage{position:relative;min-width:0;min-height:0;background:var(--sheet);overflow:hidden;touch-action:none;cursor:grab}
+.stage.drag{cursor:grabbing}
+.pane{position:absolute;inset:0}
+svg.map{width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+svg.map .bg{fill:var(--sheet)}
+svg.map .casing{stroke:var(--sheet)}
+svg.map .stops{fill:var(--sheet);stroke:var(--sheet-ink)}
+svg.map .lb text{paint-order:stroke;stroke:var(--sheet);stroke-width:2.5px;stroke-linejoin:round;fill:var(--sheet-ink)}
+svg.map .ll{stroke:var(--sheet)!important}
+svg.map .leg text{fill:var(--sheet-ink)}
+svg.map .inset .box{fill:var(--bg);stroke:var(--rule)}
+svg.map .inset text{fill:var(--sheet-ink)}
+svg.map .leg text:nth-of-type(2){fill:var(--sheet-muted)}
+svg.map .ln{stroke:var(--c)}
+svg.map .lln{fill:var(--c)}
+svg.map .chip rect{fill:var(--c)}
+svg.map .chip text,svg.map .leg .chip text{stroke:none;fill:var(--t)!important}
+.chipb{background:var(--c);color:var(--t)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) svg.map .ln{stroke:var(--cd)}
+  :root:not([data-theme="light"]) svg.map .lln{fill:var(--cd)}
+  :root:not([data-theme="light"]) svg.map .chip rect{fill:var(--cd)}
+  :root:not([data-theme="light"]) svg.map .chip text{fill:var(--td)!important}
+  :root:not([data-theme="light"]) .chipb{background:var(--cd);color:var(--td)}
+}
+:root[data-theme="dark"] svg.map .ln{stroke:var(--cd)}
+:root[data-theme="dark"] svg.map .lln{fill:var(--cd)}
+:root[data-theme="dark"] svg.map .chip rect{fill:var(--cd)}
+:root[data-theme="dark"] svg.map .chip text{fill:var(--td)!important}
+:root[data-theme="dark"] .chipb{background:var(--cd);color:var(--td)}
+svg.map .ln,svg.map .lb,svg.map .chip,svg.map .st{transition:opacity .15s}
+svg.map .ln{cursor:pointer}
+/* orientation layer (render.py LANDMARKS): railway station names grey, zone-2 insets keep their tint, white parts follow the sheet */
+svg.map .lb.rl text{fill:#7a818d}
+svg.map .bgl [fill="#fff"],svg.map .ic [fill="#fff"]{fill:var(--sheet)}
+svg.map .bgl [stroke="#fff"],svg.map .ic [stroke="#fff"]{stroke:var(--sheet)}
+/*LMCSS*/
+#geo{position:absolute;inset:0;z-index:0;background:var(--sheet)}
+.stage.geo{cursor:auto;touch-action:auto}
+.stage.geo .legend,.stage.geo .pane,.stage.geo .zoom,.stage.geo .hint{display:none}
+.stage:not(.geo) #geo{display:none}
+.leaflet-container{font-family:var(--body)}
+.leaflet-tile-pane{filter:grayscale(.85) brightness(1.07) contrast(.9)}
+.stl{font:600 11px var(--body);color:#16181d;background:rgba(255,255,255,.92);border:1px solid #c9ced6;border-radius:3px;padding:1px 5px;box-shadow:none}
+.stl::before{display:none}
+.stl.stt{font-weight:800}
+.gch{display:inline-block;color:#fff;font:700 10px var(--body);border-radius:3px;padding:1px 4px;margin:2px 2px 0 0;text-shadow:0 0 2px rgba(0,0,0,.6)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9)}}
+:root[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9)}
+.zoom{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:4px}
+.zoom button{width:36px;height:36px;font:600 18px var(--body);color:var(--fg);background:var(--panel);border:1px solid var(--rule);border-radius:6px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.legend{position:absolute;left:16px;top:16px;max-width:calc(100% - 32px);font-size:12px;color:var(--fg)}
+.legend summary{display:inline-block;list-style:none;font:500 12px var(--body);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.legend summary::-webkit-details-marker{display:none}
+.legend summary::before{content:"▸ "}.legend[open] summary::before{content:"▾ "}
+.legend ul{list-style:none;margin:6px 0 0;padding:8px 12px;background:var(--panel);border:1px solid var(--rule);border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.15);max-height:calc(100vh - 260px);overflow:auto}
+.legend li{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:8px;padding:2px 0;line-height:1.3}
+.legend .lgk{display:flex;justify-content:center}.legend svg{display:block}
+.hint{position:absolute;left:16px;bottom:16px;font-size:12px;color:var(--muted);background:var(--panel);opacity:.92;padding:4px 8px;border-radius:4px}
+button:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:760px){
+  main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  aside{border-right:0;border-bottom:1px solid var(--rule)}
+  #lines{display:flex;gap:6px;overflow-x:auto;padding:8px 16px}
+  #lines li{display:block;padding:0;flex:none}
+  #lines li .route,#lines li .k{display:none}
+  #lines li.note{display:none}
+  .chipb{display:block;padding:5px 10px;min-width:30px}
+  .meta,.hint{display:none}
+  /* phone: the sheet gets the height — no duplicate h1 (the topbar names the page), changes as a one-row strip like #lines */
+  h1{display:none}
+  header{padding:6px 16px;gap:4px 12px}
+  .ahead{padding:4px 16px}
+  #changes{display:flex;gap:8px;overflow-x:auto;padding:8px 16px}
+  #changes .note,#changes .what small{display:none}
+  #changes li.ch{flex:none;width:210px;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:2px 6px 2px 2px}
+  #changes .what{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
+@media (prefers-reduced-motion:reduce){svg.map *{transition:none!important}}
+footer.note{flex:none;padding:6px 16px;font-size:12px;color:var(--muted);background:var(--panel);border-top:1px solid var(--rule)}
+footer.note a{color:inherit}
+@media (max-width:760px){footer.note{padding:5px 16px calc(5px + env(safe-area-inset-bottom));white-space:nowrap;overflow-x:auto}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page">Schemat linii GZM</a>
+  </nav>
+</div>
+<header>
+  <h1>Tramwaje GZM – schemat linii</h1>
+  <div class="seg" role="group" aria-label="Widok"><button type="button" data-v="schema" aria-pressed="true">Schemat</button><button type="button" data-v="geo" aria-pressed="false">Mapa geograficzna</button></div>
+  <span class="meta">Dzień roboczy, środa 16.09.2026 · GTFS ZTM GZM · <span id="cnt"></span> linii</span>
+  <button class="btn" id="theme" aria-label="Przełącz motyw jasny/ciemny">Motyw</button>
+</header>
+<main>
+  <aside>
+    <div class="ahead"><b>Linie</b><button class="btn" id="clear" disabled>Pokaż wszystkie</button></div>
+    <ul id="lines"></ul>
+  </aside>
+  <div class="stage" id="stage">
+    <div class="pane" id="pane-tram"></div>
+    <div id="geo"></div>
+    <details class="legend"><summary>Legenda</summary><ul><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><circle cx="12" cy="7" r="4" style="fill:var(--sheet);stroke:var(--sheet-ink)" stroke-width="1.5"/></svg></span><span>przystanek</span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="3" y="2" width="18" height="10" rx="3.5" style="fill:var(--sheet);stroke:var(--sheet-ink)" stroke-width="1.5"/></svg></span><span>węzeł przesiadkowy (przystanki bliżej niż ok. 75 m są jednym punktem)</span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><text x="12" y="10.5" font-size="8.5" font-weight="700" text-anchor="middle" style="fill:var(--sheet-ink)">A / B</text></svg></span><span>sklejone przystanki: nazwy obu</span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="2" y="1.5" width="20" height="11" rx="2.5" style="fill:var(--sheet-ink)"/><text x="12" y="10.3" font-size="8" font-weight="700" text-anchor="middle" style="fill:var(--sheet)">12</text></svg></span><span>krańcówka linii (numery linii kończących tu bieg)</span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><text x="12" y="10.5" font-size="9" font-weight="700" text-anchor="middle" style="fill:var(--sheet-ink)">4 8</text></svg></span><span>numery linii przy wiązce</span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><line x1="1" x2="23" y1="7" y2="7" stroke="#9ba2ad" stroke-width="4.5" stroke-linecap="round"/><line x1="1" x2="23" y1="7" y2="7" style="stroke:var(--sheet)" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="7" r="3.4" stroke="#9ba2ad" stroke-width="1.7" style="fill:var(--sheet)"/></svg></span><span>kolej, stacja</span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#3b4250"/><path d="M3 1.6h4a1.4 1.4 0 0 1 1.4 1.4v3.6a1 1 0 0 1-1 1H2.6a1 1 0 0 1-1-1V3a1.4 1.4 0 0 1 1.4-1.4z" style="fill:var(--sheet)"/><rect x="2.6" y="2.8" width="4.8" height="1.9" fill="#3b4250"/><circle cx="3.3" cy="6" r=".6" fill="#3b4250"/><circle cx="6.7" cy="6" r=".6" fill="#3b4250"/><path d="M3.2 7.6 2.2 9M6.8 7.6 7.8 9" style="stroke:var(--sheet)" stroke-width=".9"/></svg></span><span>stacja kolejowa przy przystanku</span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#1e5bb8"/><path d="M3 2v6M7 2v6M3 5h4" style="stroke:var(--sheet)" stroke-width="1.6" fill="none"/></svg></span><span>szpital</span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#3b4250"/><path d="M1.5 4h7l-.6 4.6H2.1z" style="fill:var(--sheet)"/><path d="M3.4 4.6c0-3 3.2-3 3.2 0" fill="none" style="stroke:var(--sheet)" stroke-width=".7"/></svg></span><span>centrum handlowe</span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="1" y="1" width="22" height="12" rx="3.5" fill="#dcecd6"/></svg></span><span>park, las</span></li></ul></details>
+    <div class="hint">Kliknij linię, żeby ją wyróżnić · przeciągnij i przewiń, żeby przybliżyć</div>
+    <div class="zoom"><button id="zin" aria-label="Przybliż">+</button><button id="zout" aria-label="Oddal">−</button><button id="zfit" aria-label="Cały schemat">⤢</button></div>
+  </div>
+</main>
+<footer class="note">
+  <a href="../">GISBoost</a> · dane: GTFS ZTM GZM (<a href="https://otwartedane.metropoliagzm.pl/">otwartedane.metropoliagzm.pl</a>), zrealizowany rozkład z <a href="https://github.com/GISBoost/easy-GTFS-RT">easy-GTFS-RT</a> · tło: © <a href="https://www.openstreetmap.org/copyright">autorzy OpenStreetMap</a> (ODbL) · układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · do druku (1189 × 618 mm): <a href="druk/gzm_tramwaje.pdf">PDF</a>/<a href="druk/gzm_tramwaje.svg">SVG</a>/<a href="druk/gzm_tramwaje.jpg">JPG</a>
+</footer>
+<script>
+const META=/*META*/, SVG=/*SVGS*/, GEOJSON=/*GEOJSON*/;
+const stage=document.getElementById('stage'), list=document.getElementById('lines'), clearBtn=document.getElementById('clear');
+const s={sel:new Set()}; let G=null, view='schema';
+document.getElementById('cnt').textContent=META.length;
+const pane=document.getElementById('pane-tram');
+fetch(SVG).then(r=>{if(!r.ok) throw new Error(r.status); return r.text()}).then(txt=>{pane.innerHTML=txt; s.svg=pane.querySelector('svg'); const vb=s.svg.getAttribute('viewBox').split(/\s+/).map(Number); s.home=vb.slice(); s.vb=vb.slice();}).catch(e=>{pane.textContent='Nie udało się wczytać schematu.'});
+function apply(){s.svg.setAttribute('viewBox',s.vb.map(v=>v.toFixed(2)).join(' '));}
+const selCss=document.head.appendChild(document.createElement('style'));
+function paint(){const any=s.sel.size>0, id='#svg-tram';
+  selCss.textContent=any?`${id} [data-l]{opacity:.13} ${[...s.sel].map(l=>`${id} [data-l~="${CSS.escape(l)}"]`).join(',')}{opacity:1}`:'';
+  for(const li of list.children) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l)); clearBtn.disabled=!any; if(G) G.repaint();}
+function fitSel(){if(!s.svg||!s.sel.size) return; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(const g of s.svg.querySelectorAll('g.ln')){ if(!s.sel.has(g.getAttribute('data-l'))) continue; const b=g.getBBox(); if(!b.width&&!b.height) continue;
+    x0=Math.min(x0,b.x); y0=Math.min(y0,b.y); x1=Math.max(x1,b.x+b.width); y1=Math.max(y1,b.y+b.height);}
+  if(x1<x0) return; const m=Math.max(x1-x0,y1-y0)*0.12+60; s.vb=[x0-m,y0-m,x1-x0+2*m,y1-y0+2*m]; apply();}
+function toggle(l,fit){s.sel.has(l)?s.sel.delete(l):s.sel.add(l); paint(); if(fit) view==='geo'?G&&G.fit():fitSel();}
+const chip=m=>{const c=document.createElement('span'); c.className='chipb'; c.textContent=m.n; c.style.cssText='--c:#'+m.c+';--cd:#'+m.d+';--t:'+m.t+';--td:'+m.td; return c};
+for(const m of META){
+  const li=document.createElement('li'); li.dataset.l=m.n; li.tabIndex=0; li.setAttribute('role','button'); li.setAttribute('aria-pressed','false'); li.title=m.a+' – '+m.b;
+  const r=document.createElement('span'); r.className='route'; r.textContent=m.a+' – '+m.b;
+  const q=document.createElement('span'); q.className='k'; q.textContent=m.k+' kursów'; q.title='Liczba kursów linii w dniu rozkładu';
+  li.append(chip(m),r,q); li.onclick=()=>toggle(m.n,true); li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(m.n,true)}}; list.append(li);}
+clearBtn.onclick=()=>{s.sel.clear(); paint()};
+// pan / zoom on the viewBox
+function scaleOf(){const r=stage.getBoundingClientRect(); return Math.max(s.vb[2]/r.width, s.vb[3]/r.height);}
+function pt(cx,cy){const r=stage.getBoundingClientRect(), k=scaleOf();
+  const ox=s.vb[0]+(s.vb[2]-r.width*k)/2, oy=s.vb[1]+(s.vb[3]-r.height*k)/2; return [ox+(cx-r.left)*k, oy+(cy-r.top)*k];}
+function zoomAt(f,cx,cy){if(!s.svg) return; const nw=s.vb[2]*f; if(nw>s.home[2]*1.5||nw<s.home[2]/60) return;
+  const [px,py]=pt(cx,cy); s.vb=[px-(px-s.vb[0])*f, py-(py-s.vb[1])*f, s.vb[2]*f, s.vb[3]*f]; apply();}
+stage.addEventListener('wheel',e=>{if(stage.classList.contains('geo')||e.target.closest('.legend'))return; e.preventDefault(); zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
+const ptrs=new Map(); let moved=0, pinch=0;
+stage.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom,.legend')||!s.svg||stage.classList.contains('geo'))return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
+  if(ptrs.size===2){const a=[...ptrs.values()]; pinch=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);}});
+stage.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId))return; const p=ptrs.get(e.pointerId);
+  if(ptrs.size===1){const k=scaleOf(); s.vb[0]-=(e.clientX-p[0])*k; s.vb[1]-=(e.clientY-p[1])*k; moved+=Math.abs(e.clientX-p[0])+Math.abs(e.clientY-p[1]); apply();}
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===2){const a=[...ptrs.values()], d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]); if(pinch>0&&d>0){zoomAt(pinch/d,(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2); moved+=5;} pinch=d;}});
+function up(e){ if(!ptrs.has(e.pointerId))return; ptrs.delete(e.pointerId); stage.classList.remove('drag');
+  if(moved<5&&e.type==='pointerup'){const el=document.elementFromPoint(e.clientX,e.clientY); const g=el&&el.closest&&el.closest('.ln,.chip'); if(g) toggle(g.getAttribute('data-l'));}}
+stage.addEventListener('pointerup',up); stage.addEventListener('pointercancel',up);
+const mid=()=>{const r=stage.getBoundingClientRect(); return [r.left+r.width/2,r.top+r.height/2]};
+document.getElementById('zin').onclick=()=>zoomAt(0.7,...mid());
+document.getElementById('zout').onclick=()=>zoomAt(1/0.7,...mid());
+document.getElementById('zfit').onclick=()=>{if(s.svg){s.vb=s.home.slice(); apply()}};
+// view switch: schematic diagram <-> geographic map (Leaflet + OSM tiles, loaded on first use)
+function loadGeo(){return loadGeo.p||(loadGeo.p=new Promise((ok,no)=>{const sc=document.createElement('script'); sc.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; sc.onload=ok; sc.onerror=no; document.head.append(sc)})
+  .then(()=>new Promise((ok,no)=>{const sc=document.createElement('script'); sc.src='geo.js?v=/*GEOV*/'; sc.onload=ok; sc.onerror=no; document.head.append(sc)}))
+  .then(()=>fetch(GEOJSON).then(r=>r.json())).then(D=>{s.pick=l=>toggle(l,false); s.meta=Object.fromEntries(META.map(m=>[m.n,m])); G=GeoMap(document.getElementById('geo'),D,s); G.repaint()}).catch(e=>{loadGeo.p=null; document.getElementById('geo').textContent='Nie udało się wczytać mapy.'}))}
+function setView(v){view=v; stage.classList.toggle('geo',v==='geo');
+  for(const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed',b.dataset.v===v);
+  document.querySelector('.hint').textContent=v==='geo'?'':'Kliknij linię, żeby ją wyróżnić · przeciągnij i przewiń, żeby przybliżyć';
+  if(v==='geo') loadGeo().then(()=>{if(G){G.invalidate(); G.fit()}}); try{localStorage.setItem('gzm-view',v)}catch(e){}}
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+try{if(localStorage.getItem('gzm-view')==='geo') setView('geo')}catch(e){}
+// download links point to the dark (_ciemny) files when the effective theme is dark
+const dlSync=()=>{const d=(document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
+  document.querySelectorAll('footer.note a[href^="druk/"]').forEach(a=>a.setAttribute('href',a.getAttribute('href').replace(/(_ciemny)?\.(pdf|svg|jpg)$/,(_,c,e)=>(d?'_ciemny':'')+'.'+e)))};
+document.getElementById('theme').onclick=()=>{const r=document.documentElement, cur_=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'), n=cur_==='dark'?'light':'dark';
+  r.setAttribute('data-theme',n); try{localStorage.setItem('gzm-theme',n)}catch(e){} dlSync()};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',dlSync); dlSync();
+</script>
+</body>
+</html>
