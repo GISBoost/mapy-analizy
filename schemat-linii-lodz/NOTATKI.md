@@ -102,3 +102,60 @@ zostają, bo zmiana kolejności zmieniłaby też schemat.
   Przy wyróżnieniu kształt liczony jest tylko z wybranych linii (jedna linia = pastylka).
 - Kościuszki-Mickiewicza zostaje pastylką: stają tam tylko linie z Kościuszki (2, 3, 6, 7, 11); linie z Mickiewicza stają na
   Piotrkowskiej Centrum.
+
+## 12.10.2026: skala linii względem zoomu
+
+- **Objaw:** na oddaleniu (z11,5–12) sieć zlewa się w plamę z wielkim białym węzłem w centrum; na każdym zoomie inna geometria.
+- **Przyczyna:** wszystko w pikselach. Linia 2,9 px na z12 to ok. 68 m w terenie, na z17,5 6 px to ok. 3 m: wiązka 8 linii
+  ma w terenie ok. 740 m na z12 i ok. 30 m na z17,5. Wygładzanie 16 px to 380 m na z12 i 8 m na z17,5; promienie węzłów
+  i grupowanie zależą od odstępu linii, więc też od zoomu.
+- **Porównane** (kolaż obecny | metry | pośredni, z11,5/13/15/17): szerokość w metrach (8 m, min 1,5 px) trzyma geometrię,
+  ale na z13 linie za cienkie (uwaga autora), a na z17 ok. 11 px.
+- **Wybrany wariant pośredni**, jak interpolacja wykładnicza szerokości w stylach map wektorowych (Mapbox/MapLibre `interpolate`
+  `exponential`; baza 1 = stałe piksele, 2 = metry): `width = 6 · 1,35^(z − 16)`, w granicach 1,6–9 px (z12 1,8; z13 2,4;
+  z14 3,3; z15 4,4; z16 6; z17 8,1). Kafle LOOM mają ok. 1,15 (z14 3 px, z16 4 px).
+- Wygładzanie w metrach (24 m, min. 2 px): kształt osi ten sam na każdym zoomie. Pastylka `1,5 · w + 3,5`. Przystanki przelotowe
+  (pastylki i prostokąty) od z14, krańcówki jak dotąd.
+
+## 12.10.2026: rysowanie wiązek według zasad `transitmap` (LOOM)
+
+- **Uwaga autora** (zrzuty z loom.cs.uni-freiburg.de/global, Londyn): tam linie idą równo obok siebie, wchodzą prosto w hub,
+  a od pewnego oddalenia kształt „zastyga”. U nas linie rozjeżdżały się przy węzłach, a każdy zoom wyglądał inaczej.
+- **Jak to robi LOOM** (kod `~/loom/src` w WSL, commit 1e47578; strona /global; kafle):
+  - Graf linii z osiami wygładzonymi w metrach powstaje raz. Wygładzanie: `LineGraph::smooth`, czyli `smoothenOutliers(50)`,
+    `simplify`, Chaikin ×3. Wejście to tory z OSM.
+  - `transitmap --render-engine mvt` dla każdego całkowitego zoomu liczy tylko fronty węzłów, czyli odcinki prostopadłe do
+    wiązki o jej szerokości:
+    - krawędź skraca tylko dopóty, dopóki fronty w węźle się nakładają (`expandOverlappinFronts`);
+    - z bliskich węzłów robi meta-węzły;
+    - linia to oś przesunięta o stały offset, przycięta do frontów;
+    - w węźle łączy fronty krzywą Béziera z ramieniem 0,55 × odległość do przecięcia stycznych (`getInnerBezier`);
+    - przystanek to otoczka frontów zamieniona na zorientowany prostokąt (`getStopGeoms`).
+  - Frontend: Leaflet + `Leaflet.VectorGrid`, `weight` z kafla w pikselach. Kafle są dla z6–17. Szerokość linii: ok. 1 px do z11,
+    2 px na z12, 3 px na z13–14, 4 px na z16. Między zoomami kafel jest tylko skalowany.
+- **Przyczyny u nas:**
+  - oś upraszczana i wygładzana w pikselach przy każdym `draw()`;
+  - przesuwanie całej wiązki przy węźle (`sh`, wygaszane na 8 odstępach), które ściągało linie z osi;
+  - stały promień cięcia `n · odstęp / 2 + odstęp`, przez który wiązka skręcała przed hubem;
+  - kształt przystanku liczony z punktów na łukach.
+- **Poprawka (`geo.js`):**
+  - Oś liczona raz przy wczytaniu, w metrach (zoom odniesienia 18): kolce < 35° przy odcinku < 50 m, DP 3 m, Chaikin ×3, DP 0,5 m.
+    Na każdym zoomie oś jest tylko skalowana.
+  - Stały offset linii od osi; usunięte `sh`, `ease` i `rad`.
+  - Fronty: start 1 odstęp przed węzłem, cofanie o ¼ odstępu, dopóki fronty się przecinają albo są bliżej niż 1 px (najwyżej 45%
+    krawędzi). Krawędź, z której po cięciu zostaje mniej niż odstęp, łączy węzły w grupę, a fronty grupy są rozsuwane razem.
+  - Krzywe w węźle jak `getInnerBezier`; przy cięciwie < 1,5 px prosty odcinek.
+  - Przystanek z frontów: pastylka wzdłuż frontu albo prostokąt w osi najszerszej wiązki (oś liczona per linia).
+  - Szerokość schodkowa, liniowo między progami: z11 1,5; z12 2; z13 3; z14 3,5; z15 4; z16 5; z17 6 px.
+- **Pułapka:** `if (F) for … if (…) {…} else …` przypiął `else` do wewnętrznego `if`. Przystanki w środku wiązki wyszły jako
+  kropki. Potrzebne nawiasy.
+- **Sprawdzone:**
+  - kolaż przed | po: z13, z15, z16 centrum; z15 i z17 Zachodnia/Północna;
+  - ciemny motyw na z15,5: bez szpar w wiązkach przy połówce zoomu;
+  - z11,5 po `fit()`;
+  - wolne końce linii na z12, z15, z17: 51 (każda linia 2, P1 3 z odgałęzieniem na pl. Niepodległości), jak przed zmianą;
+  - konsola bez błędów.
+  - Czas `draw()` po rozgrzaniu: z12 74 ms, z13 64, z15 107, z16 137, z17 129. Fronty kosztują 2–7 ms; reszta to warstwy
+    Leafleta i podpisy, jak przedtem.
+- **Zostaje:** splot na Zachodniej/Północnej (linia 17 przecina wiązkę, żeby skręcić na wschód). To kolejność z `loom`,
+  jest krótszy niż przedtem. Zmiana wymaga przeliczenia LOOM.

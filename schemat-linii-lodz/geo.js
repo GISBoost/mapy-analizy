@@ -16,9 +16,15 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
   let touched = false; for (const t of ['pointerdown', 'wheel', 'keydown']) el.addEventListener(t, () => { touched = true; }, { passive: true });
   new ResizeObserver(() => { if (!el.clientWidth) return; map.invalidateSize(); lock(); if (!touched) map.fitBounds(bounds); }).observe(el);
   const cv = L.canvas({ padding: 0.3, tolerance: 5 }), grp = L.layerGroup().addTo(map), stopGrp = L.layerGroup().addTo(map);
-  let byLine = {}, markers = [], nodePos = {}, lineDir = {}, hits = null, look = {}, drawnZ = null;  // lineDir: node|line -> axis of travel there
-  const SIGMA = 16;  // px: how much the centrelines are smoothed (more = rounder)
-  const width = z => z <= 10 ? 1.5 : z <= 11 ? 2.3 : z <= 12 ? 2.9 : z <= 13 ? 3.6 : z <= 14 ? 4.5 : z <= 15 ? 5.3 : 6;
+  // nodePos, lineDir: stop|line -> place and axis of travel of the line at a stop inside a chained edge;
+  // fronts: node group -> [{pts: [[line, point]], ax}], where each bundle is cut before the node
+  let byLine = {}, markers = [], nodePos = {}, lineDir = {}, fronts = {}, rootOf = {}, hits = null, look = {}, drawnZ = null;
+  const mpp = z => 156543.03 * Math.cos(bounds.getCenter().lat * Math.PI / 180) / 2 ** z;  // metres per pixel
+  // line width in pixels by zoom, in steps as on loom's tiles (3 px at z13, 4 px at z16 there), interpolated between the steps
+  const WT = [[11, 1.5], [12, 2], [13, 3], [14, 3.5], [15, 4], [16, 5], [17, 6]];
+  const width = z => { if (z <= WT[0][0]) return WT[0][1];
+    for (let i = 1; i < WT.length; i++) if (z <= WT[i][0]) { const [z0, a] = WT[i - 1], [z1, b] = WT[i]; return a + (b - a) * (z - z0) / (z1 - z0); }
+    return WT[WT.length - 1][1]; };
   const P = (x, y) => L.point(x, y), lerp = (a, b, t) => P(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
   const dark = () => (document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
   const col = ln => '#' + (look.dark && S.meta[ln] && S.meta[ln].d || D.lines[ln]);
@@ -29,17 +35,18 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
     let m = 0, k = 0; for (let i = 1; i < p.length - 1; i++) { const d = Math.abs(dy * (p[i].x - a.x) - dx * (p[i].y - a.y)) / l; if (d > m) { m = d; k = i; } }
     return m > tol ? dp(p.slice(0, k + 1), tol).slice(0, -1).concat(dp(p.slice(k), tol)) : [a, b];
   }
-  function smooth(p, sig) {  // resample every 3 px, Gaussian-weighted average (sigma sig px); ends stay put (reflected padding)
-    const st = 3, r = [p[0]]; let carry = 0;
-    for (let i = 1; i < p.length; i++) { const a = p[i - 1], b = p[i], l = Math.hypot(b.x - a.x, b.y - a.y); let t = st - carry;
-      while (t <= l) { r.push(P(a.x + (b.x - a.x) * t / l, a.y + (b.y - a.y) * t / l)); t += st; } carry = l - (t - st); }
-    const e = p[p.length - 1]; if (Math.hypot(e.x - r[r.length - 1].x, e.y - r[r.length - 1].y) > 0.5) r.push(e); else r[r.length - 1] = e;
-    const n = r.length, K = Math.ceil(3 * sig / st); if (n < 4) return r;
-    const at = i => i < 0 ? P(2 * r[0].x - r[Math.min(-i, n - 1)].x, 2 * r[0].y - r[Math.min(-i, n - 1)].y) : i > n - 1 ? P(2 * r[n - 1].x - r[Math.max(2 * (n - 1) - i, 0)].x, 2 * r[n - 1].y - r[Math.max(2 * (n - 1) - i, 0)].y) : r[i];
-    const w = []; for (let k = -K; k <= K; k++) w.push(Math.exp(-0.5 * (k * st / sig) ** 2)); const ws = w.reduce((a, b) => a + b, 0);
-    const out = r.map((_, i) => { let x = 0, y = 0; for (let k = -K; k <= K; k++) { const q = at(i + k), wk = w[k + K]; x += q.x * wk; y += q.y * wk; } return P(x / ws, y / ws); });
-    out[0] = r[0]; out[n - 1] = r[n - 1]; return dp(out, 0.35);
+  function spikes(p, d) {  // drops a point where the track doubles back (< 35°) next to a segment shorter than d, as loom's smoothenOutliers
+    const r = p.slice(), c35 = Math.cos(35 * Math.PI / 180);
+    for (let i = 1; i < r.length - 1; i++) { const a = r[i - 1], b = r[i], c = r[i + 1], ux = a.x - b.x, uy = a.y - b.y, vx = c.x - b.x, vy = c.y - b.y, la = Math.hypot(ux, uy), lc = Math.hypot(vx, vy);
+      if ((la < d || lc < d) && (ux * vx + uy * vy) / (la * lc || 1) > c35) r.splice(i--, 1); }
+    return r;
   }
+  const chaikin = (p, n) => { for (let k = 0; k < n; k++) { const r = [p[0]]; for (let i = 1; i < p.length; i++) r.push(lerp(p[i - 1], p[i], .25), lerp(p[i - 1], p[i], .75)); r.push(p[p.length - 1]); p = r; } return p; };
+  // every centreline is generalised once, in metres, as loom's line graph is: spikes out, Douglas-Peucker, Chaikin's corner cutting.
+  // A zoom only scales it, so the bundles keep their shape from zoom to zoom and only the widths and the cuts at the nodes change
+  // (smoothing in pixels on every zoom made each zoom look different). R: zoom of the stored points, 1 px ~ 0.37 m in Łódź
+  const R = 18, m1 = 1 / mpp(R);
+  for (const e of D.edges) e.m = dp(chaikin(dp(spikes(e.p.map(q => map.project(L.latLng(q[1], q[0]), R)), 50 * m1), 3 * m1), 3), 0.5 * m1);
   function offset(p, d) {  // d(i) px to the right of the direction of travel on screen (y down), mitred joints (limited)
     if (p.length < 2) return p;
     const nrm = (a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1; return [-dy / l, dx / l]; };
@@ -50,81 +57,74 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
   function draw() {
     const z = drawnZ = map.getZoom(), w = width(z), pitch = w + 1;  // as loom's tiles: every line with a 1 px dark outline, the outlines of neighbours touching
     look = { dark: dark() }; look.cas = '#16181d'; look.bg = look.dark ? getComputedStyle(el).backgroundColor : '#ececec';
-    grp.clearLayers(); byLine = {}; nodePos = {}; lineDir = {};
-    const key = q => q[0] + ',' + q[1], last = a => a[a.length - 1];
-    // loom lists an edge's lines from the left of its direction (geographically, y up); flipping it adds ~70 crossings at the nodes
-    const E = D.edges.map(e => { const px = smooth(dp(e.p.map(q => map.project(L.latLng(q[1], q[0]), z)), 1.2), SIGMA), n = e.l.length;
+    grp.clearLayers(); byLine = {}; nodePos = {}; lineDir = {}; fronts = {}; rootOf = {};
+    const key = q => q[0] + ',' + q[1], last = a => a[a.length - 1], f = 2 ** (z - R);
+    const E = D.edges.map(e => { const px = dp(e.m.map(q => P(q.x * f, q.y * f)), 0.25);  // the same centreline on every zoom, only scaled
       if (px.length < 2) px.push(px[0]);  // an edge shorter than a pixel at this zoom
       const cum = [0]; for (let i = 1; i < px.length; i++) cum.push(cum[i - 1] + Math.hypot(px[i].x - px[i - 1].x, px[i].y - px[i - 1].y));
-      return { e, px, cum, len: last(cum), ends: [key(e.p[0]), key(last(e.p))] }; });
-    // where lines join, leave or swap places at a node, the lines that run on would jump sideways inside the node (a bundle is centred
-    // on its track). Instead the bundle's end slides by half the mismatch of its lines with the lines they run on into, near the node,
-    // so the lines that run on meet their continuation nearly in place
+      return { e, px, cum, len: last(cum), ends: [key(e.p[0]), key(last(e.p))], s: [0, 0] }; });
+    // every line runs at a fixed offset from its bundle's centreline, as on loom's tiles. Where lines join or leave, the lines that run on
+    // step sideways inside the node (sliding the bundle near the node instead pulled the lines off the track, apart from each other).
+    // loom lists an edge's lines from the left of its direction (geographically, y up); flipping it adds ~150 crossings at the nodes
     const base = (o, k) => ((o.e.l.length - 1) / 2 - k) * pitch;  // to the right of the edge's direction
-    const into = (o, j) => { const p = o.px, a = j ? p[p.length - 2] : p[1], b = j ? last(p) : p[0], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return [(b.x - a.x) / l, (b.y - a.y) / l]; };
-    const inc = {}; for (const o of E) { o.ends.forEach((k, j) => (inc[k] = inc[k] || []).push([o, j]));  // node -> [[edge, end]]
-      o.sh = [o.e.l.map(() => 0), o.e.l.map(() => 0)]; }
-    for (const k in inc) { const I = inc[k]; if (I.length < 2) continue;
-      for (const [o, j] of I) { const d = into(o, j), mis = [];
-        o.e.l.forEach((ln, i) => { let best = null, bv = 0.8;  // the other end this line runs on into most straight
-          for (const [q, jq] of I) { if (q === o) continue; const m = q.e.l.indexOf(ln); if (m < 0) continue; const dq = into(q, jq), v = -(d[0] * dq[0] + d[1] * dq[1]); if (v > bv) { bv = v; best = [q, jq, m]; } }
-          // offsets seen travelling into the node; running on means they cancel
-          mis.push(best ? (j ? 1 : -1) * base(o, i) + (best[1] ? 1 : -1) * base(best[0], best[2]) : null); });
-        const ok = mis.filter(x => x !== null); if (!ok.length) continue;
-        // the whole bundle slides as one (its lines stay side by side), by the weighted mean of its lines' half mismatches;
-        // a joining line (no continuation) counts little. Łódź: per-line fits opened gaps between the lines of a bundle
-        const avg = ok.reduce((a, b) => a + b, 0) / ok.length, sg = j ? -1 : 1, wt = mis.map(x => x === null ? 0.05 : 1);
-        const sh = mis.reduce((a, x, i) => a + sg * (x === null ? avg : x) / 2 * wt[i], 0) / wt.reduce((a, b) => a + b, 0);
-        o.sh[j] = mis.map(() => sh); } }
-    const ease = t => t * t * (3 - 2 * t);
-    // the slide fades out within 8 pitches of the node: eased over the whole edge it tilted every short edge in the centre
-    for (const o of E) { const L = Math.min(8 * pitch, (o.len || 1) / 2);
-      o.off = o.e.l.map((ln, k) => offset(o.px, i => base(o, k) + o.sh[0][k] * (1 - ease(Math.min(o.cum[i] / L, 1))) + o.sh[1][k] * (1 - ease(Math.min((o.len - o.cum[i]) / L, 1))))); }
+    for (const o of E) o.off = o.e.l.map((ln, k) => offset(o.px, () => base(o, k)));
+    const at = (o, s) => { let i = 1; while (i < o.cum.length - 1 && o.cum[i] < s) i++; const g = o.cum[i] - o.cum[i - 1] || 1; return [i, Math.min(Math.max((s - o.cum[i - 1]) / g, 0), 1)]; };
+    const piece = (p, o, s0, s1) => { const [i0, t0] = at(o, s0), [i1, t1] = at(o, s1); return [lerp(p[i0 - 1], p[i0], t0), ...p.slice(i0, i1), lerp(p[i1 - 1], p[i1], t1)]; };
+    const dir = (o, s) => { const [i] = at(o, s), a = o.px[i - 1], b = o.px[i], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return [(b.x - a.x) / l, (b.y - a.y) / l]; };
     // stops inside a chained edge: the place of each line across the bundle at the stop
     const near = (o, q) => { let bi = 1, bt = 0, bd = Infinity; for (let i = 1; i < o.px.length; i++) { const a = o.px[i - 1], b = o.px[i], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
       const t = Math.min(Math.max(((q.x - a.x) * dx + (q.y - a.y) * dy) / l2, 0), 1), d = Math.hypot(a.x + dx * t - q.x, a.y + dy * t - q.y); if (d < bd) { bd = d; bi = i; bt = t; } } return [bi, bt]; };
     for (const o of E) for (const k of o.e.mid || []) { const [x, y] = k.split(',').map(Number), [i, t] = near(o, map.project(L.latLng(y, x), z));
       const a = o.px[i - 1], b = o.px[i]; o.e.l.forEach((ln, j) => { nodePos[k + '|' + ln] = lerp(o.off[j][i - 1], o.off[j][i], t); lineDir[k + '|' + ln] = [b.x - a.x, b.y - a.y]; }); }
-    // every node gets a radius: the bundles are cut that far before it and each line's ends are joined by a curve inside it (as in loom).
-    // A node where the bundles just continue (same lines, same places) only needs a short one to round the corner.
-    const sideVec = (o, k, j) => { const i = j ? o.px.length - 1 : 0, c = o.off[k][i]; return [c.x - o.px[i].x, c.y - o.px[i].y]; };
-    const rad = {};
-    for (const k in inc) { const I = inc[k]; if (I.length < 2) { rad[k] = 0; continue; }
-      let simple = I.length === 2 && I[0][0].e.l.length === I[1][0].e.l.length;
-      if (simple) { const [[a, ja], [b, jb]] = I; simple = a.e.l.every((ln, i) => { const m = b.e.l.indexOf(ln); if (m < 0) return false;
-        const u = sideVec(a, i, ja), v = sideVec(b, m, jb); return Math.hypot(u[0] - v[0], u[1] - v[1]) < 1; }); }
-      rad[k] = simple ? pitch : Math.max(...I.map(([o]) => o.e.l.length)) * pitch / 2 + pitch; }
-    // nodes whose cuts would overlap along the short edge between them make one junction (loom's meta nodes): that edge goes
-    // and every line crosses the group in a single curve, so the whole bundle turns in one place
+    // node fronts (loom's writeNodeFronts / expandOverlappinFronts): each bundle ends in a front, a cut square to its track as wide as the
+    // bundle. A front starts a pitch before the node and moves back only while it overlaps another front of the node, so a bundle runs
+    // straight up to the junction and its lines turn inside it (a fixed cut of half the widest bundle bent them well before it)
+    const inc = {}; for (const o of E) o.ends.forEach((k, j) => (inc[k] = inc[k] || []).push([o, j]));  // node -> [[edge, end]]
+    const front = (o, j) => { const s = j ? o.len - o.s[j] : o.s[j], [i, t] = at(o, s), c = lerp(o.px[i - 1], o.px[i], t), [dx, dy] = dir(o, s), h = (o.e.l.length * pitch + 1) / 2;
+      return [P(c.x + dy * h, c.y - dx * h), P(c.x - dy * h, c.y + dx * h)]; };
+    const side = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+    const dps = (p, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, t = Math.min(Math.max(((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1), 0), 1); return Math.hypot(a.x + dx * t - p.x, a.y + dy * t - p.y); };
+    const hit = (a, b) => side(a[0], a[1], b[0]) * side(a[0], a[1], b[1]) < 0 && side(b[0], b[1], a[0]) * side(b[0], b[1], a[1]) < 0 ||
+      Math.min(dps(a[0], b[0], b[1]), dps(a[1], b[0], b[1]), dps(b[0], a[0], a[1]), dps(b[1], a[0], a[1])) < 1;
+    const grow = I => { for (let it = 0; it < 400; it++) { const F = I.map(([o, j]) => front(o, j)); let moved = false;
+      for (let a = 0; a < I.length; a++) for (let b = a + 1; b < I.length; b++) if (hit(F[a], F[b]))
+        for (const [o, j] of [I[a], I[b]]) { const mx = o.len * 0.45; if (o.s[j] < mx) { o.s[j] = Math.min(o.s[j] + pitch / 4, mx); moved = true; } }
+      if (!moved) return; } };
+    for (const k in inc) if (inc[k].length > 1) { for (const [o, j] of inc[k]) o.s[j] = Math.min(pitch, o.len * 0.45); grow(inc[k]); }
+    // nodes whose fronts eat up the short edge between them make one junction (loom's meta nodes): that edge goes, the fronts of all
+    // of them are moved apart together and every line crosses the group in a single curve, so the whole bundle turns in one place
     const up = {}, ck = k => up[k] && up[k] !== k ? (up[k] = ck(up[k])) : k;
-    for (const o of E) { const [a, b] = o.ends; if (a !== b && inc[a].length > 1 && inc[b].length > 1 && o.len < rad[a] + rad[b]) { o.inner = true; const ra = ck(a), rb = ck(b); if (ra !== rb) up[ra] = rb; } }
-    const at = (o, s) => { let i = 1; while (i < o.cum.length - 1 && o.cum[i] < s) i++; const g = o.cum[i] - o.cum[i - 1] || 1; return [i, Math.min(Math.max((s - o.cum[i - 1]) / g, 0), 1)]; };
-    const piece = (p, o, s0, s1) => { const [i0, t0] = at(o, s0), [i1, t1] = at(o, s1); return [lerp(p[i0 - 1], p[i0], t0), ...p.slice(i0, i1), lerp(p[i1 - 1], p[i1], t1)]; };
-    const dir = (o, s) => { const [i] = at(o, s), a = o.px[i - 1], b = o.px[i], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return [(b.x - a.x) / l, (b.y - a.y) / l]; };
-    const segs = [], ends = {}, conn = {};  // conn: node|line -> the curves drawn there
-     // ends: node|line -> [{p: cut point, d: unit vector towards the node, rest: polyline from the cut to the node}]
+    for (const o of E) { const [a, b] = o.ends; if (a !== b && inc[a].length > 1 && inc[b].length > 1 && o.len - o.s[0] - o.s[1] < pitch) { o.inner = true; const ra = ck(a), rb = ck(b); if (ra !== rb) up[ra] = rb; } }
+    const mem = {}; for (const k in inc) { rootOf[k] = ck(k); (mem[ck(k)] = mem[ck(k)] || []).push(k); }
+    for (const r in mem) if (mem[r].length > 1) grow(mem[r].flatMap(k => inc[k]).filter(([o]) => !o.inner));
+    const segs = [], ends = {};  // ends: node|line -> [{p: cut point, d: unit vector towards the node, rest: polyline from the cut to the node}]
     for (const o of E) {
       if (o.inner) continue; const [n0, n1] = o.ends.map(ck);
-      const s0 = Math.min(rad[o.ends[0]], o.len * 0.45), s1 = o.len - Math.min(rad[o.ends[1]], o.len * 0.45), d0 = dir(o, s0), d1 = dir(o, s1);
-      o.e.l.forEach((ln, k) => { const c = o.off[k], pts = piece(c, o, s0, s1); segs.push({ ln, pts });
-        (ends[n0 + '|' + ln] = ends[n0 + '|' + ln] || []).push({ p: pts[0], d: [-d0[0], -d0[1]], rest: piece(c, o, 0, s0), tip: c[0] });
-        (ends[n1 + '|' + ln] = ends[n1 + '|' + ln] || []).push({ p: last(pts), d: d1, rest: piece(c, o, s1, o.len), tip: last(c) }); });
+      const s0 = o.s[0], s1 = o.len - o.s[1], d0 = dir(o, s0), d1 = dir(o, s1), F0 = { pts: [], ax: d0 }, F1 = { pts: [], ax: d1 };
+      (fronts[n0] = fronts[n0] || []).push(F0); (fronts[n1] = fronts[n1] || []).push(F1);
+      o.e.l.forEach((ln, k) => { const c = o.off[k], pts = piece(c, o, s0, s1); segs.push({ ln, pts }); F0.pts.push([ln, pts[0]]); F1.pts.push([ln, last(pts)]);
+        (ends[n0 + '|' + ln] = ends[n0 + '|' + ln] || []).push({ p: pts[0], d: [-d0[0], -d0[1]], rest: piece(c, o, 0, s0) });
+        (ends[n1 + '|' + ln] = ends[n1 + '|' + ln] || []).push({ p: last(pts), d: d1, rest: piece(c, o, s1, o.len) }); });
     }
+    // inside a node each line joins its two cuts with a cubic curve along the tracks (loom's getInnerBezier): the handles reach 0.55 of
+    // the way to where the two tracks meet, close to a circular arc; cuts almost in line get a straight piece
+    const meet = (p, u, q, v, m) => { const dn = u[0] * v[1] - u[1] * v[0]; if (Math.abs(dn) < 1e-9) return null;
+      const t = ((q.x - p.x) * v[1] - (q.y - p.y) * v[0]) / dn, s = ((q.x - p.x) * u[1] - (q.y - p.y) * u[0]) / dn;
+      return t > 0 && s > 0 && t < m && s < m ? (t + s) / 2 : null; };
     for (const id in ends) {
       const L_ = ends[id], ln = id.slice(id.lastIndexOf('|') + 1);
-      if (L_.length === 1) { segs.push({ ln, pts: L_[0].rest }); (conn[id] = conn[id] || []).push(L_[0].rest); nodePos[id] = L_[0].tip; lineDir[id] = L_[0].d; continue; }  // the line ends here
+      if (L_.length === 1) { segs.push({ ln, pts: L_[0].rest }); continue; }  // the line ends here
       // join every end to the one it continues into most straight (a branch of the same line gets its own curve)
-      const done = new Set(); let best = -2;
+      const done = new Set();
       L_.forEach((a, i) => { let m = -1, s = -2; L_.forEach((b, j) => { if (j !== i) { const v = -(a.d[0] * b.d[0] + a.d[1] * b.d[1]); if (v > s) { s = v; m = j; } } });
         const pk = Math.min(i, m) + ',' + Math.max(i, m); if (done.has(pk)) return; done.add(pk);
-        const b = L_[m], h = Math.hypot(b.p.x - a.p.x, b.p.y - a.p.y) * 0.42, c1 = P(a.p.x + a.d[0] * h, a.p.y + a.d[1] * h), c2 = P(b.p.x + b.d[0] * h, b.p.y + b.d[1] * h), pts = [];
+        const b = L_[m], d = Math.hypot(b.p.x - a.p.x, b.p.y - a.p.y);
+        if (d < 1.5) { segs.push({ ln, pts: [a.p, b.p] }); return; }
+        const r = meet(a.p, a.d, b.p, b.d, 2 * d), h = r && r * 0.55 < d ? r * 0.55 : d * 0.55;
+        const c1 = P(a.p.x + a.d[0] * h, a.p.y + a.d[1] * h), c2 = P(b.p.x + b.d[0] * h, b.p.y + b.d[1] * h), pts = [];
         for (let t = 0; t <= 1.0001; t += 1 / 12) { const u = 1 - t; pts.push(P(u * u * u * a.p.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * b.p.x, u * u * u * a.p.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * b.p.y)); }
-        segs.push({ ln, pts }); (conn[id] = conn[id] || []).push(pts); if (s > best) { best = s; nodePos[id] = pts[6]; lineDir[id] = [a.d[0] - b.d[0], a.d[1] - b.d[1]]; } });
+        segs.push({ ln, pts }); });
     }
-    const mem = {}; for (const k in inc) (mem[ck(k)] = mem[ck(k)] || []).push(k);
-    for (const id in conn) { const r = id.slice(0, id.lastIndexOf('|')), ln = id.slice(id.lastIndexOf('|') + 1); if (mem[r].length < 2) continue;
-      for (const k of mem[r]) { const [x, y] = k.split(',').map(Number), q = map.project(L.latLng(y, x), z); let bd = Infinity; lineDir[k + '|' + ln] = lineDir[id];
-        for (const pts of conn[id]) for (const p of pts) { const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; nodePos[k + '|' + ln] = p; } } } }
     // two passes, all casings under all lines, so no outline cuts into a neighbouring line where pieces meet
     const ll = p => p.map(q => map.unproject(q, z));
     for (const g of segs) g.cs = L.polyline(g.ll = ll(g.pts), { renderer: cv, color: look.cas, weight: w + 2, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(grp);
@@ -156,11 +156,11 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
   const chip = x => `<span class="gch" style="background:${col(x)}">${x}</span>`;
   function stops(z) {
     stopGrp.clearLayers(); markers = [];
-    const w = width(z), th = w + 5, boxes = [], labels = [];  // th: pill thickness; its length spans the lines that stop there
+    const w = width(z), th = w * 1.5 + 3.5, boxes = [], labels = [];  // th: pill thickness; its length spans the lines that stop there
     // names of through stops only in and around the view (a permanent tooltip per stop is what makes z15+ slow); redone on moveend
     const vb = map.getPixelBounds(), pad = vb.getSize().multiplyBy(0.25), inView = c => c.x > vb.min.x - pad.x && c.x < vb.max.x + pad.x && c.y > vb.min.y - pad.y && c.y < vb.max.y + pad.y;
     for (const d of D.stops) {
-      const term = d.t.length > 0; if (z < 12 && !term) continue;
+      const term = d.t.length > 0; if (z < 14 && !term) continue;  // below z14 only the termini: through stops cluttered the overview
       const m = L.circleMarker([0, 0], { renderer: cv, radius: Math.max(th / 2, 4), stroke: false, fillOpacity: 0, interactive: true });
       m.d = d; m.key = d.ll[0] + ',' + d.ll[1]; m.th = th; m.pill = [['#16181d', th], ['#fff', th - 2.6]].map(([c, wt]) => L.polyline([[0, 0], [0, 0]], { renderer: cv, color: c, weight: wt, lineCap: 'round', interactive: false }).addTo(stopGrp));
       m.hub = L.polygon([], { renderer: cv, color: '#16181d', weight: 1.4, fillColor: '#fff', fillOpacity: 1, interactive: false }).addTo(stopGrp);
@@ -186,23 +186,26 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json (pipeline/geo_e
       else m.bindTooltip(`<b>${d.n}</b><br>${d.l.map(chip).join('')}`, { direction: 'top', className: 'stl' });
     }
   }
-  // a stop where the given lines all travel along one axis (straight, diagonal or turning together) is a pill across them;
-  // where they cross (one line goes up, another sideways: a transfer between directions) it is a rounded box, as on loom's maps.
-  // Returns the shape's box in layer pixels.
+  // a stop is drawn over the fronts of the bundles that stop there (as loom's stations): where they all travel along one axis
+  // (straight, diagonal or turning together) a pill along the fronts, square to the track; where they cross (one line goes up,
+  // another sideways: a transfer between directions) a rounded box around the fronts, so the bundles run straight into it.
+  // Only the lines that stop there (or the selected ones) count. Returns the shape's box in layer pixels.
   function shape(m, lines) {
-    const z = map.getZoom(), h = m.th / 2; let v = lines.map(ln => nodePos[m.key + '|' + ln]).filter(Boolean);
+    const z = map.getZoom(), h = m.th / 2, on = new Set(lines), F = fronts[rootOf[m.key]]; let v = [], ax = [];
+    if (F) { for (const f of F) for (const [ln, p] of f.pts) if (on.has(ln)) { v.push(p); ax.push(f.ax); } }  // an axis per line: the widest bundle sets the box
+    else for (const ln of lines) { const p = nodePos[m.key + '|' + ln]; if (p) { v.push(p); ax.push(lineDir[m.key + '|' + ln]); } }  // inside a chained edge
     if (!v.length) v = [map.project(L.latLng(m.d.ll[1], m.d.ll[0]), z)];
-    const ax = lines.map(ln => lineDir[m.key + '|' + ln]).filter(Boolean).map(([x, y]) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; });
+    ax = ax.map(([x, y]) => { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; }); if (!ax.length) ax = [[1, 0]];
     const par = (a, b) => Math.abs(a[0] * b[0] + a[1] * b[1]) > 0.866;  // within 30 degrees, either way
+    const u = ax.reduce((b, a) => ax.filter(x => par(x, a)).length > ax.filter(x => par(x, b)).length ? a : b, ax[0]), n = [-u[1], u[0]];  // the axis most lines share
+    const S_ = v.map(p => p.x * u[0] + p.y * u[1]), T_ = v.map(p => p.x * n[0] + p.y * n[1]), g = h - 0.7;
     if (ax.every(a => ax.every(b => par(a, b)))) {
       m.hub.setLatLngs([]);
-      const far = (o, l) => l.reduce((a, q) => Math.hypot(q.x - o.x, q.y - o.y) > Math.hypot(a.x - o.x, a.y - o.y) ? q : a, o), A = far(v[0], v), B = far(A, v);
+      const s = S_.reduce((a, b) => a + b, 0) / S_.length, A = P(s * u[0] + Math.min(...T_) * n[0], s * u[1] + Math.min(...T_) * n[1]), B = P(s * u[0] + Math.max(...T_) * n[0], s * u[1] + Math.max(...T_) * n[1]);
       m.pill.forEach(q => q.setLatLngs([map.unproject(A, z), map.unproject(B, z)]));
       return { x0: Math.min(A.x, B.x) - h, x1: Math.max(A.x, B.x) + h, y0: Math.min(A.y, B.y) - h, y1: Math.max(A.y, B.y) + h };
     }
     m.pill.forEach(q => q.setLatLngs([]));
-    const u = ax.reduce((b, a) => ax.filter(x => par(x, a)).length > ax.filter(x => par(x, b)).length ? a : b, ax[0]), n = [-u[1], u[0]];  // the axis most lines share
-    const S_ = v.map(p => p.x * u[0] + p.y * u[1]), T_ = v.map(p => p.x * n[0] + p.y * n[1]), g = h - 0.7;
     const s0 = Math.min(...S_) - g, s1 = Math.max(...S_) + g, t0 = Math.min(...T_) - g, t1 = Math.max(...T_) + g, rr = Math.min(g, (s1 - s0) / 2, (t1 - t0) / 2), pts = [];
     for (const [cs, ct, a0] of [[s1 - rr, t1 - rr, 0], [s0 + rr, t1 - rr, 90], [s0 + rr, t0 + rr, 180], [s1 - rr, t0 + rr, 270]])
       for (let a = a0; a <= a0 + 90; a += 30) { const ss = cs + rr * Math.cos(a * Math.PI / 180), tt = ct + rr * Math.sin(a * Math.PI / 180); pts.push(P(ss * u[0] + tt * n[0], ss * u[1] + tt * n[1])); }

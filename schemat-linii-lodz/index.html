@@ -282,7 +282,7 @@ document.querySelectorAll('#sseg button').forEach(b=>b.onclick=()=>show(mapk,b.d
 let G=null, GK=null, gview='schema'; try{if(localStorage.getItem('lodz-view')==='geo') gview='geo'}catch(e){}
 const add=(tag,a)=>new Promise((ok,no)=>{const e=document.createElement(tag); Object.assign(e,a,{onload:ok,onerror:no}); document.head.append(e)});
 function loadGeo(){return loadGeo.p||(loadGeo.p=Promise.all([add('link',{rel:'stylesheet',href:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'}),add('script',{src:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'})])
-  .then(()=>add('script',{src:'geo.js?v=49c2b0fc'})).then(()=>fetch(GEOS[cur])).then(r=>r.json()).then(D=>{GK=cur;
+  .then(()=>add('script',{src:'geo.js?v=7cf5375c'})).then(()=>fetch(GEOS[cur])).then(r=>r.json()).then(D=>{GK=cur;
     // the selection set of a pane is replaced on state switches, so the map reads it through a getter
     G=GeoMap(document.getElementById('geo'),D,{get sel(){return st[GK].sel}, pick:l=>toggle(l,false), meta:Object.fromEntries(META[GK].map(m=>[m.n,m]))}); G.repaint()})
   .catch(e=>{loadGeo.p=null; document.getElementById('geo').textContent=t('geoErr')}))}
