@@ -34,12 +34,12 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json; S = {sel: Set,
     const out = r.map((_, i) => { let x = 0, y = 0; for (let k = -K; k <= K; k++) { const q = at(i + k), wk = w[k + K]; x += q.x * wk; y += q.y * wk; } return P(x / ws, y / ws); });
     out[0] = r[0]; out[n - 1] = r[n - 1]; return dp(out, 0.35);
   }
-  function offset(p, d) {  // d px to the right of the direction of travel on screen (y down), mitred joints (limited)
-    if (!d || p.length < 2) return p;
+  function offset(p, d) {  // d(i) px to the right of the direction of travel on screen (y down), mitred joints (limited)
+    if (p.length < 2) return p;
     const nrm = (a, b) => { const dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1; return [-dy / l, dx / l]; };
     return p.map((q, i) => { const u1 = nrm(p[Math.max(i - 1, 0)], p[i]), u2 = nrm(p[i], p[Math.min(i + 1, p.length - 1)]);
       let mx = u1[0] + u2[0], my = u1[1] + u2[1]; const ml = Math.hypot(mx, my) || 1; mx /= ml; my /= ml;
-      const k = Math.min(1 / Math.max(mx * u1[0] + my * u1[1], 0.5), 2); return P(q.x + mx * d * k, q.y + my * d * k); });
+      const k = Math.min(1 / Math.max(mx * u1[0] + my * u1[1], 0.5), 2); const di = d(i); return P(q.x + mx * di * k, q.y + my * di * k); });
   }
   function draw() {
     const z = map.getZoom(), w = width(z), pitch = w + 1;  // as loom's tiles: every line with a 1 px dark outline, the outlines of neighbours touching
@@ -50,7 +50,30 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json; S = {sel: Set,
     const E = D.edges.map(e => { const px = smooth(dp(e.p.map(q => map.project(L.latLng(q[1], q[0]), z)), 1.2), SIGMA), n = e.l.length;
       if (px.length < 2) px.push(px[0]);  // an edge shorter than a pixel at this zoom
       const cum = [0]; for (let i = 1; i < px.length; i++) cum.push(cum[i - 1] + Math.hypot(px[i].x - px[i - 1].x, px[i].y - px[i - 1].y));
-      return { e, px, cum, len: last(cum), ends: [key(e.p[0]), key(last(e.p))], off: e.l.map((ln, k) => offset(px, ((n - 1) / 2 - k) * pitch)) }; });
+      return { e, px, cum, len: last(cum), ends: [key(e.p[0]), key(last(e.p))] }; });
+    // where lines join, leave or swap places at a node, the lines that run on would jump sideways inside the node (a bundle is centred
+    // on its track). Instead each line's end slides by half its mismatch with the line it runs on into, eased along the edge, as far as
+    // the bundle's order and spacing allow, so the lines that run on meet their continuation in place and only the joining ones move
+    const base = (o, k) => ((o.e.l.length - 1) / 2 - k) * pitch;  // to the right of the edge's direction
+    const into = (o, j) => { const p = o.px, a = j ? p[p.length - 2] : p[1], b = j ? last(p) : p[0], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return [(b.x - a.x) / l, (b.y - a.y) / l]; };
+    const inc = {}; for (const o of E) { o.ends.forEach((k, j) => (inc[k] = inc[k] || []).push([o, j]));  // node -> [[edge, end]]
+      o.sh = [o.e.l.map(() => 0), o.e.l.map(() => 0)]; }
+    for (const k in inc) { const I = inc[k]; if (I.length < 2) continue;
+      for (const [o, j] of I) { const d = into(o, j), mis = [];
+        o.e.l.forEach((ln, i) => { let best = null, bv = 0.8;  // the other end this line runs on into most straight
+          for (const [q, jq] of I) { if (q === o) continue; const m = q.e.l.indexOf(ln); if (m < 0) continue; const dq = into(q, jq), v = -(d[0] * dq[0] + d[1] * dq[1]); if (v > bv) { bv = v; best = [q, jq, m]; } }
+          // offsets seen travelling into the node; running on means they cancel
+          mis.push(best ? (j ? 1 : -1) * base(o, i) + (best[1] ? 1 : -1) * base(best[0], best[2]) : null); });
+        const ok = mis.filter(x => x !== null); if (!ok.length) continue;
+        const avg = ok.reduce((a, b) => a + b, 0) / ok.length, sg = j ? -1 : 1;
+        // each line as close to its continuation as it can get while keeping the bundle's order and spacing (a joining line gives way)
+        const u = mis.map((x, i) => base(o, i) + sg * (x === null ? avg : x) / 2 + i * pitch), fit = iso(u, mis.map(x => x === null ? 0.05 : 1));
+        o.sh[j] = fit.map((v, i) => v - i * pitch - base(o, i)); } }
+    function iso(u, wt) {  // weighted least-squares non-increasing fit (pool adjacent violators)
+      const B = []; u.forEach((v, i) => { B.push([v * wt[i], wt[i], 1]); while (B.length > 1) { const a = B[B.length - 2], b = B[B.length - 1]; if (a[0] / a[1] >= b[0] / b[1]) break; B.pop(); a[0] += b[0]; a[1] += b[1]; a[2] += b[2]; } });
+      return B.flatMap(b => Array(b[2]).fill(b[0] / b[1])); }
+    const ease = t => t * t * (3 - 2 * t);
+    for (const o of E) o.off = o.e.l.map((ln, k) => offset(o.px, i => base(o, k) + o.sh[0][k] + (o.sh[1][k] - o.sh[0][k]) * ease(o.cum[i] / (o.len || 1))));
     // stops inside a chained edge: the place of each line across the bundle at the stop
     const near = (o, q) => { let bi = 1, bt = 0, bd = Infinity; for (let i = 1; i < o.px.length; i++) { const a = o.px[i - 1], b = o.px[i], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
       const t = Math.min(Math.max(((q.x - a.x) * dx + (q.y - a.y) * dy) / l2, 0), 1), d = Math.hypot(a.x + dx * t - q.x, a.y + dy * t - q.y); if (d < bd) { bd = d; bi = i; bt = t; } } return [bi, bt]; };
@@ -58,8 +81,6 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json; S = {sel: Set,
       o.e.l.forEach((ln, j) => { nodePos[k + '|' + ln] = lerp(o.off[j][i - 1], o.off[j][i], t); }); }
     // every node gets a radius: the bundles are cut that far before it and each line's ends are joined by a curve inside it (as in loom).
     // A node where the bundles just continue (same lines, same places) only needs a short one to round the corner.
-    const inc = {};  // node -> [[edge, end]]
-    for (const o of E) o.ends.forEach((k, j) => (inc[k] = inc[k] || []).push([o, j]));
     const sideVec = (o, k, j) => { const i = j ? o.px.length - 1 : 0, c = o.off[k][i]; return [c.x - o.px[i].x, c.y - o.px[i].y]; };
     const rad = {};
     for (const k in inc) { const I = inc[k]; if (I.length < 2) { rad[k] = 0; continue; }
