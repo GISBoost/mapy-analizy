@@ -2,7 +2,7 @@
 // Drawn like the diagram: smoothed centrelines, bundles of parallel lines in loom's order with a dark 1 px outline (as loom's tiles), stops as pills
 // across the lines that stop there, termini named with their line chips. A click on a line (or on the list) highlights it.
 window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json; S = {sel: Set, pick(line), meta: {line: {a, b, d (dark colour)}}}
-  dropEyes(D);
+  dropEyes(D); chainEdges(D);
   const map = L.map(el, { preferCanvas: true, zoomSnap: 0.5, minZoom: 9, maxZoom: 18 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">autorzy OpenStreetMap</a> (ODbL)' }).addTo(map);
   const bounds = L.latLngBounds(D.edges.flatMap(e => e.p.map(q => [q[1], q[0]]))); map.fitBounds(bounds);
@@ -51,6 +51,11 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json; S = {sel: Set,
       if (px.length < 2) px.push(px[0]);  // an edge shorter than a pixel at this zoom
       const cum = [0]; for (let i = 1; i < px.length; i++) cum.push(cum[i - 1] + Math.hypot(px[i].x - px[i - 1].x, px[i].y - px[i - 1].y));
       return { e, px, cum, len: last(cum), ends: [key(e.p[0]), key(last(e.p))], off: e.l.map((ln, k) => offset(px, ((n - 1) / 2 - k) * pitch)) }; });
+    // stops inside a chained edge: the place of each line across the bundle at the stop
+    const near = (o, q) => { let bi = 1, bt = 0, bd = Infinity; for (let i = 1; i < o.px.length; i++) { const a = o.px[i - 1], b = o.px[i], dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy || 1;
+      const t = Math.min(Math.max(((q.x - a.x) * dx + (q.y - a.y) * dy) / l2, 0), 1), d = Math.hypot(a.x + dx * t - q.x, a.y + dy * t - q.y); if (d < bd) { bd = d; bi = i; bt = t; } } return [bi, bt]; };
+    for (const o of E) for (const k of o.e.mid || []) { const [x, y] = k.split(',').map(Number), [i, t] = near(o, map.project(L.latLng(y, x), z));
+      o.e.l.forEach((ln, j) => { nodePos[k + '|' + ln] = lerp(o.off[j][i - 1], o.off[j][i], t); }); }
     // every node gets a radius: the bundles are cut that far before it and each line's ends are joined by a curve inside it (as in loom).
     // A node where the bundles just continue (same lines, same places) only needs a short one to round the corner.
     const inc = {};  // node -> [[edge, end]]
@@ -62,27 +67,37 @@ window.GeoMap = function (el, D, S) {  // D = mapy/tram_geo.json; S = {sel: Set,
       if (simple) { const [[a, ja], [b, jb]] = I; simple = a.e.l.every((ln, i) => { const m = b.e.l.indexOf(ln); if (m < 0) return false;
         const u = sideVec(a, i, ja), v = sideVec(b, m, jb); return Math.hypot(u[0] - v[0], u[1] - v[1]) < 1; }); }
       rad[k] = simple ? pitch : Math.max(...I.map(([o]) => o.e.l.length)) * pitch / 2 + pitch; }
+    // nodes whose cuts would overlap along the short edge between them make one junction (loom's meta nodes): that edge goes
+    // and every line crosses the group in a single curve, so the whole bundle turns in one place
+    const up = {}, ck = k => up[k] && up[k] !== k ? (up[k] = ck(up[k])) : k;
+    for (const o of E) { const [a, b] = o.ends; if (a !== b && inc[a].length > 1 && inc[b].length > 1 && o.len < rad[a] + rad[b]) { o.inner = true; const ra = ck(a), rb = ck(b); if (ra !== rb) up[ra] = rb; } }
     const at = (o, s) => { let i = 1; while (i < o.cum.length - 1 && o.cum[i] < s) i++; const g = o.cum[i] - o.cum[i - 1] || 1; return [i, Math.min(Math.max((s - o.cum[i - 1]) / g, 0), 1)]; };
     const piece = (p, o, s0, s1) => { const [i0, t0] = at(o, s0), [i1, t1] = at(o, s1); return [lerp(p[i0 - 1], p[i0], t0), ...p.slice(i0, i1), lerp(p[i1 - 1], p[i1], t1)]; };
     const dir = (o, s) => { const [i] = at(o, s), a = o.px[i - 1], b = o.px[i], l = Math.hypot(b.x - a.x, b.y - a.y) || 1; return [(b.x - a.x) / l, (b.y - a.y) / l]; };
-    const segs = [], ends = {};  // ends: node|line -> [{p: cut point, d: unit vector towards the node, rest: polyline from the cut to the node}]
+    const segs = [], ends = {}, conn = {};  // conn: node|line -> the curves drawn there
+     // ends: node|line -> [{p: cut point, d: unit vector towards the node, rest: polyline from the cut to the node}]
     for (const o of E) {
+      if (o.inner) continue; const [n0, n1] = o.ends.map(ck);
       const s0 = Math.min(rad[o.ends[0]], o.len * 0.45), s1 = o.len - Math.min(rad[o.ends[1]], o.len * 0.45), d0 = dir(o, s0), d1 = dir(o, s1);
       o.e.l.forEach((ln, k) => { const c = o.off[k], pts = piece(c, o, s0, s1); segs.push({ ln, pts });
-        (ends[o.ends[0] + '|' + ln] = ends[o.ends[0] + '|' + ln] || []).push({ p: pts[0], d: [-d0[0], -d0[1]], rest: piece(c, o, 0, s0), tip: c[0] });
-        (ends[o.ends[1] + '|' + ln] = ends[o.ends[1] + '|' + ln] || []).push({ p: last(pts), d: d1, rest: piece(c, o, s1, o.len), tip: last(c) }); });
+        (ends[n0 + '|' + ln] = ends[n0 + '|' + ln] || []).push({ p: pts[0], d: [-d0[0], -d0[1]], rest: piece(c, o, 0, s0), tip: c[0] });
+        (ends[n1 + '|' + ln] = ends[n1 + '|' + ln] || []).push({ p: last(pts), d: d1, rest: piece(c, o, s1, o.len), tip: last(c) }); });
     }
     for (const id in ends) {
       const L_ = ends[id], ln = id.slice(id.lastIndexOf('|') + 1);
-      if (L_.length === 1) { segs.push({ ln, pts: L_[0].rest }); nodePos[id] = L_[0].tip; continue; }  // the line ends here
+      if (L_.length === 1) { segs.push({ ln, pts: L_[0].rest }); (conn[id] = conn[id] || []).push(L_[0].rest); nodePos[id] = L_[0].tip; continue; }  // the line ends here
       // join every end to the one it continues into most straight (a branch of the same line gets its own curve)
       const done = new Set(); let best = -2;
       L_.forEach((a, i) => { let m = -1, s = -2; L_.forEach((b, j) => { if (j !== i) { const v = -(a.d[0] * b.d[0] + a.d[1] * b.d[1]); if (v > s) { s = v; m = j; } } });
         const pk = Math.min(i, m) + ',' + Math.max(i, m); if (done.has(pk)) return; done.add(pk);
         const b = L_[m], h = Math.hypot(b.p.x - a.p.x, b.p.y - a.p.y) * 0.42, c1 = P(a.p.x + a.d[0] * h, a.p.y + a.d[1] * h), c2 = P(b.p.x + b.d[0] * h, b.p.y + b.d[1] * h), pts = [];
         for (let t = 0; t <= 1.0001; t += 1 / 12) { const u = 1 - t; pts.push(P(u * u * u * a.p.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * b.p.x, u * u * u * a.p.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * b.p.y)); }
-        segs.push({ ln, pts }); if (s > best) { best = s; nodePos[id] = pts[6]; } });
+        segs.push({ ln, pts }); (conn[id] = conn[id] || []).push(pts); if (s > best) { best = s; nodePos[id] = pts[6]; } });
     }
+    const mem = {}; for (const k in inc) (mem[ck(k)] = mem[ck(k)] || []).push(k);
+    for (const id in conn) { const r = id.slice(0, id.lastIndexOf('|')), ln = id.slice(id.lastIndexOf('|') + 1); if (mem[r].length < 2) continue;
+      for (const k of mem[r]) { const [x, y] = k.split(',').map(Number), q = map.project(L.latLng(y, x), z); let bd = Infinity;
+        for (const pts of conn[id]) for (const p of pts) { const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; nodePos[k + '|' + ln] = p; } } } }
     // two passes, all casings under all lines, so no outline cuts into a neighbouring line where pieces meet
     const ll = p => p.map(q => map.unproject(q, z));
     for (const g of segs) g.cs = L.polyline(g.ll = ll(g.pts), { renderer: cv, color: look.cas, weight: w + 2, lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(grp);
@@ -184,4 +199,21 @@ function dropEyes(D) {
   for (const k in chains) { const v = Object.values(chains[k]); if (v.length < 2 || !v.every(c => same(c.l, v[0].l))) continue;
     v.sort((x, y) => x.len - y.len).slice(1).forEach(c => c.ids.forEach(j => drop.add(j))); }
   D.edges = D.edges.filter((_, i) => !drop.has(i));
+}
+// Join the edges that meet at a node where the same lines just continue in the same places (nearly every stop), so a bundle is one
+// smoothed polyline from junction to junction and runs straight through its stops, as in loom (fronts only move off a node where they overlap).
+function chainEdges(D) {
+  const K = q => q[0] + ',' + q[1], last = a => a[a.length - 1], inc = {}, E = D.edges;
+  E.forEach((e, i) => [K(e.p[0]), K(last(e.p))].forEach((k, j) => (inc[k] = inc[k] || []).push([i, j])));
+  const rev = a => a.slice().reverse(), eq = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+  const through = k => { const v = inc[k]; if (v.length !== 2 || v[0][0] === v[1][0]) return false; const [[a, ja], [b, jb]] = v;
+    return eq(ja ? E[a].l : rev(E[a].l), jb ? rev(E[b].l) : E[b].l); };
+  const orient = (i, k) => K(E[i].p[0]) === k ? { p: E[i].p, l: E[i].l } : { p: rev(E[i].p), l: rev(E[i].l) };
+  const used = new Set(), out = [];
+  const walk = (i, k) => { let o = orient(i, k), j = i; const p = o.p.slice(), mid = []; used.add(i); let nk = K(last(p));
+    while (through(nk)) { const nx = inc[nk].find(x => x[0] !== j)[0]; if (used.has(nx)) break; const q = orient(nx, nk); mid.push(nk); p.push(...q.p.slice(1)); used.add(nx); j = nx; nk = K(last(q.p)); }
+    out.push({ p, l: o.l, mid }); };
+  for (const k in inc) if (!through(k)) for (const [i] of inc[k]) if (!used.has(i)) walk(i, k);
+  E.forEach((e, i) => { if (!used.has(i)) walk(i, K(e.p[0])); });  // loops of through nodes only
+  D.edges = out;
 }

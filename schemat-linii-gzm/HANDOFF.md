@@ -41,6 +41,8 @@ Dane robocze **poza repo**: `C:\Users\Michal\Desktop\easy\schemat-gzm-dane\` (GT
 
 - **Dane**: `tram_geo.json` ma `lines`, `edges {p, l}` (geometria krawędzi i linie na nich), `stops {ll, n, l, t}`. Kolejność linii w wiązce pochodzi z LOOM.
 - **Wygładzanie**: `smooth(p, sig)`: przepróbkowanie co 3 px, filtr Gaussa, odbite brzegi, stałe końce, na końcu Douglas-Peucker. Stała `SIGMA = 16`. Krawędzie: `smooth(dp(project(...), 1.2), SIGMA)`.
+- **`chainEdges()`** (przy starcie, po `dropEyes()`): skleja krawędzie przez węzły stopnia 2, gdzie te same linie jadą dalej w tej samej kolejności (304 z 312 takich węzłów). Przystanki w środku sklejonej krawędzi są w `e.mid`; ich miejsce na każdej linii to najbliższy punkt osi (`near`). Wcześniej każdy przystanek ciął wiązkę i dokładał łuk, stąd zagięcia.
+- **Grupy węzłów** (w `draw()`, zależnie od zoomu): krawędź krótsza niż suma promieni jej końców znika, a jej węzły łączą się w jeden (`ck`, union-find); linie przechodzą przez grupę jednym łukiem. Przystanek w grupie dostaje najbliższy punkt łuków swojej linii (`conn`). Pętle nawrotowe na krańcówkach przy małym zoomie znikają w grupie.
 - **`draw()`**: przesunięcia równoległe linii w wiązce (`pitch = w + 1`), wiązki ucięte o promień węzła i połączone łukami Béziera (`ends`, `nodePos`), dwa przebiegi: najpierw wszystkie ciemne obwódki (w+2), potem linie; tooltip i klik → `S.pick(ln)`. `dropEyes()` przy starcie zwija oczka do krótszej ścieżki.
 - **Grubość linii**: `width(z)`: z≤10 → 1.5, 11 → 2.3, 12 → 2.9, 13 → 3.6, 14 → 4.5, 15 → 5.3, więcej → 6 (styl z kafli MVT LOOM: linia + obwódka 1 px).
 - **`paintLines()` / `paintStops()`**: niewybrane linie dostają kolor zmieszany z tłem (nieprzezroczysty, bez kropek na łączeniach), wybrane idą na wierzch; pastylki obejmują tylko wybrane linie i zawsze leżą nad liniami.
@@ -59,6 +61,7 @@ Zmiana samego `geo.js` wymaga tylko ponownego uruchomienia `build_page.py`, bo w
 
 ## Znane problemy i podejrzane miejsca (do sprawdzenia)
 
+- (12.10.2026, druga runda) Sklejanie krawędzi przez przystanki i grupowanie bliskich węzłów: wiązki proste, skręcają razem. Zostają krótkie „S” tam, gdzie LOOM zmienia kolejność linii, i lekkie fale z geometrii `topo`. Pastylka krańcówki w grupie (np. Bytom Plac Sikorskiego na z14) bywa wydłużona.
 - (12.10.2026) Widok geograficzny poprawiony: łuki na węzłach, odwrócona strona wiązek (wcześniej odbite względem LOOM: 121 → 48 przecięć na węzłach), oczka zwinięte, kolizje etykiet, ciemna paleta, zoom startowy. Etykieta, która nie mieści się w żadnej z 4 pozycji, jest tylko w tooltipie.
 - Wygładzanie `SIGMA = 16` zaokrągla też prawdziwe zakręty. Kompromis do rozważenia (np. zależność od zoomu).
 - Widoku geograficznego nie testowano na telefonie. Ciemny motyw tego widoku w ostatniej wersji też nie był sprawdzany.
