@@ -134,7 +134,9 @@ Korytarz Piotrkowskiej zaczyna się poniżej osi Piłsudskiego/Mickiewicza, inac
 jednego punktu. Samo prostowanie przy domyślnym `octi` prawie nic nie daje. Z
 `-g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5`
 Piotrkowska jest pionowa ze skrętem 90° na pl. Reymonta (issue #1). Z samym `--diag-pen 1` centrum wychodzi tak samo, ale
-Pabianicka i ogon do Pabianic kładą się poziomo. Kary za zakręty (`--pen-90` 0–0,5 przy `--pen-135` 2–3) nic tu nie zmieniają.
+Pabianicka i ogon do Pabianic kładą się poziomo. Kary faworyzujące 90° (`--pen-90` 0–0,5 przy `--pen-135` 2–3) same
+prostują Piotrkowską, ale rozjeżdżają resztę (średni błąd kierunku 23° zamiast 17°), a dodane do zestawu wyżej tylko dokładają
+schodków (61 → 127–142 załamań).
 
 `gtfs_fix_shapes.py <gtfs.zip|katalog> <wynik.zip>` — feed ZDiT podany wprost do `gtfs2graph` (także we wtyczce QGIS
 [loom_qgis](https://github.com/transportforcairo/loom_qgis)) przerywa wczytywanie: część kursów (tramwaj 43, kilkanaście
