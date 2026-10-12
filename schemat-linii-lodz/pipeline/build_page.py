@@ -1,6 +1,7 @@
 # build_page.py <work> <page_tpl.html> <diff.json> <out.html>
 # Reads <work>/out<SUF>/<m>.svg + .lines.json for both states (SUF '' = from 5.10.2026, '_przed' = before).
 # Each diagram goes to its own <out dir>/mapy/<m><SUF>.svg, fetched by the page when its tab is first opened.
+# A geographic view is offered for every mapy/<m><SUF>_geo.json present (geo_export.py); geo.js gets a ?v= hash.
 import json, re, sys, os, hashlib
 W, TPL, DIFF, OUT = sys.argv[1:5]
 MAPS=[('tram','Tramwaje'),('bus','Autobusy'),('night','Nocne')]
@@ -46,8 +47,13 @@ for k,s in svgs.items():
     open(os.path.join(os.path.dirname(OUT),'mapy',k+'.svg'),'w',encoding='utf-8',newline='\n').write(s)
     urls[k]=f'mapy/{k}.svg?v={hashlib.sha1(s.encode()).hexdigest()[:8]}'  # a new URL when the map changes: no cached old map next to a new page
 panes=''.join(f'<div class="pane" id="pane-{k}" {"" if k=="tram" else "hidden"}></div>' for k in svgs)
+D_=os.path.dirname(OUT); geos={}  # geographic views: mapy/<m><SUF>_geo.json written by geo_export.py, where there is one
+for k in svgs:
+    f=os.path.join(D_,'mapy',k+'_geo.json')
+    if os.path.exists(f): geos[k]=f'mapy/{k}_geo.json?v={hashlib.sha1(open(f,"rb").read()).hexdigest()[:8]}'
+gv=hashlib.sha1(open(os.path.join(D_,'geo.js'),'rb').read()).hexdigest()[:8]
 diff=json.load(open(DIFF,encoding='utf-8'))
 html=(open(TPL,encoding='utf-8').read().replace('/*TABS*/',tabs).replace('<!--PANES-->',panes)
-      .replace('/*META*/',json.dumps(meta,ensure_ascii=False)).replace('/*SVGS*/',json.dumps(urls)).replace('/*LMCSS*/',lmcss()).replace('/*DIFF*/',json.dumps(diff,ensure_ascii=False))
+      .replace('/*META*/',json.dumps(meta,ensure_ascii=False)).replace('/*SVGS*/',json.dumps(urls)).replace('/*LMCSS*/',lmcss()).replace('/*DIFF*/',json.dumps(diff,ensure_ascii=False)).replace('/*GEOS*/',json.dumps(geos)).replace('/*GEOV*/',gv)
       .replace('src="i18n.js"',f'src="i18n.js?v={hashlib.sha1(open(os.path.join(os.path.dirname(OUT),"i18n.js"),"rb").read()).hexdigest()[:8]}"'))  # new strings reach cached pages too
 open(OUT,'w',encoding='utf-8',newline='\n').write(html); print(OUT, len(html)//1024,'KB')

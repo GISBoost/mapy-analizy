@@ -44,6 +44,7 @@ h1::before{content:"";width:14px;height:14px;border-radius:50%;border:4px solid 
 .seg{display:inline-flex;border:1px solid var(--rule);border-radius:5px;overflow:hidden}
 .seg button{font:600 12px var(--body);color:var(--muted);background:var(--panel);border:0;padding:5px 10px;cursor:pointer}
 .seg button+button{border-left:1px solid var(--rule)}
+.seg[hidden]{display:none}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
 .atabs{display:flex;gap:4px}
 .atab{font:600 12px var(--sdisplay);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:2px 2px 3px;cursor:pointer}
@@ -137,6 +138,19 @@ button:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-of
   #changes li.ch{flex:none;width:210px;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:2px 6px 2px 2px}
   #changes .what{font-size:11px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 }
+/* geographic view (geo.js, Leaflet + OSM tiles, loaded on first use): trams from 5.10 only */
+#geo{position:absolute;inset:0;z-index:0;background:var(--sheet)}
+.stage.geo{cursor:auto;touch-action:auto}
+.stage.geo .legend,.stage.geo .pane,.stage.geo .zoom,.stage.geo .hint{display:none}
+.stage:not(.geo) #geo{display:none}
+.leaflet-container{font-family:var(--body)}
+.leaflet-tile-pane{filter:grayscale(.85) brightness(1.07) contrast(.9)}
+.stl{font:600 11px var(--body);color:#16181d;background:rgba(255,255,255,.92);border:1px solid #c9ced6;border-radius:3px;padding:1px 5px;box-shadow:none}
+.stl::before{display:none}
+.stl.stt{font-weight:800}
+.gch{display:inline-block;color:#fff;font:700 10px var(--body);border-radius:3px;padding:1px 4px;margin:2px 2px 0 0;text-shadow:0 0 2px rgba(0,0,0,.6);white-space:nowrap}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9)}}
+:root[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9)}
 @media (prefers-reduced-motion:reduce){svg.map *{transition:none!important}}
 footer.note{flex:none;padding:6px 16px;font-size:12px;color:var(--muted);background:var(--panel);border-top:1px solid var(--rule)}
 footer.note a{color:inherit}
@@ -155,7 +169,8 @@ footer.note a{color:inherit}
 <header>
   <h1 data-i18n="h1">Łódź – schemat linii</h1>
   <div class="tabs" role="tablist">/*TABS*/</div>
-  <div class="seg" role="group" data-i18n-aria-label="stateAria" aria-label="Stan rozkładu"><button type="button" data-state="" aria-pressed="true" data-i18n="stateAfter">Od 5.10.2026</button><button type="button" data-state="_przed" aria-pressed="false" data-i18n="stateBefore">Przed 5.10.2026</button></div>
+  <div class="seg" id="sseg" role="group" data-i18n-aria-label="stateAria" aria-label="Stan rozkładu"><button type="button" data-state="" aria-pressed="true" data-i18n="stateAfter">Od 5.10.2026</button><button type="button" data-state="_przed" aria-pressed="false" data-i18n="stateBefore">Przed 5.10.2026</button></div>
+  <div class="seg" id="vseg" role="group" data-i18n-aria-label="viewAria" aria-label="Widok" hidden><button type="button" data-gv="schema" aria-pressed="true" data-i18n="viewSchema">Schemat</button><button type="button" data-gv="geo" aria-pressed="false" data-i18n="viewGeo">Mapa</button></div>
   <span class="meta" id="meta" data-i18n="meta">Rozkład od 5.10.2026 · dzień roboczy · GTFS ZDiT Łódź</span>
   <button class="btn" id="theme" data-i18n="themeBtn" data-i18n-aria-label="themeAria" aria-label="Przełącz motyw jasny/ciemny">Motyw</button>
 </header>
@@ -167,6 +182,7 @@ footer.note a{color:inherit}
   </aside>
   <div class="stage" id="stage">
     <!--PANES-->
+    <div id="geo"></div>
     <details class="legend"><summary data-i18n="legendBtn">Legenda</summary><ul><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><circle cx="12" cy="7" r="4" style="fill:var(--sheet);stroke:var(--sheet-ink)" stroke-width="1.5"/></svg></span><span data-i18n="lgStop"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="3" y="2" width="18" height="10" rx="3.5" style="fill:var(--sheet);stroke:var(--sheet-ink)" stroke-width="1.5"/></svg></span><span data-i18n="lgHub"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><text x="12" y="10.5" font-size="8.5" font-weight="700" text-anchor="middle" style="fill:var(--sheet-ink)">A / B</text></svg></span><span data-i18n="lgMerge"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="2" y="1.5" width="20" height="11" rx="2.5" style="fill:var(--sheet-ink)"/><text x="12" y="10.3" font-size="8" font-weight="700" text-anchor="middle" style="fill:var(--sheet)">12</text></svg></span><span data-i18n="lgTerm"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><text x="12" y="10.5" font-size="9" font-weight="700" text-anchor="middle" style="fill:var(--sheet-ink)">4 8</text></svg></span><span data-i18n="lgNums"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><line x1="2" x2="22" y1="7" y2="7" style="stroke:var(--sheet-ink)" stroke-width="3" stroke-linecap="round" stroke-dasharray=".3 4.5"/></svg></span><span data-i18n="lgCont"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><line x1="1" x2="23" y1="7" y2="7" stroke="#9ba2ad" stroke-width="4.5" stroke-linecap="round"/><line x1="1" x2="23" y1="7" y2="7" style="stroke:var(--sheet)" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="7" r="3.4" stroke="#9ba2ad" stroke-width="1.7" style="fill:var(--sheet)"/></svg></span><span data-i18n="lgRail"></span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#3b4250"/><path d="M3 1.6h4a1.4 1.4 0 0 1 1.4 1.4v3.6a1 1 0 0 1-1 1H2.6a1 1 0 0 1-1-1V3a1.4 1.4 0 0 1 1.4-1.4z" style="fill:var(--sheet)"/><rect x="2.6" y="2.8" width="4.8" height="1.9" fill="#3b4250"/><circle cx="3.3" cy="6" r=".6" fill="#3b4250"/><circle cx="6.7" cy="6" r=".6" fill="#3b4250"/><path d="M3.2 7.6 2.2 9M6.8 7.6 7.8 9" style="stroke:var(--sheet)" stroke-width=".9"/></svg></span><span data-i18n="lgTrain"></span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#1e5bb8"/><path d="M3 2v6M7 2v6M3 5h4" style="stroke:var(--sheet)" stroke-width="1.6" fill="none"/></svg></span><span data-i18n="lgHosp"></span></li><li><span class="lgk"><svg viewBox="0 0 10 10" width="14" height="14"><rect width="10" height="10" rx="2" fill="#3b4250"/><path d="M1.5 4h7l-.6 4.6H2.1z" style="fill:var(--sheet)"/><path d="M3.4 4.6c0-3 3.2-3 3.2 0" fill="none" style="stroke:var(--sheet)" stroke-width=".7"/></svg></span><span data-i18n="lgMall"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="1" y="1" width="22" height="12" rx="3.5" fill="#dcecd6"/></svg></span><span data-i18n="lgPark"></span></li><li><span class="lgk"><svg viewBox="0 0 24 14" width="28" height="16"><rect x="12" y="0" width="12" height="14" fill="#f1eef7"/><line x1="12" x2="12" y1="0" y2="14" stroke="#a18bd0" stroke-width="2"/></svg></span><span data-i18n="lgZone"></span></li></ul></details>
     <div class="hint" data-i18n="hint">Kliknij linię, żeby ją wyróżnić · przeciągnij i przewiń, żeby przybliżyć</div>
     <div class="zoom"><button id="zin" data-i18n-aria-label="zoomIn" aria-label="Przybliż">+</button><button id="zout" data-i18n-aria-label="zoomOut" aria-label="Oddal">−</button><button id="zfit" data-i18n-aria-label="zoomFit" aria-label="Cały schemat">⤢</button></div>
@@ -184,7 +200,7 @@ footer.note a{color:inherit}
 </footer>
 <script src="i18n.js"></script>
 <script>
-const META=/*META*/, DIFF=/*DIFF*/, SVGS=/*SVGS*/;
+const META=/*META*/, DIFF=/*DIFF*/, SVGS=/*SVGS*/, GEOS=/*GEOS*/;  // GEOS: pane key -> geographic data (only those with a map)
 const stage=document.getElementById('stage'), list=document.getElementById('lines'), clearBtn=document.getElementById('clear'), chl=document.getElementById('changes');
 // cur = pane key = map + state ('' = from 5.10.2026, '_przed' = before)
 const st={}; let cur='tram', mapk='tram', state='', view='lines';
@@ -202,13 +218,15 @@ function paint(k){
   selCss.textContent=any?`${id} [data-l]{opacity:.13} ${[...s.sel].map(l=>`${id} [data-l~="${CSS.escape(l)}"]`).join(',')}{opacity:1}`:'';
   for(const li of list.children) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l));
   for(const li of chl.querySelectorAll('li.ch')) li.setAttribute('aria-pressed', s.sel.has(li.dataset.l));
-  clearBtn.disabled=!any;
+  clearBtn.disabled=!any; if(G&&k===GK) G.repaint();
 }
 function fitSel(){const s=st[cur]; if(!s.svg||!s.sel.size) return; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   for(const g of s.svg.querySelectorAll('g.ln')){ if(!s.sel.has(g.getAttribute('data-l'))) continue; const b=g.getBBox(); if(!b.width&&!b.height) continue;
     x0=Math.min(x0,b.x); y0=Math.min(y0,b.y); x1=Math.max(x1,b.x+b.width); y1=Math.max(y1,b.y+b.height);}
   if(x1<x0) return; const m=Math.max(x1-x0,y1-y0)*0.12+60; s.vb=[x0-m,y0-m,x1-x0+2*m,y1-y0+2*m]; apply(cur);}
-function toggle(l,fit){const s=st[cur]; s.sel.has(l)?s.sel.delete(l):s.sel.add(l); paint(cur); if(fit) fitSel();}
+function geoOn(){return stage.classList.contains('geo')}
+function fitAny(){geoOn()?G&&G.fit():fitSel()}
+function toggle(l,fit){const s=st[cur]; s.sel.has(l)?s.sel.delete(l):s.sel.add(l); paint(cur); if(fit) fitAny();}
 function buildList(k){
   list.textContent='';
   for(const m of META[k]){
@@ -238,7 +256,7 @@ function buildChanges(){
     const go=async()=>{ // highlight on the active diagram; switch state only if the line isn't drawn there
       let s=state; if(!has(mapk+s,r.n)){const o=s?'':'_przed'; if(has(mapk+o,r.n)) s=o;}
       if(s!==state) show(mapk,s);
-      if(has(cur,r.n)){const k=cur; st[k].sel=new Set([r.n]); paint(k); await load(k); if(k===cur) fitSel();}};
+      if(has(cur,r.n)){const k=cur; st[k].sel=new Set([r.n]); paint(k); await load(k); if(k===cur) fitAny();}};
     li.append(chip(m),w); li.onclick=go; li.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
     chl.append(li);
   }
@@ -251,14 +269,26 @@ function show(m,s){
   if(m===mapk&&k!==cur) st[k].sel=new Set([...prev.sel].filter(l=>has(k,l)));  // keep the selection across states
   mapk=m; state=s; cur=k;
   for(const b of document.querySelectorAll('.tab')){b.setAttribute('aria-selected', b.dataset.map===m); b.querySelector('.cnt').textContent=META[b.dataset.map+s].length;}
-  for(const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', b.dataset.state===s);
+  for(const b of document.querySelectorAll('#sseg button')) b.setAttribute('aria-pressed', b.dataset.state===s);
   const me=document.getElementById('meta'); me.dataset.i18n=s?'metaBefore':'meta'; me.textContent=t(me.dataset.i18n);
   for(const key of Object.keys(st)) document.getElementById('pane-'+key).hidden = key!==k;
-  buildList(k); buildChanges(); paint(k); load(k).catch(()=>{});
+  buildList(k); buildChanges(); paint(k); load(k).catch(()=>{}); geoSync();
   try{localStorage.setItem('lodz-map',m); localStorage.setItem('lodz-state',s)}catch(e){}
 }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>show(b.dataset.map,state));
-document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>show(mapk,b.dataset.state));
+document.querySelectorAll('#sseg button').forEach(b=>b.onclick=()=>show(mapk,b.dataset.state));
+// schematic diagram <-> geographic map; the switch shows only where a map exists, the chosen view comes back with it
+let G=null, GK=null, gview='schema'; try{if(localStorage.getItem('lodz-view')==='geo') gview='geo'}catch(e){}
+const add=(tag,a)=>new Promise((ok,no)=>{const e=document.createElement(tag); Object.assign(e,a,{onload:ok,onerror:no}); document.head.append(e)});
+function loadGeo(){return loadGeo.p||(loadGeo.p=Promise.all([add('link',{rel:'stylesheet',href:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'}),add('script',{src:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'})])
+  .then(()=>add('script',{src:'geo.js?v=/*GEOV*/'})).then(()=>fetch(GEOS[cur])).then(r=>r.json()).then(D=>{GK=cur;
+    // the selection set of a pane is replaced on state switches, so the map reads it through a getter
+    G=GeoMap(document.getElementById('geo'),D,{get sel(){return st[GK].sel}, pick:l=>toggle(l,false), meta:Object.fromEntries(META[GK].map(m=>[m.n,m]))}); G.repaint()})
+  .catch(e=>{loadGeo.p=null; document.getElementById('geo').textContent=t('geoErr')}))}
+function geoSync(){const ok=cur in GEOS, on=ok&&gview==='geo'; document.getElementById('vseg').hidden=!ok;
+  for(const b of document.querySelectorAll('#vseg button')) b.setAttribute('aria-pressed', b.dataset.gv===(on?'geo':'schema'));
+  stage.classList.toggle('geo',on); if(on) loadGeo().then(()=>{if(G){G.invalidate(); G.repaint()}});}
+document.querySelectorAll('#vseg button').forEach(b=>b.onclick=()=>{gview=b.dataset.gv; try{localStorage.setItem('lodz-view',gview)}catch(e){} geoSync()});
 document.querySelectorAll('.atab').forEach(b=>b.onclick=()=>setView(b.dataset.v));
 clearBtn.onclick=()=>{st[cur].sel.clear(); paint(cur)};
 // pan / zoom on the viewBox
@@ -267,9 +297,9 @@ function pt(s,cx,cy){const r=stage.getBoundingClientRect(), k=scaleOf(s);
   const ox=s.vb[0]+(s.vb[2]-r.width*k)/2, oy=s.vb[1]+(s.vb[3]-r.height*k)/2; return [ox+(cx-r.left)*k, oy+(cy-r.top)*k];}
 function zoomAt(f,cx,cy){const s=st[cur]; if(!s.svg) return; const nw=s.vb[2]*f; if(nw>s.home[2]*1.5||nw<s.home[2]/60) return;
   const [px,py]=pt(s,cx,cy); s.vb=[px-(px-s.vb[0])*f, py-(py-s.vb[1])*f, s.vb[2]*f, s.vb[3]*f]; apply(cur);}
-stage.addEventListener('wheel',e=>{if(e.target.closest('.legend'))return; e.preventDefault(); zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
+stage.addEventListener('wheel',e=>{if(geoOn()||e.target.closest('.legend'))return; e.preventDefault(); zoomAt(Math.exp(e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
 const ptrs=new Map(); let moved=0, pinch=0;
-stage.addEventListener('pointerdown',e=>{if(e.target.closest('.zoom,.legend')||!st[cur].svg)return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
+stage.addEventListener('pointerdown',e=>{if(geoOn()||e.target.closest('.zoom,.legend')||!st[cur].svg)return; ptrs.set(e.pointerId,[e.clientX,e.clientY]); moved=0; stage.setPointerCapture(e.pointerId); stage.classList.add('drag');
   if(ptrs.size===2){const a=[...ptrs.values()]; pinch=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);}});
 stage.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId))return; const p=ptrs.get(e.pointerId), s=st[cur];
   if(ptrs.size===1){const k=scaleOf(s); s.vb[0]-=(e.clientX-p[0])*k; s.vb[1]-=(e.clientY-p[1])*k; moved+=Math.abs(e.clientX-p[0])+Math.abs(e.clientY-p[1]); apply(cur);}
