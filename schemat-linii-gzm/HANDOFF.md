@@ -41,10 +41,10 @@ Dane robocze **poza repo**: `C:\Users\Michal\Desktop\easy\schemat-gzm-dane\` (GT
 
 - **Dane**: `tram_geo.json` ma `lines`, `edges {p, l}` (geometria krawędzi i linie na nich), `stops {ll, n, l, t}`. Kolejność linii w wiązce pochodzi z LOOM.
 - **Wygładzanie**: `smooth(p, sig)`: przepróbkowanie co 3 px, filtr Gaussa, odbite brzegi, stałe końce, na końcu Douglas-Peucker. Stała `SIGMA = 16`. Krawędzie: `smooth(dp(project(...), 1.2), SIGMA)`.
-- **`draw()`**: przesunięcia równoległe linii w wiązce (`pitch = w + 0.6`), wektory węzłów (`nodeVec`), wtapianie przesunięć przy węzłach na rampie `min(40, len/3)`, biała obwódka (waga w+3) plus kolorowa linia, tooltip i klik → `S.pick(ln)`.
-- **Grubość linii**: `width(z)`: z≤10 → 2, 11 → 3, 12 → 3.8, 13 → 4.8, 14 → 6, 15 → 7, więcej → 8.
-- **`paintLines()`**: przyciemnia niewybrane linie (opacity .13), wybraną wynosi na wierzch, przyciemnia pastylki.
-- **`stops(z)`**: pastylka to dwie polilinie (ciemna obwódka + biały środek, okrągłe końce) między dwoma najdalszymi przesunięciami obsługujących linii. Przystanki od z≥12, krańcówki wcześniej (z chipami z numerami linii od z≥11), wszystkie nazwy od z≥15, poniżej tooltip po najechaniu.
+- **`draw()`**: przesunięcia równoległe linii w wiązce (`pitch = w + 1`), wiązki ucięte o promień węzła i połączone łukami Béziera (`ends`, `nodePos`), dwa przebiegi: najpierw wszystkie ciemne obwódki (w+2), potem linie; tooltip i klik → `S.pick(ln)`. `dropEyes()` przy starcie zwija oczka do krótszej ścieżki.
+- **Grubość linii**: `width(z)`: z≤10 → 1.5, 11 → 2.3, 12 → 2.9, 13 → 3.6, 14 → 4.5, 15 → 5.3, więcej → 6 (styl z kafli MVT LOOM: linia + obwódka 1 px).
+- **`paintLines()` / `paintStops()`**: niewybrane linie dostają kolor zmieszany z tłem (nieprzezroczysty, bez kropek na łączeniach), wybrane idą na wierzch; pastylki obejmują tylko wybrane linie i zawsze leżą nad liniami.
+- **`stops(z)`**: pastylka to dwie polilinie (ciemna obwódka + biały środek, okrągłe końce) między dwoma najdalszymi miejscami obsługujących linii na węźle. Przystanki od z≥12, krańcówki wcześniej (z chipami od z≥11), nazwy od z≥15; etykiety z kolizjami (4 pozycje, omijają pastylki, inne etykiety i w miarę możliwości linie), reszta w tooltipie.
 - **Strona** (`page_tpl.html`): przełącznik widoków w nagłówku, leniwe `loadGeo()`, `setView()`, `s.pick`/`s.meta` ustawiane przed `GeoMap(...)`, filtry kafelków (szarość, odwrócone w ciemnym), klucz motywu `gzm-theme`.
 
 ## Przebudowa strony po zmianach
@@ -59,7 +59,7 @@ Zmiana samego `geo.js` wymaga tylko ponownego uruchomienia `build_page.py`, bo w
 
 ## Znane problemy i podejrzane miejsca (do sprawdzenia)
 
-- Podpisy przystanków w gęstym centrum (np. zoom 14) nachodzą na siebie. Nie ma wykrywania kolizji etykiet.
+- (12.10.2026) Widok geograficzny poprawiony: łuki na węzłach, odwrócona strona wiązek (wcześniej odbite względem LOOM: 121 → 48 przecięć na węzłach), oczka zwinięte, kolizje etykiet, ciemna paleta, zoom startowy. Etykieta, która nie mieści się w żadnej z 4 pozycji, jest tylko w tooltipie.
 - Wygładzanie `SIGMA = 16` zaokrągla też prawdziwe zakręty. Kompromis do rozważenia (np. zależność od zoomu).
 - Widoku geograficznego nie testowano na telefonie. Ciemny motyw tego widoku w ostatniej wersji też nie był sprawdzany.
 - Schemat: tło do 1,5 km od przystanków, dalekie lasy jako blade zielone plamy. Lupa przycina etykietę miasta. Mało szpitali przy przystankach.

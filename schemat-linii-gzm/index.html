@@ -231,7 +231,7 @@ document.getElementById('zout').onclick=()=>zoomAt(1/0.7,...mid());
 document.getElementById('zfit').onclick=()=>{if(s.svg){s.vb=s.home.slice(); apply()}};
 // view switch: schematic diagram <-> geographic map (Leaflet + OSM tiles, loaded on first use)
 function loadGeo(){return loadGeo.p||(loadGeo.p=new Promise((ok,no)=>{const sc=document.createElement('script'); sc.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; sc.onload=ok; sc.onerror=no; document.head.append(sc)})
-  .then(()=>new Promise((ok,no)=>{const sc=document.createElement('script'); sc.src='geo.js?v=bbf4e5bf'; sc.onload=ok; sc.onerror=no; document.head.append(sc)}))
+  .then(()=>new Promise((ok,no)=>{const sc=document.createElement('script'); sc.src='geo.js?v=055a61e7'; sc.onload=ok; sc.onerror=no; document.head.append(sc)}))
   .then(()=>fetch(GEOJSON).then(r=>r.json())).then(D=>{s.pick=l=>toggle(l,false); s.meta=Object.fromEntries(META.map(m=>[m.n,m])); G=GeoMap(document.getElementById('geo'),D,s); G.repaint()}).catch(e=>{loadGeo.p=null; document.getElementById('geo').textContent='Nie udało się wczytać mapy.'}))}
 function setView(v){view=v; stage.classList.toggle('geo',v==='geo');
   for(const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed',b.dataset.v===v);
