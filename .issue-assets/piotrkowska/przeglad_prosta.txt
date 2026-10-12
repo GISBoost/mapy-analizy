@@ -1,0 +1,88 @@
+0.00 14.1 42 s1_b1_t0 | reymonta_dirs [0, 180] | --geo-pen 1
+0.00 22.4 69 s1_ortho100 | reymonta_dirs [0, 180] | -b ortholinear --geo-pen 1
+0.07 10.6 161 s2_b10_t3 | reymonta_dirs [90, 271] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.07 10.6 61 s1_b8_t0 | reymonta_dirs [90, 270] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5
+0.07 10.6 96 s1_b10_t0 | reymonta_dirs [90, 270] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5
+0.07 10.8 140 s2_b10_t1 | reymonta_dirs [90, 271] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.07 11.7 66 s2_b8_t0 | reymonta_dirs [90, 271] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5
+0.07 12.0 127 s1_b8_t2 | reymonta_dirs [90, 270] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.07 14.4 93 s1_b1_t2 | reymonta_dirs [90, 270] | --geo-pen 1 --pen-90 0 --pen-135 3 --pen-45 4
+0.07 14.6 80 s1_b1_t1 | reymonta_dirs [90, 270] | --geo-pen 1 --pen-90 0.5 --pen-135 2
+0.07 14.7 90 s1_b1_t3 | reymonta_dirs [90, 270] | --geo-pen 1 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.07 16.8 56 s1_b2_t0 | reymonta_dirs [90, 270] | --geo-pen 3
+0.07 17.0 89 s1_b2_t3 | reymonta_dirs [90, 270] | --geo-pen 3 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.07 17.4 78 s1_b2_t2 | reymonta_dirs [90, 270] | --geo-pen 3 --pen-90 0 --pen-135 3 --pen-45 4
+0.07 19.6 28 s1_b3_t0 | reymonta_dirs [90, 270] | --diag-pen 1
+0.07 21.8 34 s1_b4_t0 | reymonta_dirs [90, 270] | --diag-pen 2
+0.07 23.0 42 s1_b0_t3 | reymonta_dirs [90, 270] | --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.07 23.0 42 s1_b3_t3 | reymonta_dirs [90, 270] | --diag-pen 1 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.07 23.0 42 s1_b4_t3 | reymonta_dirs [90, 270] | --diag-pen 2 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.07 23.1 42 s1_b0_t1 | reymonta_dirs [90, 270] | --pen-90 0.5 --pen-135 2
+0.07 23.8 43 s1_b3_t1 | reymonta_dirs [90, 270] | --diag-pen 1 --pen-90 0.5 --pen-135 2
+0.07 25.0 42 s1_b4_t1 | reymonta_dirs [90, 270] | --diag-pen 2 --pen-90 0.5 --pen-135 2
+0.12 11.0 87 s2_b10_t0 | reymonta_dirs [90, 270] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5
+0.13 8.9 137 s2_b9_t0 | reymonta_dirs [90, 347] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5
+0.13 9.4 240 s2_b9_t3 | reymonta_dirs [90, 359] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.14 10.1 179 s1_b5_t2 | reymonta_dirs [90, 270] | -g 50% --geo-pen 1 --nd-move-pen 2 --pen-90 0 --pen-135 3 --pen-45 4
+0.14 21.0 59 s2_ortho100 | reymonta_dirs [90, 270] | -b ortholinear --geo-pen 1
+0.14 9.4 134 s1_b9_t0 | reymonta_dirs [90, 270] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5
+0.14 9.6 208 s1_b9_t1 | reymonta_dirs [90, 270] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.14 9.6 236 s1_b9_t3 | reymonta_dirs [90, 270] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.14 9.7 192 s1_b5_t1 | reymonta_dirs [90, 270] | -g 50% --geo-pen 1 --nd-move-pen 2 --pen-90 0.5 --pen-135 2
+0.14 9.8 201 s1_b5_t3 | reymonta_dirs [90, 270] | -g 50% --geo-pen 1 --nd-move-pen 2 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.14 9.8 214 s1_b9_t2 | reymonta_dirs [90, 270] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.14 9.8 84 s1_b5_t0 | reymonta_dirs [90, 270] | -g 50% --geo-pen 1 --nd-move-pen 2
+0.16 10.4 181 s1_b6_t2 | reymonta_dirs [90, 270] | -g 45% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3 --pen-90 0 --pen-135 3 --pen-45 4
+0.16 10.5 74 s1_b7_t0 | reymonta_dirs [90, 270] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5
+0.16 10.7 171 s1_b7_t2 | reymonta_dirs [90, 270] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.16 10.9 142 s2_b7_t3 | reymonta_dirs [0, 99] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.16 11.1 159 s1_b10_t3 | reymonta_dirs [90, 270] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.16 11.2 138 s2_b7_t1 | reymonta_dirs [0, 99] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.16 11.3 134 s1_b10_t1 | reymonta_dirs [90, 270] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.16 11.7 142 s1_b8_t3 | reymonta_dirs [90, 270] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.16 12.0 146 s1_b10_t2 | reymonta_dirs [90, 270] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.16 12.6 131 s1_b8_t1 | reymonta_dirs [90, 270] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.16 16.9 79 s1_b2_t1 | reymonta_dirs [90, 270] | --geo-pen 3 --pen-90 0.5 --pen-135 2
+0.16 9.5 206 s2_b9_t1 | reymonta_dirs [90, 347] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.16 9.9 91 s1_b6_t0 | reymonta_dirs [90, 270] | -g 45% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3
+0.17 10.4 136 s1_b7_t3 | reymonta_dirs [90, 270] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.17 10.5 132 s1_b7_t1 | reymonta_dirs [90, 270] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.18 11.5 129 s2_b8_t1 | reymonta_dirs [90, 353] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5 --pen-90 0.5 --pen-135 2
+0.18 11.6 144 s2_b8_t3 | reymonta_dirs [90, 353] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.18 9.6 86 s2_b5_t0 | reymonta_dirs [90, 358] | -g 50% --geo-pen 1 --nd-move-pen 2
+0.19 10.5 189 s2_b6_t2 | reymonta_dirs [0, 99] | -g 45% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3 --pen-90 0 --pen-135 3 --pen-45 4
+0.19 14.9 123 s2_ortho50 | reymonta_dirs [90, 270] | -b ortholinear -g 50% --geo-pen 1
+0.19 16.3 92 s2_b1_t2 | reymonta_dirs [90, 270] | --geo-pen 1 --pen-90 0 --pen-135 3 --pen-45 4
+0.19 19.7 71 s2_b3_t2 | reymonta_dirs [90, 270] | --diag-pen 1 --pen-90 0 --pen-135 3 --pen-45 4
+0.19 20.2 69 s2_b4_t2 | reymonta_dirs [90, 270] | --diag-pen 2 --pen-90 0 --pen-135 3 --pen-45 4
+0.19 21.7 40 s2_b0_t2 | reymonta_dirs [90, 270] | --pen-90 0 --pen-135 3 --pen-45 4
+0.23 18.6 71 s1_b4_t2 | reymonta_dirs [0, 180] | --diag-pen 2 --pen-90 0 --pen-135 3 --pen-45 4
+0.23 19.6 44 s1_b0_t2 | reymonta_dirs [0, 180] | --pen-90 0 --pen-135 3 --pen-45 4
+0.23 20.0 88 s1_b3_t2 | reymonta_dirs [0, 180] | --diag-pen 1 --pen-90 0 --pen-135 3 --pen-45 4
+0.25 16.7 62 s2_b2_t0 | reymonta_dirs [0, 180] | --geo-pen 3
+0.25 9.9 90 s2_b6_t0 | reymonta_dirs [0, 180] | -g 45% --geo-pen 0.5 --nd-move-pen 3 --diag-pen 0.25 --pen-45 1 --pen-90 1 --pen-135 1 --density-pen 0 --max-grid-dist 3
+0.27 11.9 145 s2_b10_t2 | reymonta_dirs [90, 353] | -g 70% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.28 10.2 184 s2_b7_t2 | reymonta_dirs [0, 180] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.28 9.6 211 s2_b5_t3 | reymonta_dirs [0, 99] | -g 50% --geo-pen 1 --nd-move-pen 2 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.28 9.7 202 s2_b9_t2 | reymonta_dirs [0, 99] | -g 50% --geo-pen 3 --nd-move-pen 3 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.28 9.8 186 s2_b5_t1 | reymonta_dirs [0, 99] | -g 50% --geo-pen 1 --nd-move-pen 2 --pen-90 0.5 --pen-135 2
+0.30 10.6 187 s2_b5_t2 | reymonta_dirs [0, 99] | -g 50% --geo-pen 1 --nd-move-pen 2 --pen-90 0 --pen-135 3 --pen-45 4
+0.30 11.9 139 s2_b8_t2 | reymonta_dirs [90, 270] | -g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5 --pen-90 0 --pen-135 3 --pen-45 4
+0.30 14.5 85 s2_b1_t1 | reymonta_dirs [90, 359] | --geo-pen 1 --pen-90 0.5 --pen-135 2
+0.30 14.8 97 s2_b1_t3 | reymonta_dirs [90, 359] | --geo-pen 1 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.30 15.4 20 s2_b3_t0 | reymonta_dirs [90, 270] | --diag-pen 1
+0.30 20.5 35 s2_b4_t0 | reymonta_dirs [90, 270] | --diag-pen 2
+0.30 22.5 32 s2_b3_t1 | reymonta_dirs [90, 270] | --diag-pen 1 --pen-90 0.5 --pen-135 2
+0.30 22.8 31 s2_b0_t3 | reymonta_dirs [90, 270] | --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.30 22.8 31 s2_b3_t3 | reymonta_dirs [90, 270] | --diag-pen 1 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.30 22.9 31 s2_b4_t3 | reymonta_dirs [90, 270] | --diag-pen 2 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.30 23.0 39 s2_b4_t1 | reymonta_dirs [90, 270] | --diag-pen 2 --pen-90 0.5 --pen-135 2
+0.30 23.9 39 s2_b0_t1 | reymonta_dirs [90, 270] | --pen-90 0.5 --pen-135 2
+0.34 17.6 86 s2_b2_t2 | reymonta_dirs [0, 180] | --geo-pen 3 --pen-90 0 --pen-135 3 --pen-45 4
+0.38 15.6 112 s1_ortho50 | reymonta_dirs [90, 270] | -b ortholinear -g 50% --geo-pen 1
+0.39 16.3 86 s2_b2_t1 | reymonta_dirs [0, 180] | --geo-pen 3 --pen-90 0.5 --pen-135 2
+0.40 16.3 90 s2_b2_t3 | reymonta_dirs [0, 180] | --geo-pen 3 --pen-90 0.5 --pen-135 2 --diag-pen 1.5
+0.40 16.5 21 s1_b0_t0 | reymonta_dirs [135, 315] | 
+0.45 10.8 69 s2_b7_t0 | reymonta_dirs [135, 315] | -g 45% --geo-pen 0.25 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 10 --max-grid-dist 5
+0.47 16.4 22 s2_b0_t0 | reymonta_dirs [135, 315] | 
+0.52 14.0 37 s2_b1_t0 | reymonta_dirs [135, 315] | --geo-pen 1

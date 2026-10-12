@@ -123,6 +123,19 @@ więc rysujemy ją jako cztery węzły połączone pierścieniem:
 Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 `topo -d 150` scala przystanki do 150 m w jeden węzeł, chip stoi we właściwym miejscu.
 
+`straighten.py <katalog_gtfs> <wynik>` (eksperyment, 12.10.2026) — prostuje ulice w GTFS po `filt.py`, przed LOOM:
+przystanki i punkty `shapes.txt` do `buf` m od podanej łamanej dostają wspólną długość (`"axis":"v"`) albo szerokość
+(`"h"`), z opcjonalnym wygaszaniem przy skrzyżowaniu (`taper`). Konfiguracja w env `STRAIGHTEN` (JSON, opis w nagłówku).
+Tramwaje „po”: Piotrkowska od Żwirki do pl. Reymonta na długość Piotrkowskiej Centrum (19.4570) i Przybyszewskiego od
+pl. Reymonta do Kilińskiego na szerokość pl. Reymonta (51.7429, wygaszane od 19.4725 do 19.4752):
+`[{"path":[[19.4583,51.7577],[19.4590,51.7556],[19.4600,51.7527],[19.4607,51.7490],[19.4614,51.7462],[19.4627,51.7429]],"axis":"v","to":19.4570,"buf":70},
+{"path":[[19.4627,51.7429],[19.4690,51.7441],[19.4760,51.7455]],"axis":"h","to":51.7429,"buf":70,"taper":[19.4725,19.4752]}]`.
+Korytarz Piotrkowskiej zaczyna się poniżej osi Piłsudskiego/Mickiewicza, inaczej ściągnąłby kawałek poziomej wiązki do
+jednego punktu. Samo prostowanie przy domyślnym `octi` prawie nic nie daje. Z
+`-g 70% --geo-pen 1 --nd-move-pen 3 --diag-pen 0.5 --pen-45 2 --pen-90 1 --pen-135 1 --density-pen 5 --max-grid-dist 5`
+Piotrkowska jest pionowa ze skrętem 90° na pl. Reymonta (issue #1). Z samym `--diag-pen 1` centrum wychodzi tak samo, ale
+Pabianicka i ogon do Pabianic kładą się poziomo. Kary za zakręty (`--pen-90` 0–0,5 przy `--pen-135` 2–3) nic tu nie zmieniają.
+
 `gtfs_fix_shapes.py <gtfs.zip|katalog> <wynik.zip>` — feed ZDiT podany wprost do `gtfs2graph` (także we wtyczce QGIS
 [loom_qgis](https://github.com/transportforcairo/loom_qgis)) przerywa wczytywanie: część kursów (tramwaj 43, kilkanaście
 linii autobusowych) ma `shape_id` bez wpisu w `shapes.txt`. Skrypt usuwa takie kursy, gdy linia ma inne z kształtem,
