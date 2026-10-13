@@ -25,7 +25,7 @@
   let HEX = null;        // hex.json
   let LAY = {};          // layer arrays (Float32Array, NaN = null)
   let N = 0;
-  let map, hexRenderer, polys = [], markers = [], pickMode = false, selected = null;
+  let map, hexRenderer, polys = [], markers = [], pickMode = false, selected = null, selOutline = null;
   const colors = RAMP.map(([p, h]) => [p, [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))]);
 
   const state = {
@@ -301,9 +301,9 @@
     return "";
   }
   function renderCard(i) {
-    const el = $("hexCard"); selected = i; el.hidden = false;
+    const el = $("hexCard"); selected = i; el.hidden = false; outlineHex(i);
     const sc = result.score[i], st = result.status[i];
-    let head = "<button class='close' aria-label='" + t("cardClose") + "' id='cardClose'>✕</button><h3>" + t("cardTitle", { id: i }) + "</h3>";
+    let head = "<div class='chead'><h3>" + t("cardTitle", { id: i }) + "</h3><button class='close' type='button' aria-label='" + t("cardClose") + "' id='cardClose'>✕</button></div>";
     if (!Number.isNaN(sc)) head += "<div class='total'>" + t("cardScore") + ": " + fmt(sc, 1) + " / 100</div>";
     else head += "<div class='muted'>" + (st === 1 ? t("cardRejectedHard") : st === 2 ? t("cardRejectedLow") : t("cardNoCriteria")) + "</div>";
     let rows = "";
@@ -321,7 +321,17 @@
     el.innerHTML = head +
       (rows ? "<table><tr class='muted'><td>" + t("cardCriterion") + "</td><td class='num'>" + t("cardRaw") + "</td><td class='num'>" + t("cardPts") + "</td><td class='num'>" + t("cardWeight") + "</td></tr>" + rows + "</table>" : "") +
       (times ? "<h3>" + t("cardTimes") + "</h3><table>" + times + "</table>" : "");
-    $("cardClose").onclick = () => { el.hidden = true; selected = null; };
+    $("cardClose").onclick = closeCard;
+  }
+  function closeCard() {
+    $("hexCard").hidden = true; selected = null;
+    if (selOutline) { selOutline.remove(); selOutline = null; }
+  }
+  // light outline of the hex the card describes; drawn last on the shared canvas and not clickable, so taps still reach the hexes
+  function outlineHex(i) {
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#1b2430";
+    if (selOutline) selOutline.remove();
+    selOutline = L.polygon(polys[i].getLatLngs(), { renderer: hexRenderer, interactive: false, fill: false, color, weight: 2, opacity: 0.85 }).addTo(map);
   }
   const minText = (v) => (v === 255 ? t("cardUnreached", { max: M.matrix.cap }) : v + " " + t("unitMin"));
   const targetRaw = (tg, i) => (tg ? minText(tg.times[i]) + " (" + t("cardBest") + ")" : "");
@@ -536,11 +546,16 @@
     polys = HEX.p.map((flat, i) => {
       const ring = []; for (let k = 0; k < flat.length; k += 2) ring.push([flat[k + 1], flat[k]]);
       const p = L.polygon(ring, { renderer, stroke: false, fillOpacity: 0 });
-      p.on("click", (e) => { if (pickMode) { addTargetAt(i); setPick(false); L.DomEvent.stopPropagation(e); } else renderCard(i); });
+      p.on("click", (e) => {   // tapping the open hex again closes its card; the map click below then must not run
+        L.DomEvent.stopPropagation(e);
+        if (pickMode) { addTargetAt(i); setPick(false); } else if (selected === i) closeCard(); else renderCard(i);
+      });
       return p.addTo(map);
     });
-    map.on("click", (e) => { if (pickMode) { const h = nearestHex(e.latlng.lat, e.latlng.lng); if (h >= 0) addTargetAt(h); setPick(false); } });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setPick(false); });
+    map.on("click", (e) => {   // a tap outside the hexes picks a target in pick mode, otherwise closes the card
+      if (pickMode) { const h = nearestHex(e.latlng.lat, e.latlng.lng); if (h >= 0) addTargetAt(h); setPick(false); } else if (selected != null) closeCard();
+    });
+    document.addEventListener("keydown", (e) => { if (e.key !== "Escape") return; if (pickMode) setPick(false); else if (selected != null) closeCard(); });
   }
 
   // Own vector context from OSM (data/context.json): green areas under the hexagons, roads/rails/water/names above.

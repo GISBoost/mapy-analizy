@@ -73,12 +73,17 @@ main { position: relative; min-width: 0; min-height: 0; }
 #map.picking { cursor: crosshair; }
 .map-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 0.82rem; color: var(--ink-muted); background: var(--surface-2); z-index: 500; pointer-events: none; opacity: 0; transition: opacity 0.15s; }
 .map-loading.visible { opacity: 1; }
-.card { position: absolute; right: 12px; top: 12px; z-index: 600; width: 363px; max-height: calc(100% - 24px); overflow-y: auto; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 12px 14px; font-size: 0.82rem; }
+.card { position: absolute; right: 12px; top: 12px; z-index: 1001; width: 363px; max-height: calc(100% - 24px); overflow-y: auto; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); padding: 12px 14px; font-size: 0.82rem; }
 .card h3 { margin: 0 0 6px; font-size: 0.95rem; font-family: "Archivo", sans-serif; }
+.card .chead { position: sticky; top: -12px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -12px -14px 4px; padding: 0 2px 0 14px; background: var(--surface); }   /* title + close stay in view while the card scrolls */
+.card .chead h3 { margin: 0; }
 .card table { width: 100%; border-collapse: collapse; margin: 6px 0; }
 .card td { padding: 3px 4px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .card td.num { text-align: right; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.card .close { position: absolute; right: 8px; top: 6px; all: unset; cursor: pointer; padding: 2px 8px; color: var(--ink-muted); }
+.card td.num:nth-child(2), .card tr.muted td { white-space: normal; }   /* long raw values ("6.0% powierzchni") and headers wrap instead of widening the card */
+.card .close { all: unset; flex: none; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; cursor: pointer; color: var(--ink-muted); font-size: 1rem; }
+.card .close:hover { background: var(--surface-2); color: var(--ink); }
+.card .close:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 .card .muted { color: var(--ink-muted); }
 .card .total { font-weight: 600; font-size: 1.05rem; }
 
@@ -91,8 +96,10 @@ footer.note a { color: var(--accent); }
   body { height: auto; overflow: auto; }
   .app { grid-template-columns: 1fr; }
   aside { border-right: none; border-bottom: 1px solid var(--border); }
-  main { order: -1; position: sticky; top: 0; z-index: 600; height: 45vh; border-bottom: 1px solid var(--border); }   /* map first and pinned, settings scroll beneath */
-  .card { width: calc(100% - 24px); }
+  main { order: -1; position: sticky; top: 0; z-index: 600; border-bottom: 1px solid var(--border); }   /* map first and pinned, settings scroll beneath */
+  #map { height: 45vh; }
+  /* the hex card opens under the map, not over it: the map keeps its full size and the settings move down */
+  .card { position: static; width: auto; max-height: 38vh; border: none; border-top: 1px solid var(--border); border-radius: 0; box-shadow: none; }
 }
 
 .place span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font-size: 11px; font-weight: 600; color: #333; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
