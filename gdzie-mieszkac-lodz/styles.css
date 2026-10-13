@@ -15,6 +15,20 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+/* top bar: copy-link and language buttons sit after the nav; on phones they move up next to the brand and the
+   link button shows only its icon, so the bar keeps two rows (gisboost-1.css lets .topbar and .topnav wrap) */
+.topbar .tools { display: flex; align-items: center; gap: 4px; margin-left: -14px; }
+.topbar .share .share-ico { margin-right: 0.35em; }
+@media (max-width: 900px) {
+  .topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: 8px 16px; gap: 6px 12px; }
+  .topbar .brand { min-width: 0; }
+  .topbar .brand .sub { overflow: hidden; text-overflow: ellipsis; }
+  .topbar .tools { grid-column: 2; grid-row: 1; margin-left: 0; }
+  .topbar .topnav { grid-column: 1 / -1; grid-row: 2; margin-left: -11px; }
+  .topbar .share .share-txt { display: none; }
+  .topbar .share .share-ico { margin-right: 0; }
+}
+}
 .mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
 
 .app { flex: 1; display: grid; grid-template-columns: 360px 1fr; min-height: 0; }

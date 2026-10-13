@@ -567,7 +567,11 @@
   async function shareLink() {
     await lastSave;
     const url = location.href, btn = $("shareBtn");
-    const done = (key) => { btn.textContent = t(key); clearTimeout(shareTimer); shareTimer = setTimeout(() => { btn.textContent = t("shareBtn"); }, 2000); };
+    const ico = btn.querySelector(".share-ico"), txt = btn.querySelector(".share-txt");
+    const done = (key) => {
+      ico.textContent = "✓"; txt.textContent = t(key); clearTimeout(shareTimer);
+      shareTimer = setTimeout(() => { ico.textContent = "🔗"; txt.textContent = t("shareBtn"); }, 2000);
+    };
     if (navigator.share && matchMedia("(pointer: coarse)").matches) {
       try { await navigator.share({ title: document.title, url }); } catch (e) { /* closed by the user */ }
       return;
