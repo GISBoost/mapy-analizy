@@ -19,6 +19,12 @@ Strona: `https://gisboost.github.io/mapy-analizy/schemat-linii-lodz/`
 - `druk/`: PDF i SVG do druku: tramwaje (szerokość 594 mm), autobusy (1189 mm), nocne (841 mm);
   stan sprzed 5.10 z sufiksem `_przed`. Do szybkiego podglądu także JPG (2500 px po dłuższym boku).
 - `pipeline/`: skrypty, którymi to powstało (opis niżej).
+- `geo.js`, `mapy/tram_geo.json`: **widok geograficzny** (od 12.10.2026, na razie tylko tramwaje od 5.10). Te same linie,
+  przystanki i krańcówki co schemat, położone na kaflach OpenStreetMap (Leaflet 1.9.4, ładowany przy pierwszym otwarciu
+  widoku). Przełącznik „Schemat | Mapa” pojawia się obok przełącznika stanu tylko tam, gdzie jest mapa.
+  Linie, węzły i przystanki rysuje `transitmap` z [LOOM](https://github.com/ad-freiburg/loom) jako kafle wektorowe dla
+  z11–z17, tak jak na mapach twórców LOOM; kafle są scalone w jeden plik danych, a strona dokłada podpisy, krańcówki
+  i wyróżnianie linii. Pomiary i kontrola w `NOTATKI.md`.
 
 ## Dane
 

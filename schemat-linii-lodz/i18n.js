@@ -65,6 +65,10 @@ const STRINGS = {
     chRemoved: "zlikwidowana · było {a} kurs.",
     chRoute: "zmiana trasy (+{p} / −{m} przyst.)",
     chTrips: "kursy {a} → {b}",
+    viewAria: "Widok",
+    viewSchema: "Schemat",
+    viewGeo: "Mapa",
+    geoErr: "Nie udało się wczytać mapy. Odśwież stronę.",
   },
   en: {
     langToggleAriaLabel: "Switch language",
@@ -123,6 +127,10 @@ const STRINGS = {
     chRemoved: "discontinued · was {a} trips",
     chRoute: "route change (+{p} / −{m} stops)",
     chTrips: "trips {a} → {b}",
+    viewAria: "View",
+    viewSchema: "Diagram",
+    viewGeo: "Map",
+    geoErr: "Could not load the map. Reload the page.",
   },
 };
 

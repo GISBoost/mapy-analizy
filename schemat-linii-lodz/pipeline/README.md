@@ -64,6 +64,23 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
 5. `build_page.py <WORK> page_tpl.html <diff.json> ../index.html` — strona z oboma stanami
    (czyta `$WORK/out<SUF>/<m>.svg` i `.lines.json`). Schematy zapisuje do `../mapy/<m><SUF>.svg`, a odcinki
    linii z jednej grupy scala w jedną ścieżkę (`<path>`; ten sam wygląd, ok. 3 razy mniej węzłów DOM).
+5a. Widok geograficzny (przed krokiem 5; dziś tylko tramwaje „po”). Na **kopii** `loom.json` (nie na oryginale, nie na
+   `fish`/`octi`) `serving.py` ze skilla `schemat-linii-loom`, potem eksport:
+   ```
+   cp $WORK/out_TF150/tram.loom.json $WORK/out_TF150/tram.geo.json
+   py -3 -X utf8 serving.py $WORK/out_TF150/tram.geo.json $WORK/out_TF150/tram.loom.json $WORK/data_TF150/tram
+   LABELS='{"Północna":"Północna / Nowomiejska"}' py -3 -X utf8 geo_export.py $WORK/out_TF150/tram.geo.json \
+     $WORK/data_TF150/meta/tram.json colors/tram.json ../mapy/tram_geo.json
+   ```
+   Linie i przystanki mapy rysuje `transitmap` z LOOM jako kafle wektorowe (MVT), osobno dla z11–z17, z grubością linii
+   w pikselach dla każdego zoomu (`geo_tiles.sh`, w WSL). `geo_tiles.py` scala kafle do `tram_geo.json` (klucz `z`).
+   Uruchamiaj go zawsze po `geo_export.py`, bo ten zapisuje plik od nowa. Kafle zostają w katalogu roboczym, nie w repo:
+   ```
+   MSYS_NO_PATHCONV=1 wsl.exe bash -l geo_tiles.sh $WORK_WSL/out_TF150/tram.geo.json $WORK_WSL/tiles_tram
+   py -3 -X utf8 geo_tiles.py $WORK/tiles_tram ../mapy/tram_geo.json
+   ```
+   `build_page.py` daje przełącznik mapy każdemu stanowi, dla którego jest `../mapy/<m><SUF>_geo.json`, i wstawia hash
+   `?v=` dla `geo.js` i danych. Nazwy przystanków i krańcówki `geo_export.py` liczy jak `render.py`; kolory z `colors/<m>.json`.
 6. `pdf.py <WORK> <SUF> ../druk` — SVG i PDF do druku (headless Chrome, `CHROME=ścieżka`).
    pdf.py zapisuje też wersję ciemną `<nazwa><SUF>_ciemny.{svg,pdf}` (kolory jak w ciemnym motywie strony), `jpg.py` robi z niej JPG, a strona podmienia linki do pobrania zależnie od motywu.
    `jpg.py ../druk [2500]` — podgląd JPG każdego SVG z `druk/` (dłuższy bok w px, Chrome + Pillow).
