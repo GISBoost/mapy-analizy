@@ -2,3 +2,8 @@
 Thumbs.db
 .claude/
 schemat-linii-lodz/OPTYMALIZACJA_PRZEGLADARKA.md
+# Local only: loom style tests, radius trials and the agent prompt for the map view
+schemat-linii-lodz/PROMPT_*.md
+schemat-linii-lodz/test_*.png
+schemat-linii-lodz/Geographic late night subway map.*
+schemat-linii-lodz/Late night subway diagram.*
