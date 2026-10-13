@@ -3,7 +3,12 @@
 Interaktywna mapa heksagonów 250 m dla Łodzi: użytkownik ustawia wymagania (do 5 celów dojazdu, przystanki,
 częstotliwość, zieleń, hałas), a mapa pokazuje tylko miejsca, które je spełniają, pokolorowane wynikiem 0–100.
 Vanilla JS + [Leaflet](https://leafletjs.com/), zero build stepu — ten sam wzorzec co pozostałe analizy w
-[mapy-analizy](../README.md). PL/EN, stan filtrów w adresie URL (`#s=…`).
+[mapy-analizy](../README.md). PL/EN, stan filtrów w adresie URL (`#z=…`) i przycisk „Kopiuj link” (na telefonie systemowe „Udostępnij”).
+
+Link: ustawienia jako tablica JSON bez nazw pól (kolejność pól ustalona w `share.js`, nowe pola tylko na końcu),
+spakowana `deflate-raw` i zapisana w base64url. Przy ustawieniach domyślnych adres jest bez `#`. Link z wieloma
+zmianami i 5 celami ma ok. 250–400 znaków (dawny format `#s=` 1400–2100); stare linki `#s=…` nadal działają
+i po otwarciu przepisują się na `#z=`.
 
 Narzędzie pokazuje **model, nie wyrocznię**: nie jest poradą inwestycyjną ani wyceną nieruchomości.
 
@@ -24,6 +29,7 @@ plik, strona działa, tylko wolniej); GitHub Pages obsługuje `Range`.
 |---|---|
 | `index.html`, `styles.css`, `i18n.js` | strona, style, PL/EN |
 | `app.js` | mapa, panel, cele, karta „dlaczego ten wynik", stan w URL, odczyt macierzy |
+| `share.js`, `share.test.js` | zapis ustawień w linku (`#z=`) i odczyt; `node share.test.js` — zapis↔odczyt, długość, stare i uszkodzone linki |
 | `score.js`, `score.test.js` | silnik punktacji (czyste funkcje); `node score.test.js` — test z ręcznie policzonymi wartościami |
 | *(dane)* | w repo `gdzie-mieszkac-lodz-data`, **generowane** przez `easy-R5/tools/apartment_finder/scripts/export_web.py` |
 

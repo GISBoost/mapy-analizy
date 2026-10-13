@@ -48,19 +48,33 @@
   function effDir() { return state.dir === "auto" ? M.default_dir[state.win] : state.dir; }
 
   // ---------- URL state ----------
-  function saveHash() {
-    const s = { w: state.win, t: state.ttype, r: state.rides, l: state.lka ? 1 : 0, d: state.dir, b: state.bedroom ? 1 : 0,
+  // The hash holds the filters as #z=<deflated positional JSON> (share.js); links from before 10.2026 used
+  // #s=<URI-encoded keyed JSON> and are still read. Default settings leave the address without a hash.
+  const shareCtx = () => ({ wkeys: WEIGHT_KEYS.concat(SVC_KEYS), svc: SVC, noise: NOISE, modes: MODES });
+  let defaultPacked = null, saveSeq = 0, lastSave = Promise.resolve();
+  function snapshot() {
+    return { w: state.win, t: state.ttype, r: state.rides, l: state.lka ? 1 : 0, d: state.dir, b: state.bedroom ? 1 : 0,
       wt: state.weights, hn: state.hardNoise, nc: state.noiseCfg, cn: { h: state.canopy.hard ? 1 : 0, m: state.canopy.min }, co: state.canopyOverlay ? 1 : 0,
       pr: { h: state.price.hard ? 1 : 0, m: state.price.max }, po: state.priceOverlay ? 1 : 0,
       sv: Object.fromEntries(Object.entries(state.svc).map(([k, c]) => [k, { m: c.mode, y: c.y, x: c.x, h: c.hard ? 1 : 0 }])), ms: state.minScore, sr: state.showRejected ? 1 : 0,
       tg: state.targets.map((x) => ({ h: x.hex, n: x.name, m: MODES.filter((k) => x.modes[k]).join(","), x: x.maxMin, i: x.idealMin, w: x.weight, k: x.hard ? 1 : 0 })) };
-    try { history.replaceState(null, "", "#s=" + encodeURIComponent(JSON.stringify(s))); } catch (e) { /* ignore */ }
   }
-  function loadHash() {
-    const m = /#s=([^&]+)/.exec(location.hash);
-    if (!m) return;
+  function saveHash() {
+    const seq = ++saveSeq, s = snapshot();
+    const clean = location.pathname + location.search;
+    lastSave = (async () => {
+      let url = clean;
+      if (JSON.stringify(Share.pack(s, shareCtx())) !== defaultPacked) url += "#z=" + await Share.encode(s, shareCtx());
+      if (seq === saveSeq) history.replaceState(null, "", url);   // a newer change has already been written otherwise
+    })().catch(() => { /* no CompressionStream or no history: keep the address as it is */ });
+    return lastSave;
+  }
+  async function loadHash() {
+    defaultPacked = JSON.stringify(Share.pack(snapshot(), shareCtx()));
+    const z = /#z=([A-Za-z0-9_-]+)/.exec(location.hash), m = /#s=([^&]+)/.exec(location.hash);
+    if (!z && !m) return;
     try {
-      const s = JSON.parse(decodeURIComponent(m[1]));
+      const s = z ? await Share.decode(z[1], shareCtx()) : JSON.parse(decodeURIComponent(m[1]));
       const ok = (v, list, d) => (list.includes(v) ? v : d);
       state.win = ok(s.w, Object.keys(M.windows), state.win);
       state.ttype = ok(s.t, ["static", "p50", "p85"], state.ttype);
@@ -548,6 +562,20 @@
     });
   }
 
+  // ---------- share link ----------
+  let shareTimer = null;
+  async function shareLink() {
+    await lastSave;
+    const url = location.href, btn = $("shareBtn");
+    const done = (key) => { btn.textContent = t(key); clearTimeout(shareTimer); shareTimer = setTimeout(() => { btn.textContent = t("shareBtn"); }, 2000); };
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+      try { await navigator.share({ title: document.title, url }); } catch (e) { /* closed by the user */ }
+      return;
+    }
+    try { await navigator.clipboard.writeText(url); done("shareCopied"); }
+    catch (e) { window.prompt(t("shareManual"), url); }
+  }
+
   // ---------- init ----------
   async function init() {
     const loading = $("maploading"); loading.classList.add("visible");
@@ -566,7 +594,7 @@
       if (SVX) { SVC = SVX.criteria; SVC_KEYS = SVC.map((k) => "svc_" + k); }
       if (SVX) SVC.forEach((k) => { const d = SVX.defaults[k]; state.svc[k] = { mode: d.mode, y: d.y, x: d.x, hard: false }; state.weights["svc_" + k] = 0; });
       NOISE.forEach((k) => { const c = M.curves.noise[k]; state.noiseCfg[k] = { soft: c.soft_db, hard: c.hard_db, share: Math.round(c.hard_max_share * 100) }; });
-      loadHash();
+      await loadHash();
       initMap(); renderStatic(); drawMarkers(); drawContext(); applyCanopyOverlay(); applyPriceOverlay();
       $("win").onchange = (e) => { state.win = e.target.value; renderStatic(); refreshAllTargets(); recompute(); };
       $("ttype").onchange = (e) => { state.ttype = e.target.value; $("ttypeHint").textContent = t("ttypeHint_" + state.ttype); refreshAllTargets(); recompute(); };
@@ -577,6 +605,7 @@
       $("showRejected").onchange = (e) => { state.showRejected = e.target.checked; recompute(); };
       $("minScore").oninput = (e) => { state.minScore = +e.target.value; $("minScoreVal").textContent = e.target.value; recompute(); };
       $("addTarget").onclick = () => setPick(!pickMode);
+      $("shareBtn").onclick = shareLink;
       setLangChangeHandler(() => { renderStatic(); if (selected != null) renderCard(selected); stats(); });
       recompute(); refreshAllTargets();
     } catch (e) {

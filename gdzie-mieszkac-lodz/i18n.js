@@ -11,6 +11,10 @@ const STRINGS = {
     title: "Gdzie mieszkać w Łodzi? — GISBoost",
     navCatalog: "Analizy",
     navThis: "Gdzie mieszkać w Łodzi?",
+    shareBtn: "🔗 Kopiuj link",
+    shareCopied: "Skopiowano ✓",
+    shareManual: "Skopiuj link do tych ustawień:",
+    shareAria: "Kopiuj link do bieżących ustawień",
     introHtml:
       "Ustaw swoje wymagania — mapa pokaże tylko miejsca, które je spełniają, i pokoloruje je wynikiem. " +
       "Czasy dojazdu liczone są z rozkładu oraz ze <b>zmierzonego</b> przebiegu kursów (rekonstrukcja GTFS-RT), " +
@@ -153,6 +157,10 @@ const STRINGS = {
     title: "Where to live in Łódź? — GISBoost",
     navCatalog: "Analyses",
     navThis: "Where to live in Łódź?",
+    shareBtn: "🔗 Copy link",
+    shareCopied: "Copied ✓",
+    shareManual: "Copy the link to these settings:",
+    shareAria: "Copy a link to the current settings",
     introHtml:
       "Set your requirements — the map shows only the places that meet them and colours them by score. " +
       "Travel times come from the timetable and from <b>measured</b> trip performance (reconstructed GTFS-RT), " +
