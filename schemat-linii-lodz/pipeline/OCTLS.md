@@ -5,7 +5,7 @@ formacie co `octi`. Dalsze kroki (`serving.py`, `transitmap`, `render.py`) nie w
 schemat. Domyślnie potok nadal używa `octi`; `octls` włącza się zmienną `OCTI=ls` (patrz „Użycie”).
 
 Po co to jest: `octi` układa graf na jednolitej siatce i nie da się mu powiedzieć „ta ulica ma być pionowa”.
-Schemat MPK ma kilka osi, które ludzie rozpoznają (Piotrkowska pionowo, Mickiewicza i Piłsudskiego poziomo,
+Schemat MPK z 2016 roku ma kilka osi, które ludzie rozpoznają (Piotrkowska pionowo, Mickiewicza i Piłsudskiego poziomo,
 Pabianicka pod 45°), a ogony na Retkini i Olechowie mają być pod 45°. W `octls` te osie to jawny plik
 wejściowy (`goals/tram.json`), a reszta grafu układa się sama, możliwie blisko geografii.
 Historia decyzji i pomiary: `../NOTATKI.md`, zgłoszenie

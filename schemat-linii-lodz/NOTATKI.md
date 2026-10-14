@@ -188,7 +188,7 @@ zostają, bo zmiana kolejności zmieniłaby też schemat.
 
 ## 14.10.2026: własny solver `octls` (opcjonalny zamiast `octi`), wariant `lv048`
 
-**Cel (wzór: schemat MPK z 2026, szare linie = autobusy, pominięte):** Piotrkowska jedną osią pionową
+**Cel (wzór: schemat MPK z 2016, szare linie = autobusy, pominięte):** Piotrkowska jedną osią pionową
 (Helenówek–Zgierska–Zachodnia–Piotrkowska), Mickiewicza/Piłsudskiego poziomo, Pabianicka jedną linią pod 45°
 z Rondem Lotników jak u MPK, Retkinia, Olechów i Kochanówka pod 45° bez zagięć 90°, Dąbrowa poziomo, Gdańska
 poziomo i potem pionowo. Z `octi` (także po dostrojeniu parametrów i wyprostowaniu wejścia, zgłoszenie #1) nie dało
