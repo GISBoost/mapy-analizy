@@ -15,6 +15,15 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
    Parametry: `TOPO_D=150`; `octi` domyślnie dla tramwajów i nocnych; dla autobusów
    `-g 60% --edge-order num-lines --loc-search-max-iters 20` oraz `LWID=24 LSP=5`
    (pozostałe: 30 i 7). Env: `LOOM_BUILD`, `WORK`, `SUF`.
+   **`OCTI=ls`** (tylko tramwaje, opcjonalnie): zamiast `fisheye.py` + `octi` układ liczy własny solver `octls.py`
+   (etykiety kierunków + najmniejsze kwadraty, z osiami wymuszonymi z `goals/tram.json`), po sklejeniu węzłów
+   Ronda Lotników Lwowskich (`merge_nodes.py`). Wynik ma format `octi.json`, więc dalsze kroki bez zmian.
+   Zależność: numpy (`PY_LS`, patrz niżej). Opis modelu, opcji i ograniczeń: [`OCTLS.md`](OCTLS.md).
+   ```
+   OCTI=ls PY_LS=<python z numpy> TOPO_D=150 LOOM_BUILD=... WORK=... SUF=_TF150 bash run.sh tram tram
+   py -X utf8 test_octls.py        # test solvera na małym grafie
+   ```
+   Zmienne trybu: `PY_LS` (domyślnie `python3`), `GOALS`, `HUB_MERGE`, `OCTLS_ARGS` (domyślnie preset z wariantu `lv048`).
 3. `render.py` — własny renderer: paleta (linie biegnące razem dostają odległe kolory),
    przystanki, etykiety bez kolizji, krańcówki z rozkładu, numery linii przy wiązkach, legenda.
    Argumenty: `tm.svg octi.json meta.json out.svg tytuł podtytuł czcionka(9, autobusy 7) all

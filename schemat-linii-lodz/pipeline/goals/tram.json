@@ -1,0 +1,78 @@
+[
+{
+"name": "Mickiewicza-Pilsudskiego",
+"axis": "H",
+"path": [
+"Włókniarzy-Mickiewicza (Dw. Ł. Kaliska)",
+"Piłsudskiego-Śmigłego-Rydza"
+]
+},
+{
+"name": "Pabianicka",
+"axis": "D",
+"path": [
+"Pabianicka-Mierzejowa",
+"Pabianicka-Wólczańska"
+]
+},
+{
+"name": "Zgierska-Piotrkowska",
+"axis": "V",
+"path": [
+"Zgierska-Helenówek-pętla",
+"Zgierska-Dolna",
+"Limanowskiego-Zachodnia",
+"Zachodnia-Legionów",
+"Kościuszki-Mickiewicza",
+"pl. Reymonta"
+]
+},
+{
+"name": "Kochanowka",
+"axis": "D",
+"path": [
+"Kochanówka",
+"Limanowskiego-Zachodnia"
+]
+},
+{
+"name": "Retkinia",
+"axis": "D",
+"path": [
+"Bandurskiego-Dw. Łódź Kaliska",
+"Retkinia"
+]
+},
+{
+"name": "Olechow",
+"axis": "D",
+"path": [
+"Rokicińska-Lermontowa",
+"OLECHÓW"
+]
+},
+{
+"name": "Dabrowa",
+"axis": "H",
+"path": [
+"Dąbrowskiego-Śmigłego-Rydza",
+"Dąbrowskiego-Dw. Łódź Dąbrowa"
+]
+},
+{
+"name": "Gdanska-poziom",
+"axis": "H",
+"path": [
+"Legionów-Gdańska",
+"Gdańska-1 Maja"
+]
+},
+{
+"name": "Gdanska-pion",
+"axis": "V",
+"path": [
+"Gdańska-1 Maja",
+"Kopernika-Żeromskiego"
+]
+}
+]

@@ -185,3 +185,52 @@ zostają, bo zmiana kolejności zmieniłaby też schemat.
 - **Koszt:** `tram_geo.json` ma ok. 1 MB zamiast ok. 100 KB (na stronie gzip). Gdyby to przeszkadzało: osobny plik na zoom.
 - **Bez zmian względem `transitmap`:** „oczka” (oba kierunki na osobnych ulicach) są rysowane jako dwie wiązki. `dropEyes`
   działał tylko w naszym rysowaniu.
+
+## 14.10.2026: własny solver `octls` (opcjonalny zamiast `octi`), wariant `lv048`
+
+**Cel (wzór: schemat MPK z 2026, szare linie = autobusy, pominięte):** Piotrkowska jedną osią pionową
+(Helenówek–Zgierska–Zachodnia–Piotrkowska), Mickiewicza/Piłsudskiego poziomo, Pabianicka jedną linią pod 45°
+z Rondem Lotników jak u MPK, Retkinia, Olechów i Kochanówka pod 45° bez zagięć 90°, Dąbrowa poziomo, Gdańska
+poziomo i potem pionowo. Z `octi` (także po dostrojeniu parametrów i wyprostowaniu wejścia, zgłoszenie #1) nie dało
+się tego zrobić naraz, bo nie ma w nim „ta ulica ma być pionowa”.
+
+**Co zrobiono.** `pipeline/octls.py` (opis: `pipeline/OCTLS.md`): etykiety 8 kierunków na krawędź, pozycje węzłów
+z najmniejszych kwadratów, wyszukiwanie lokalne etykiet, osie wymuszane plikiem `goals/tram.json`. Węzły Ronda
+Lotników Lwowskich (Pabianicka i Paderewskiego) skleja `merge_nodes.py` w jeden hub. Włączane `OCTI=ls` w `run.sh`;
+domyślnie nadal `octi`.
+
+**Wybrany wariant `lv048`** (z kilku wariantów wybrał autor po obejrzeniu pełnych schematów i kolaży miejsc ze
+szkicu): `--theta 8 --anchor 0.4 --lenw 1.0 --escale 5e5 --bend45 3 --bend90 6 --bend135 20 --minlen 150 --win 0
+--xpen 100 --passes 4` + `goals/tram.json`. Pomiary (feed od 5.10, dzień roboczy 8.10):
+
+| miara | `lv048` |
+|---|---|
+| odchyłka od pionu: Kościuszki-Mickiewicza…Piotrkowska-Czerwona; oś Helenówek→Piotrkowska-Czerwona; Zgierska | 0 m |
+| odchyłka od poziomu: Mickiewicza–Piłsudskiego | 0 m |
+| Pabianicka: załamania; % długości poza 45° | 0; 0% |
+| zagięcia 90° na ogonach Retkini i Olechowa | 0 |
+| przecięcia | 0 |
+| linie narysowane | 25 z 25 |
+| węzły z zagięciem 45° / 90° / 135° | 16 / 25 / 4 |
+| średni błąd kierunku względem geografii (`sprawdz.py`) | 20,8° |
+| rozrzut skali | 0,28 |
+| konflikty etykiet (renderer) | 2 (Limanowskiego-Bałucki Rynek, Dąbrowskiego-Kilińskiego) |
+
+Poprzedni kandydat `lv018` (`--theta 10`): 32 węzły 45°, 21 węzłów 90°, 3 konflikty etykiet, 21,1°, rozrzut 0,30.
+`lv048` ma więcej kątów prostych (np. wokół Narutowicza, Kilińskiego i Piłsudskiego-Kilińskiego, różowa linia
+z Zachodniej skręca w Mickiewicza o 90° zamiast dwóch 45°), mniej 45°.
+
+**Odrzucone.** MIP w HiGHS (`octmip.py`) i ILP-LNS (`octmip_lns.py`, wybrany wariant dopracowany sąsiedztwami
+po ok. 30 krawędzi): nie dały nic ponad wyszukiwanie lokalne, LNS na `lv018` wprowadził 2 przecięcia. `octi` z ILP
+(GLPK zbudowany lokalnie) działa tylko na fragmentach ok. 11 węzłów. Kod tych prób, skrypty pomiarowe i kolaże
+zostały poza repozytorium (`schemat-lodz-dane/t_params/`, dane nie są wersjonowane).
+
+**Odtwarzalność.** Solver deterministyczny; dla `loom_merged.json` i presetu wynik identyczny bajt w bajt z `lv048`
+(14.10.2026). Przejście potoku `run.sh` z `OCTI=ls` (hub, solver, `serving.py`, `transitmap`) sprawdzone na gotowym
+`loom.json`; sam krok GTFS → `loom.json` nie został odtworzony, bo katalog roboczy `data_TF150` został wcześniej
+nadpisany danymi z lipca.
+
+**Do zrobienia (osobno).** Węzeł południowo-wschodni (Kilińskiego–Dąbrowskiego–Niepodległości–Mochnackiego):
+krótkie ukośne odcinki i dotykające się etykiety. Prostokątne zagięcia wokół Narutowicza/Piłsudskiego (decyzja
+o wadze kary 90°). Cele i preset dotyczą feedu od 5.10.2026 i tramwajów; po zmianie rozkładu trzeba sprawdzić nazwy
+w `goals/tram.json`. Schemat jest obrócony o 8° względem północy (zamierzone).
