@@ -44,7 +44,7 @@ const STRINGS = {
     zoomFit: "Cały schemat",
     footerHtml:
       '<a href="../">GISBoost</a> · dane: GTFS ZDiT Łódź, tło: © <a href="https://www.openstreetmap.org/copyright">autorzy OpenStreetMap</a> · ' +
-      'układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · do druku: ' +
+      'układ: <a href="https://github.com/ad-freiburg/loom">LOOM</a> (tramwaje: własny solver <a href="https://github.com/GISBoost/mapy-analizy/blob/main/schemat-linii-lodz/pipeline/OCTLS.md">octls</a>) · do druku: ' +
       'tramwaje <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>/<a href="druk/lodz_tramwaje.jpg">JPG</a>, ' +
       'autobusy <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>/<a href="druk/lodz_autobusy.jpg">JPG</a>, ' +
       'nocne <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>; ' +
@@ -106,7 +106,7 @@ const STRINGS = {
     zoomFit: "Whole diagram",
     footerHtml:
       '<a href="../">GISBoost</a> · data: GTFS ZDiT Łódź, background: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · ' +
-      'layout: <a href="https://github.com/ad-freiburg/loom">LOOM</a> · for print: ' +
+      'layout: <a href="https://github.com/ad-freiburg/loom">LOOM</a> (trams: own solver <a href="https://github.com/GISBoost/mapy-analizy/blob/main/schemat-linii-lodz/pipeline/OCTLS.md">octls</a>) · for print: ' +
       'trams <a href="druk/lodz_tramwaje.pdf">PDF</a>/<a href="druk/lodz_tramwaje.svg">SVG</a>/<a href="druk/lodz_tramwaje.jpg">JPG</a>, ' +
       'buses <a href="druk/lodz_autobusy.pdf">PDF</a>/<a href="druk/lodz_autobusy.svg">SVG</a>/<a href="druk/lodz_autobusy.jpg">JPG</a>, ' +
       'night <a href="druk/lodz_nocne.pdf">PDF</a>/<a href="druk/lodz_nocne.svg">SVG</a>/<a href="druk/lodz_nocne.jpg">JPG</a>; ' +

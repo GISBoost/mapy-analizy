@@ -15,6 +15,15 @@ Katalog roboczy `$WORK` (dane, wyniki pośrednie) trzymaj poza repo; do repo tra
    Parametry: `TOPO_D=150`; `octi` domyślnie dla tramwajów i nocnych; dla autobusów
    `-g 60% --edge-order num-lines --loc-search-max-iters 20` oraz `LWID=24 LSP=5`
    (pozostałe: 30 i 7). Env: `LOOM_BUILD`, `WORK`, `SUF`.
+   **`OCTI=ls`** (tylko tramwaje, opcjonalnie): zamiast `fisheye.py` + `octi` układ liczy własny solver `octls.py`
+   (etykiety kierunków + najmniejsze kwadraty, z osiami wymuszonymi z `goals/tram.json`), po sklejeniu węzłów
+   Ronda Lotników Lwowskich (`merge_nodes.py`). Wynik ma format `octi.json`, więc dalsze kroki bez zmian.
+   Zależność: numpy (`PY_LS`, patrz niżej). Opis modelu, opcji i ograniczeń: [`OCTLS.md`](OCTLS.md).
+   ```
+   OCTI=ls PY_LS=<python z numpy> TOPO_D=150 LOOM_BUILD=... WORK=... SUF=_TF150 bash run.sh tram tram
+   py -X utf8 test_octls.py        # test solvera na małym grafie
+   ```
+   Zmienne trybu: `PY_LS` (domyślnie `python3`), `GOALS`, `HUB_MERGE`, `OCTLS_ARGS` (domyślnie preset z wariantu `lv048`).
 3. `render.py` — własny renderer: paleta (linie biegnące razem dostają odległe kolory),
    przystanki, etykiety bez kolizji, krańcówki z rozkładu, numery linii przy wiązkach, legenda.
    Argumenty: `tm.svg octi.json meta.json out.svg tytuł podtytuł czcionka(9, autobusy 7) all
@@ -163,6 +172,31 @@ bez kształtu (po wyborze wariantów), więc potok tego nie potrzebuje.
 
 `mk.sh`/`fin.sh` łączą kroki 2–3 i robią podgląd PNG (`shot.py`, Playwright) — env:
 `PY`, `SUB` i (tylko `fin.sh`) `COLORS`.
+
+## Tramwaje „po”: układ z `octls` (14.10.2026)
+
+Opublikowany schemat tramwajów (stan od 5.10.2026) liczy własny solver [`octls.py`](OCTLS.md), nie `octi`
+(Piotrkowska pionowo, Mickiewicza/Piłsudskiego poziomo, Pabianicka jedną linią 45°; wariant `lv048`, zgłoszenie
+[#1](https://github.com/GISBoost/mapy-analizy/issues/1)). Stan „przed”, autobusy i nocne zostają z `octi`. Poprzedni układ
+tramwajów (`octi`) jest zachowany w tagu gita `schemat-lodz-tram-octi-2026-10-12` i w `archiwum_tram_octi/` w katalogu roboczym.
+
+Kroki (wejście: `loom.json` z `run.sh` albo gotowy `out_TF150_octls/tram.loom.json`):
+1. `OCTI=ls bash run.sh tram tram` (patrz krok 2 wyżej) albo sam `octls.py` na `loom.json` po `merge_nodes.py`; wynik `tram.octi.json`.
+2. `serving.py tram.octi.json tram.loom.json <data>/tram` oraz `transitmap` (`tm.svg`, `tl.svg`), jak w `run.sh`.
+3. `render.py` z `OCTLS=1` (zmienia tylko napis o autorstwie układu na planszy i w stopce plakatu), `LANDMARKS`, `RAIL_STYLE=double`,
+   `CUT_GAP=3`, `CUTS` jak w kroku 3 i kolorami przypiętymi `colors/tram.json` (kolory zostają takie same jak w widoku mapy
+   i w stanie „przed”). Lupa tylko dla tego układu:
+   `ZOOM='{"stations":["Bandurskiego-Dw. Łódź Kaliska","Mickiewicza-Żeromskiego","Kościuszki-Mickiewicza","Piotrkowska Centrum",
+   "Piłsudskiego-Sienkiewicza","Piłsudskiego-Kilińskiego","Piłsudskiego-Śmigłego-Rydza"],"k":2.2,"title":"Centrum"}'`
+   (stara lista, dobrana pod układ z `octi`, dawała w nowym układzie lupę ×1,0 i ucinała centrum; krzyż Mickiewicza/Piłsudskiego
+   jest teraz poziomy, więc lupa jest szerokim pasem wzdłuż niego).
+4. `build_page.py`, `pdf.py`, `jpg.py` bez zmian (pliki tramwajów „po”: `mapy/tram.svg`, `druk/lodz_tramwaje[_ciemny].{svg,pdf,jpg}`).
+   Powtórne zbudowanie strony ze starych wsadów daje identyczne `mapy/*.svg` i `druk/*.svg` autobusów i nocnych.
+
+Warstwa orientacyjna (kolej, parki, granica, dzielnice, piktogramy) działa na nowym układzie bez zmian w kodzie:
+odwzorowanie odcinkowo-afiniczne liczone jest z położeń przystanków. Przeliczenie 14.10.2026: zagięte trójkąty 21
+(było 25), `gate.py` bez zgłoszeń, 18 piktogramów (było 19), konflikty etykiet 2 (było 1), nie mieści się podpis
+„Park na Zdrowiu”. Ramki 41 i 43 renderer sam ustawia pod mapą (dolny lewy róg zajmuje ogon Pabianickiej).
 
 ## Jak powstał stan „przed” (8.10.2026)
 

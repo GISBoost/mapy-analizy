@@ -11,7 +11,8 @@ LL_SVG = sys.argv[9] if len(sys.argv) > 9 else None
 PFX = sys.argv[10] if len(sys.argv) > 10 else 'm'
 GEO = sys.argv[11] if len(sys.argv) > 11 and sys.argv[11] else None
 FIXED = json.load(open(sys.argv[12])) if len(sys.argv) > 12 else {}  # {line: 'RRGGBB'} kept as-is (colours of another state)
-import os; FONT_DIR = os.environ.get('FONT_DIR', '/usr/share/fonts/opentype/inter')
+import os; OCTLS = bool(os.environ.get('OCTLS'))  # the octilinear layout comes from pipeline/octls.py, not from LOOM's octi (credit line only)
+FONT_DIR = os.environ.get('FONT_DIR', '/usr/share/fonts/opentype/inter')
 FR = ImageFont.truetype(f'{FONT_DIR}/Inter-Medium.otf', 100)
 FB = ImageFont.truetype(f'{FONT_DIR}/Inter-Bold.otf', 100)
 tw = lambda s, f, size: f.getlength(s) * size / 100.0
@@ -856,7 +857,8 @@ if LM:
 if SB: KEY.append((lambda x, y: f'<rect x="{x:.1f}" y="{y-LF2*0.6:.1f}" width="{LF2*2:.1f}" height="{LF2*1.2:.1f}" rx="{FS*0.4:.1f}" fill="none" stroke="#c8102e" stroke-width="{FS*0.25:.2f}" stroke-dasharray="{FS*0.8:.1f} {FS*0.5:.1f}"/>', 'obszar powiększenia (pod schematem)'))
 NOTES = ['Schemat pokazuje główne warianty tras w dzień roboczy: warianty obsługiwane przez co najmniej 25% kursów linii '
          'w danym kierunku. Linie z mniej niż 6 kursami pominięto. Odległości nie są w skali.',
-         'Układ oktylinearny policzony automatycznie z rozkładu GTFS ZDiT Łódź programem LOOM (Uniwersytet we Fryburgu); '
+         ('Graf linii policzony automatycznie z rozkładu GTFS ZDiT Łódź programem LOOM (Uniwersytet we Fryburgu), układ oktylinearny własnym solverem octls; '
+          if OCTLS else 'Układ oktylinearny policzony automatycznie z rozkładu GTFS ZDiT Łódź programem LOOM (Uniwersytet we Fryburgu); ') +
          'etykiety, kolory i oprawa: GISBoost.',
          'Wersja interaktywna z wyróżnianiem linii i listą zmian rozkładu: gisboost.github.io/mapy-analizy/schemat-linii-lodz']
 kw = pw_; kc = 1 if LM and max(tw(t, FR, LF2 * 0.95) for _, t in KEY) + LF2 * 3.3 > (kw - LF2) / 2 else 2; kr = math.ceil(len(KEY) / kc)
@@ -925,7 +927,7 @@ if (BH or SIDE) and SB:
     print('zoom', f'x{k:.2f}', 'box', f'{zw:.0f}x{zhh:.0f}')
 fy = Y0 + PH - FT + LF2 * 0.6; ky = fy + LF2 * 1.8
 P.append(f'<line x1="{xl:.1f}" x2="{xr:.1f}" y1="{fy:.1f}" y2="{fy:.1f}" stroke="#d5d9e0" stroke-width="{FS*0.15:.2f}"/>'
-         f'<text x="{xr:.1f}" y="{ky+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">dane: GTFS ZDiT Łódź{", tło: © autorzy OpenStreetMap (ODbL)" if LM else ""} · układ: LOOM (Uniwersytet we Fryburgu) · '
+         f'<text x="{xr:.1f}" y="{ky+LF2*0.35:.1f}" font-size="{LF2*0.95:.1f}" text-anchor="end" fill="#5b6270">dane: GTFS ZDiT Łódź{", tło: © autorzy OpenStreetMap (ODbL)" if LM else ""} · {"graf: LOOM (Uniwersytet we Fryburgu), układ: octls" if OCTLS else "układ: LOOM (Uniwersytet we Fryburgu)"} · '
          f'opracowanie: GISBoost · <tspan font-weight="700" fill="#16181d">gisboost.github.io/mapy-analizy/schemat-linii-lodz</tspan></text></g></svg>')
 open(OUT.replace('.svg', '.poster.svg'), 'w', encoding='utf-8').write('\n'.join(P))
 json.dump([dict(n=n, c=col[n], t=txtcol(col[n]), a=clean(info[n]['from']), b=clean(info[n]['to']), k=info[n]['trips']) for n in names],

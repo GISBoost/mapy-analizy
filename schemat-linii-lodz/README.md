@@ -44,6 +44,9 @@ Strona: `https://gisboost.github.io/mapy-analizy/schemat-linii-lodz/`
    `gtfs2graph` → `topo -d 150` → `loom` → `octi` → `transitmap`. Dla autobusów
    `octi -g 60% --edge-order num-lines --loc-search-max-iters 20`; `transitmap --line-width 30
    --line-spacing 7 --outline-width 0` (autobusy 24 i 5).
+   Tramwaje od 5.10.2026 (opublikowane od 14.10.2026) układa własny solver `pipeline/octls.py` zamiast `octi`, z osiami
+   wymuszonymi (Piotrkowska pionowo, Mickiewicza poziomo, Pabianicka pod 45°); opis w `pipeline/OCTLS.md`. Poprzedni układ
+   (`octi`) jest w tagu gita `schemat-lodz-tram-octi-2026-10-12`. Stan „przed”, autobusy i nocne nadal idą przez `octi`.
 3. `render.py`: własny renderer na geometrii z LOOM: paleta (linie biegnące razem dostają
    odległe kolory), przystanki, etykiety bez kolizji, krańcówki z rozkładu, numery linii przy
    wiązkach, legenda. Czcionka przystanków 9 (autobusy 7).
