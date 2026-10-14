@@ -234,3 +234,24 @@ nadpisany danymi z lipca.
 krótkie ukośne odcinki i dotykające się etykiety. Prostokątne zagięcia wokół Narutowicza/Piłsudskiego (decyzja
 o wadze kary 90°). Cele i preset dotyczą feedu od 5.10.2026 i tramwajów; po zmianie rozkładu trzeba sprawdzić nazwy
 w `goals/tram.json`. Schemat jest obrócony o 8° względem północy (zamierzone).
+
+## 14.10.2026: publikacja tramwajów „po” z układem `octls` (`lv048`)
+
+**Co poszło na stronę i do druku:** `mapy/tram.svg`, `druk/lodz_tramwaje.{svg,pdf,jpg}` i `lodz_tramwaje_ciemny.*`
+(594 × 841 mm, 1 strona PDF). `index.html` zmienił się tylko o stopkę, hash `i18n.js` i hash `tram.svg`. Stan „przed”
+tramwajów, autobusy, nocne i widok geograficzny bez zmian: SVG autobusów i nocnych z ponownego `pdf.py` są bajt w bajt
+takie same jak w repo, `lines.json` tramwajów identyczny (kolory przypięte `colors/tram.json`).
+
+**Warstwa orientacyjna na nowym układzie** (to samo `render.py`, ustawienia z README): zagięte trójkąty odwzorowania 21
+(przy `octi` 25), `gate.py` 25 linii bez objazdów, 36 krawędzi kolei, 18 piktogramów (19), konflikty etykiet 2 (1),
+brak podpisu „Park na Zdrowiu” (parki są cięte liniami; podpis tylko wewnątrz kawałka parku). Dostrojona lupa „Centrum”
+(stara lista dawała ×1,0 i ucinała centrum, nowa ×2,2: oś Kaliska–Piłsudskiego-Śmigłego-Rydza).
+
+**Strona sprawdzona lokalnie** (serwer statyczny, bez błędów w konsoli): przełączniki Od/Przed 5.10, Schemat/Mapa,
+motyw jasny i ciemny, wyróżnianie linii, zakładka „Zmiany”, wszystkie 18 linków do pobrania zwraca 200 w obu motywach.
+
+**Różnica między schematem a mapą:** schemat skleja Rondo Lotników (Pabianicka i Paderewskiego) w jeden węzeł, mapa
+rysuje dwa przystanki. Obrócenie schematu o 8° względem północy jest zamierzone; napis „północ (kierunki przybliżone)” zostaje.
+
+**Zachowane:** tag `schemat-lodz-tram-octi-2026-10-12` (stan strony przed zmianą), katalog roboczy `archiwum_tram_octi/`
+z nieodtwarzalnym `octi.json`.

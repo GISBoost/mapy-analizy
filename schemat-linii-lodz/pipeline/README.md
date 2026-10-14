@@ -152,6 +152,31 @@ Pozostałe niezgodności w `verify` (54A/91A „Nowosolna”) to nazwy:
 `mk.sh`/`fin.sh` łączą kroki 2–3 i robią podgląd PNG (`shot.py`, Playwright) — env:
 `PY`, `SUB` i (tylko `fin.sh`) `COLORS`.
 
+## Tramwaje „po”: układ z `octls` (14.10.2026)
+
+Opublikowany schemat tramwajów (stan od 5.10.2026) liczy własny solver [`octls.py`](OCTLS.md), nie `octi`
+(Piotrkowska pionowo, Mickiewicza/Piłsudskiego poziomo, Pabianicka jedną linią 45°; wariant `lv048`, zgłoszenie
+[#1](https://github.com/GISBoost/mapy-analizy/issues/1)). Stan „przed”, autobusy i nocne zostają z `octi`. Poprzedni układ
+tramwajów (`octi`) jest zachowany w tagu gita `schemat-lodz-tram-octi-2026-10-12` i w `archiwum_tram_octi/` w katalogu roboczym.
+
+Kroki (wejście: `loom.json` z `run.sh` albo gotowy `out_TF150_octls/tram.loom.json`):
+1. `OCTI=ls bash run.sh tram tram` (patrz krok 2 wyżej) albo sam `octls.py` na `loom.json` po `merge_nodes.py`; wynik `tram.octi.json`.
+2. `serving.py tram.octi.json tram.loom.json <data>/tram` oraz `transitmap` (`tm.svg`, `tl.svg`), jak w `run.sh`.
+3. `render.py` z `OCTLS=1` (zmienia tylko napis o autorstwie układu na planszy i w stopce plakatu), `LANDMARKS`, `RAIL_STYLE=double`,
+   `CUT_GAP=3`, `CUTS` jak w kroku 3 i kolorami przypiętymi `colors/tram.json` (kolory zostają takie same jak w widoku mapy
+   i w stanie „przed”). Lupa tylko dla tego układu:
+   `ZOOM='{"stations":["Bandurskiego-Dw. Łódź Kaliska","Mickiewicza-Żeromskiego","Kościuszki-Mickiewicza","Piotrkowska Centrum",
+   "Piłsudskiego-Sienkiewicza","Piłsudskiego-Kilińskiego","Piłsudskiego-Śmigłego-Rydza"],"k":2.2,"title":"Centrum"}'`
+   (stara lista, dobrana pod układ z `octi`, dawała w nowym układzie lupę ×1,0 i ucinała centrum; krzyż Mickiewicza/Piłsudskiego
+   jest teraz poziomy, więc lupa jest szerokim pasem wzdłuż niego).
+4. `build_page.py`, `pdf.py`, `jpg.py` bez zmian (pliki tramwajów „po”: `mapy/tram.svg`, `druk/lodz_tramwaje[_ciemny].{svg,pdf,jpg}`).
+   Powtórne zbudowanie strony ze starych wsadów daje identyczne `mapy/*.svg` i `druk/*.svg` autobusów i nocnych.
+
+Warstwa orientacyjna (kolej, parki, granica, dzielnice, piktogramy) działa na nowym układzie bez zmian w kodzie:
+odwzorowanie odcinkowo-afiniczne liczone jest z położeń przystanków. Przeliczenie 14.10.2026: zagięte trójkąty 21
+(było 25), `gate.py` bez zgłoszeń, 18 piktogramów (było 19), konflikty etykiet 2 (było 1), nie mieści się podpis
+„Park na Zdrowiu”. Ramki 41 i 43 renderer sam ustawia pod mapą (dolny lewy róg zajmuje ogon Pabianickiej).
+
 ## Jak powstał stan „przed” (8.10.2026)
 
 - GTFS: release `lodz-realized-2026-10-02-phone` repo `GISBoost/easy-GTFS-RT`,
