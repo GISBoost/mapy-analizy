@@ -255,3 +255,33 @@ rysuje dwa przystanki. Obrócenie schematu o 8° względem północy jest zamier
 
 **Zachowane:** tag `schemat-lodz-tram-octi-2026-10-12` (stan strony przed zmianą), katalog roboczy `archiwum_tram_octi/`
 z nieodtwarzalnym `octi.json`.
+
+## 15.10.2026: uwagi użytkowników o schemacie tramwajowym (układ `octls`)
+
+Sześć uwag. Każdą sprawdziłem na danych i na rysunku, zanim cokolwiek zmieniłem.
+
+| Uwaga | Zasadna? | Ustalenie | Zmiana |
+|---|---|---|---|
+| przystanki przy Rynku Bałuckim są dwa razy | tak | dwa przystanki Z1 (Zgierska-Bałucki Rynek, Limanowskiego-Bałucki Rynek), 128 m, kolejne na tej samej linii | sklejone w jeden węzeł „Bałucki Rynek” |
+| podwójny przystanek Kilińskiego/Dąbrowskiego | tak | trzy węzły w jednym skrzyżowaniu (dwa „Dąbrowskiego-Kilińskiego” 115 m od siebie i „Kilińskiego-Dąbrowskiego” 137 m dalej) i trójkąt linii 2 przez bezimienny węzeł | jeden węzeł „Kilińskiego-Dąbrowskiego”, pętla usunięta |
+| brak przystanku Włókniarzy/Mickiewicza | tak, błąd | w logu `render.py`: `unmatched stations: [Włókniarzy-Mickiewicza (Dw. Ł. Kaliska)]`. Węzeł leżał 118 m od Bandurskiego i `transitmap` narysował oba jednym symbolem, więc nazwa znikła (poprzedni układ `octi` miał je osobno) | cel długości 330 m dla tej krawędzi; oba przystanki mają symbol i nazwę |
+| Włókniarzy połamana i przecina tory kolejowe | część tak | kolej była rysowana jako skos + prosta między końcami, bez sprawdzania linii tramwajowych: na `octls` 6 odcinków kolei przecinało tramwaj, którego prawdziwy tor ich nie przecina (Kaliska, Stoki, Zarzew, Widzew). Na `octi` takich przecięć nie było. Sama linia Włókniarzy ma tyle samo zagięć co w układzie `lv048` (dwa po 45°), tak biegnie ulica | trasa kolei jest wybierana tak, żeby nie robiła fałszywych przecięć (5 z 6 naprawionych, jedno zostaje przy Widzewie) |
+| Piotrkowska połamana, nie trafia w pl. Niepodległości (wczoraj trafiała) | nie | po 5.10 nie ma kursu z pl. Reymonta do pl. Niepodległości, linie skręcają w Przybyszewskiego (zgłoszenie #1). Wczorajszy układ `octi` kładł tam ukośną wiązkę, która sugerowała połączenie, którego nie ma | bez zmian |
+| Północna w miejscu pl. Kościelnego, kolizja z pl. Wolności | nie | pl. Wolności leży ok. 300 m od Północnej. Schemat skraca odcinek Limanowskiego-Zachodnia → Północna do 477 m (prawdziwe 1015 m), bo Piotrkowska ma być pionowa, a pl. Kościelny ma 492 m (prawdziwe 455 m) | bez zmian |
+
+**Pułapka rozwiązana po drodze.** Wyszukiwanie lokalne `octls` jest wrażliwe na graf: samo sklejenie dwóch węzłów i ponowne policzenie od zera
+dało zupełnie inny układ (Włókniarzy z dodatkowymi zagięciami, rozjechane Kaliska). Dlatego `octls` dostał `--init`, `--freeze-init` i
+`--dump-dirs`: opublikowany układ jest teraz zapisany jako kierunki krawędzi (`pipeline/goals/tram_dirs.json`, 10 KB, klucz = współrzędne
+końców krawędzi), a nowe sklejenia ruszają tylko własne krawędzie. `run.sh` z `OCTI=ls` odtwarza z tego układ z `loom.json` co do współrzędnych.
+Cel `len` w `goals/tram.json` ustawia docelową długość krawędzi i wagę, bo `--minlen` wpływa tylko na wybór etykiet, a nie na położenia.
+
+**Pomiary po poprawkach** (feed od 5.10, 8.10): wszystkie cele jak w `lv048`: Piotrkowska 0 m, Mickiewicza/Piłsudskiego 0 m, Pabianicka 0
+załamań i 0% poza 45°, Retkinia, Olechów i Helenówek bez 90°, 0 przecięć, 25 z 25 linii. `gate.py` bez zgłoszeń, `verify.py` 0 niezgodności
+krańcówek (zgłasza tylko skróconą nazwę „Bałucki Rynek”), zagięte trójkąty odwzorowania 19 (było 25 na `octi`), konflikty etykiet 1,
+piktogramy 19, wszystkie przystanki mają symbol (`unmatched stations: []`).
+
+**Strona** sprawdzona lokalnie na kopii z gałęzi (konsola bez błędów, przełączniki Od/Przed 5.10 i Schemat/Mapa, wszystkie linki do pobrania 200);
+SVG autobusów i nocnych z ponownego `pdf.py` takie same jak w repo (po odjęciu różnic końców linii z `autocrlf`).
+
+**Nie zrobione.** Widok geograficzny (Mapa) ma dalej dwa przystanki przy Rynku Bałuckim i trzy na Kilińskiego/Dąbrowskiego, bo rysuje
+rzeczywiste położenia z GTFS. Fałszywe przecięcie kolei przy Widzewie. Zagięcia 90° i skos przy pl. Reymonta to skutek trasy, nie błąd.
