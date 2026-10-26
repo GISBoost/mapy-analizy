@@ -26,6 +26,8 @@ Wdrożenie: GitHub Pages z brancha `main`, `index.html` w korzeniu = strona-spis
 - **[schemat-linii-lodz](schemat-linii-lodz/)** — schemat linii tramwajowych, autobusowych i nocnych Łodzi z rozkładu od 5.10.2026 (GTFS ZDiT, układ oktylinearny LOOM + własny renderer): statyczny SVG z zoomem i wyróżnianiem linii, PDF/SVG do druku w `druk/`, potok w `pipeline/`. Przełącznik „Od 5.10.2026 / Przed 5.10.2026” z listą zmian linii policzoną z GTFS. Tramwaje od 5.10 także w widoku geograficznym (przełącznik „Schemat | Mapa”, kafle OSM).
 - **[badanie-lodzkie-dostepnosc](badanie-lodzkie-dostepnosc/)** — raport z tej analizy: metoda, 8 feedów GTFS, próg przycięcia kategorii POI, wzrost dostępności 30→60 min jako zamiennik delty RT poza Łodzią, i czy jednorodna ujemna delta Łodzi to efekt powrotu do szkoły czy cecha sieci.
 
+- **[easy-matplayer](https://gisboost.github.io/easy-matplayer/)** — odtwarzacz wyników symulacji ruchu MATSim w przeglądarce (scenariusz demo: Kutno, 25% mieszkańców, auta na mapie z budynkami 3D). Kod i budowa strony: [GISBoost/easy-matplayer](https://github.com/GISBoost/easy-matplayer); to osobne repo, tu jest tylko karta w spisie.
+
 ## Dodawanie nowej analizy
 
 1. Nowy folder w korzeniu repo (`nazwa-analizy/`), własny `index.html` + `app.js` +

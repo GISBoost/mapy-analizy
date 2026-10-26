@@ -49,6 +49,10 @@ const STRINGS = {
     card7Desc:
       "Schemat linii tramwajowych, autobusowych i nocnych z rozkładu od 5.10.2026 — kliknij linię, żeby ją wyróżnić. " +
       "Porównanie ze stanem sprzed zmian i lista zmian linii. Tramwaje także na mapie miasta. PDF/SVG do druku.",
+    card8Title: "Symulacja ruchu w Kutnie",
+    card8Desc:
+      "Nagranie jednej doby ruchu samochodów z symulacji MATSim: wybierz scenariusz i oglądaj auta na mapie, także z budynkami 3D " +
+      "(obrót i pochylenie kamery). Działa w przeglądarce na komputerze.",
     tagTool: "narzędzie",
     tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
@@ -118,6 +122,10 @@ const STRINGS = {
     card7Desc:
       "Diagram of tram, bus and night lines from the timetable valid from 5 Oct 2026 — click a line to highlight it. " +
       "Comparison with the network before the change and a list of line changes. Trams also on a city map. PDF/SVG for print.",
+    card8Title: "Traffic simulation in Kutno",
+    card8Desc:
+      "A recording of one day of car traffic from a MATSim simulation: pick a scenario and watch the cars on the map, with 3D buildings " +
+      "(rotate and tilt the camera). Works in a desktop browser.",
     tagTool: "tool",
     tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",
