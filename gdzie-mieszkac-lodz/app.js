@@ -30,7 +30,7 @@
 
   const state = {
     win: "morning", ttype: "static", rides: "unlimited", lka: false, dir: "auto", bedroom: false,
-    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, canopy: { hard: false, min: 15 }, canopyOverlay: false, price: { hard: false, max: 10000 }, priceOverlay: false, svc: {}, minScore: 0, showRejected: false, targets: [],
+    weights: {}, hardNoise: { road: false, rail: false, industry: false }, noiseCfg: {}, canopy: { hard: false, min: 15 }, canopyOverlay: false, price: { hard: false, max: 10000 }, priceOverlay: false, offer: { hard: false, max: 11400 }, offerOverlay: false, offerPoints: false, svc: {}, minScore: 0, showRejected: false, targets: [],
   };
 
   // ---------- helpers ----------
@@ -50,14 +50,17 @@
   // ---------- URL state ----------
   // The hash holds the filters as #z=<deflated positional JSON> (share.js); links from before 10.2026 used
   // #s=<URI-encoded keyed JSON> and are still read. Default settings leave the address without a hash.
-  const shareCtx = () => ({ wkeys: WEIGHT_KEYS.concat(SVC_KEYS), svc: SVC, noise: NOISE, modes: MODES });
+  // "offer" (asking prices, 10.2026) goes after the service keys: the weights are positional, so older #z= links keep theirs
+  const allWeightKeys = () => WEIGHT_KEYS.concat(SVC_KEYS, ["offer"]);
+  const shareCtx = () => ({ wkeys: allWeightKeys(), svc: SVC, noise: NOISE, modes: MODES });
   let defaultPacked = null, saveSeq = 0, lastSave = Promise.resolve();
   function snapshot() {
     return { w: state.win, t: state.ttype, r: state.rides, l: state.lka ? 1 : 0, d: state.dir, b: state.bedroom ? 1 : 0,
       wt: state.weights, hn: state.hardNoise, nc: state.noiseCfg, cn: { h: state.canopy.hard ? 1 : 0, m: state.canopy.min }, co: state.canopyOverlay ? 1 : 0,
       pr: { h: state.price.hard ? 1 : 0, m: state.price.max }, po: state.priceOverlay ? 1 : 0,
       sv: Object.fromEntries(Object.entries(state.svc).map(([k, c]) => [k, { m: c.mode, y: c.y, x: c.x, h: c.hard ? 1 : 0 }])), ms: state.minScore, sr: state.showRejected ? 1 : 0,
-      tg: state.targets.map((x) => ({ h: x.hex, n: x.name, m: MODES.filter((k) => x.modes[k]).join(","), x: x.maxMin, i: x.idealMin, w: x.weight, k: x.hard ? 1 : 0 })) };
+      tg: state.targets.map((x) => ({ h: x.hex, n: x.name, m: MODES.filter((k) => x.modes[k]).join(","), x: x.maxMin, i: x.idealMin, w: x.weight, k: x.hard ? 1 : 0 })),
+      of: { h: state.offer.hard ? 1 : 0, m: state.offer.max }, oo: state.offerOverlay ? 1 : 0, op: state.offerPoints ? 1 : 0 };
   }
   function saveHash() {
     const seq = ++saveSeq, s = snapshot();
@@ -80,7 +83,7 @@
       state.ttype = ok(s.t, ["static", "p50", "p85"], state.ttype);
       state.rides = ok(s.r, ["unlimited", "max1transfer"], state.rides);
       state.lka = !!s.l; state.dir = ok(s.d, ["auto", "to", "from"], "auto"); state.bedroom = !!s.b;
-      WEIGHT_KEYS.concat(SVC_KEYS).forEach((k) => { if (s.wt && Number.isFinite(+s.wt[k])) state.weights[k] = Math.max(0, Math.min(5, +s.wt[k])); });
+      allWeightKeys().forEach((k) => { if (s.wt && Number.isFinite(+s.wt[k])) state.weights[k] = Math.max(0, Math.min(5, +s.wt[k])); });
       if (!s.wt || s.wt.canopy == null) state.weights.canopy = 0;   // links made before the canopy criterion existed keep their scores
       if (s.sv && SVX) SVC.forEach((k) => {
         const c = s.sv[k]; if (!c || !state.svc[k]) return;
@@ -99,6 +102,8 @@
       state.canopyOverlay = !!s.co;
       if (s.pr) { state.price.hard = !!s.pr.h; if (s.pr.m != null && Number.isFinite(+s.pr.m)) state.price.max = Math.max(0, Math.min(50000, +s.pr.m)); }
       state.priceOverlay = !!s.po;
+      if (s.of) { state.offer.hard = !!s.of.h; if (s.of.m != null && Number.isFinite(+s.of.m)) state.offer.max = Math.max(0, Math.min(50000, +s.of.m)); }
+      state.offerOverlay = !!s.oo; state.offerPoints = !!s.op;
       state.minScore = Math.max(0, Math.min(95, +s.ms || 0)); state.showRejected = !!s.sr;
       (s.tg || []).slice(0, M.curves.max_targets).forEach((x, k) => {
         if (!(x.h >= 0 && x.h < N)) return;
@@ -210,7 +215,8 @@
   const NAN_COL = () => new Float32Array(N).fill(NaN); // missing layer => criterion skipped (O9), never a crash
   const col = (name) => LAY[name] || NAN_COL();
   function buildLayers() {
-    const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m"), canopy: col("canopy"), price_m2: col("price_m2"), price_r: col("price_r"), price_n: col("price_n") };
+    const L = { tram_m: col("d_tram_m"), bus_m: col("d_bus_m"), green_m: col("d_green_m"), canopy: col("canopy"), price_m2: col("price_m2"), price_r: col("price_r"), price_n: col("price_n"),
+      offer_m2: col("offer_m2"), offer_r: col("offer_r"), offer_n: col("offer_n") };
     const ft = col("freq_tram_" + state.win), fb = col("freq_bus_" + state.win);
     L.freq = new Float32Array(N); for (let i = 0; i < N; i++) L.freq[i] = (ft[i] || 0) + (fb[i] || 0);
     NOISE.forEach((s) => {
@@ -257,7 +263,7 @@
     const ready = state.targets.filter((tg) => tg.times && MODES.some((m) => tg.modes[m]));
     result = Score.compute({
       n: N, curves: M.curves, weights: state.weights, minScore: state.minScore,
-      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, canopyHard: { on: state.canopy.hard, min: state.canopy.min / 100 }, priceHard: { on: state.price.hard, max: state.price.max }, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
+      svc: (svcNow = svcInput()), hardNoise: state.hardNoise, canopyHard: { on: state.canopy.hard, min: state.canopy.min / 100 }, priceHard: { on: state.price.hard, max: state.price.max }, offerHard: { on: state.offer.hard, max: state.offer.max }, hardShare: Object.fromEntries(NOISE.map((k) => [k, state.noiseCfg[k].share / 100])), layers: layersNow,
       targets: ready.map((tg) => ({ times: tg.times, idealMin: tg.idealMin, maxMin: tg.maxMin, weight: tg.weight, hard: tg.hard })),
     });
     result.ready = ready;
@@ -289,7 +295,7 @@
     }
     if (key === "frequency") return fmt(L.freq[i], 1) + " " + t("unitPerH");
     if (key === "canopy") return t("canopyRaw", { p: fmt(100 * L.canopy[i], 1) });
-    if (key === "price") return t("priceRaw", { p: fmt(L.price_m2[i]), n: fmt(L.price_n[i]), r: fmt(L.price_r[i]) });
+    if (key === "price" || key === "offer") return t(key + "Raw", { p: fmt(L[key + "_m2"][i]), n: fmt(L[key + "_n"][i]), r: fmt(L[key + "_r"][i]) });
     if (key.startsWith("svc_")) {
       const k = key.slice(4), c = state.svc[k], sv = svcNow[k];
       return sv ? t("svcCard", { n: fmt(sv.count[i]), y: c.y, mode: t("mode_" + c.mode + "_short") }) : "";
@@ -320,8 +326,13 @@
     });
     el.innerHTML = head +
       (rows ? "<table><tr class='muted'><td>" + t("cardCriterion") + "</td><td class='num'>" + t("cardRaw") + "</td><td class='num'>" + t("cardPts") + "</td><td class='num'>" + t("cardWeight") + "</td></tr>" + rows + "</table>" : "") +
-      (times ? "<h3>" + t("cardTimes") + "</h3><table>" + times + "</table>" : "");
+      (times ? "<h3>" + t("cardTimes") + "</h3><table>" + times + "</table>" : "") + cardPrices(i);
     $("cardClose").onclick = closeCard;
+  }
+  // both prices of the surroundings, also when their criteria are off (they must not be read as one number)
+  function cardPrices(i) {
+    const parts = ["price", "offer"].filter((k) => hasPrice(k) && !Number.isNaN(layersNow[k + "_m2"][i])).map((k) => t("card_" + k, { p: fmt(layersNow[k + "_m2"][i]) }));
+    return parts.length ? "<p class='hint'>" + t("cardPrices") + " " + parts.join(" · ") + "</p>" : "";
   }
   function closeCard() {
     $("hexCard").hidden = true; selected = null;
@@ -384,7 +395,8 @@
     const more = document.createElement("details"); more.className = "nmore"; more.open = !!(state.weights.noise_rail || state.weights.noise_industry || state.hardNoise.rail || state.hardNoise.industry);
     more.innerHTML = "<summary>" + t("noiseMore") + "</summary>"; mk("rail", more); mk("industry", more); nb.appendChild(more);
     renderCanopy(sliderRow);
-    renderPrice(sliderRow);
+    renderPrice(sliderRow, "price");
+    renderPrice(sliderRow, "offer");
     renderSvc(sliderRow);
     $("noNoteTargets").hidden = state.targets.length > 0;
     renderTargets();
@@ -413,47 +425,71 @@
     }
     const note = document.createElement("p"); note.className = "hint"; note.textContent = t("canopyNote", { year: M.canopy.year, h: M.canopy.height_m }); box.appendChild(note);
   }
-  // price: importance (cheaper = better) + optional budget "at most X PLN/m2" + colour preview of the hexes that have a price
-  const priceColor = (p) => { const c = M.curves.price, x = Math.max(0, Math.min(1, (p - c.low_m2) / (c.high_m2 - c.low_m2))); return "hsl(" + Math.round(210 - 190 * x) + ",70%,50%)"; };
-  function renderPrice(sliderRow) {
-    const has = !!(M.price && LAY.price_m2 && M.curves.price && M.curves.price.enabled), box = $("priceBlock"); box.innerHTML = "";
-    document.querySelectorAll("[data-i18n=secPrice]").forEach((e) => { e.hidden = !has; });
-    $("priceHintP").hidden = !has;
+  // price (RCN deals) and offer (developers' asking prices): the same block each = importance (cheaper = better) + optional budget
+  // "at most X PLN/m2" + colour preview of the hexes that have a value; offer also lists its investments as points
+  const priceColor = (p, k) => { const c = M.curves[k], x = Math.max(0, Math.min(1, (p - c.low_m2) / (c.high_m2 - c.low_m2))); return "hsl(" + Math.round(210 - 190 * x) + ",70%,50%)"; };
+  const hasPrice = (k) => !!(M[k] && LAY[k + "_m2"] && M.curves[k] && M.curves[k].enabled);
+  function renderPrice(sliderRow, k) {
+    const has = hasPrice(k), box = $(k + "Block"), cap = k[0].toUpperCase() + k.slice(1); box.innerHTML = "";
+    document.querySelectorAll("[data-i18n=sec" + cap + "]").forEach((e) => { e.hidden = !has; });
+    $(k + "HintP").hidden = !has;
     if (!has) return;
-    const P = M.price, c = M.curves.price;
-    $("priceHintP").textContent = t("priceHint", { lo: fmt(c.low_m2), hi: fmt(c.high_m2) });
+    const P = M[k], c = M.curves[k], st = state[k];
+    $(k + "HintP").textContent = t(k + "Hint", { lo: fmt(c.low_m2), hi: fmt(c.high_m2) });
     box.className = "nblock";
-    box.appendChild(sliderRow("price", t("w_price")));
+    box.appendChild(sliderRow(k, t("w_" + k)));
     const hard = document.createElement("div"); hard.className = "nrow";
-    hard.innerHTML = "<label class='toggle'><input type='checkbox' data-k='on'" + (state.price.hard ? " checked" : "") + "><span>" + t("priceRequire") + "</span></label> " +
-      "<input type='number' class='wide' data-k='max' min='0' max='50000' step='100' value='" + state.price.max + "'> " + t("unitPlnM2");
-    hard.querySelector("[data-k=on]").onchange = (e) => { state.price.hard = e.target.checked; recompute(); };
-    hard.querySelector("[data-k=max]").onchange = (e) => { state.price.max = Math.max(0, Math.min(50000, +e.target.value || 0)); e.target.value = state.price.max; recompute(); };
+    hard.innerHTML = "<label class='toggle'><input type='checkbox' data-k='on'" + (st.hard ? " checked" : "") + "><span>" + t("priceRequire") + "</span></label> " +
+      "<input type='number' class='wide' data-k='max' min='0' max='50000' step='100' value='" + st.max + "'> " + t("unitPlnM2");
+    hard.querySelector("[data-k=on]").onchange = (e) => { st.hard = e.target.checked; recompute(); };
+    hard.querySelector("[data-k=max]").onchange = (e) => { st.max = Math.max(0, Math.min(50000, +e.target.value || 0)); e.target.value = st.max; recompute(); };
     box.appendChild(hard);
-    const pv = document.createElement("div"); pv.className = "nrow";
-    pv.innerHTML = "<label class='toggle'><input type='checkbox' data-k='ov'" + (state.priceOverlay ? " checked" : "") + "><span>" + t("priceOverlay") + "</span></label>";
-    pv.querySelector("input").onchange = (e) => { state.priceOverlay = e.target.checked; applyPriceOverlay(); saveHash(); };
-    box.appendChild(pv);
+    const toggle = (key, label, apply) => {
+      const row = document.createElement("div"); row.className = "nrow";
+      row.innerHTML = "<label class='toggle'><input type='checkbox'" + (state[key] ? " checked" : "") + "><span>" + label + "</span></label>";
+      row.querySelector("input").onchange = (e) => { state[key] = e.target.checked; apply(); saveHash(); };
+      box.appendChild(row);
+    };
+    toggle(k + "Overlay", t("priceOverlay"), () => applyPriceOverlay(k));
     const lg = document.createElement("div"); lg.className = "nrow pricelegend";
-    lg.innerHTML = "<span>" + fmt(c.low_m2) + "</span><i style='background:linear-gradient(to right," + priceColor(c.low_m2) + "," + priceColor((c.low_m2 + c.high_m2) / 2) + "," + priceColor(c.high_m2) + ")'></i><span>" + fmt(c.high_m2) + " " + t("unitPlnM2") + "</span>";
+    lg.innerHTML = "<span>" + fmt(c.low_m2) + "</span><i style='background:linear-gradient(to right," + priceColor(c.low_m2, k) + "," + priceColor((c.low_m2 + c.high_m2) / 2, k) + "," + priceColor(c.high_m2, k) + ")'></i><span>" + fmt(c.high_m2) + " " + t("unitPlnM2") + "</span>";
     box.appendChild(lg);
+    if (k === "offer") toggle("offerPoints", t("offerPoints", { n: P.investments }), applyOfferPoints);
     const note = document.createElement("p"); note.className = "hint";
-    note.textContent = t("priceNote", { n: fmt(P.deeds), from: P.date_min, to: P.date_max, r: P.max_radius_m, k: P.min_n, pts: P.min_points, cov: Math.round(P.coverage_inhabited_pct) });
+    if (k === "price") note.textContent = t("priceNote", { n: fmt(P.deeds), from: P.date_min, to: P.date_max, r: P.max_radius_m, k: P.min_n, pts: P.min_points, cov: Math.round(P.coverage_inhabited_pct) });
+    else note.innerHTML = t("offerNote", { n: P.investments, dev: P.developers, offers: fmt(P.offers_active), date: P.fetched, r: P.max_radius_m, k: P.min_n, kd: P.min_developers, cov: Math.round(P.coverage_inhabited_pct), url: P.source_url });
     box.appendChild(note);
   }
-  let priceHexes = null;
-  function applyPriceOverlay() {
-    if (!map || !M.price || !LAY.price_m2) return;
-    if (!priceHexes) {   // drawn on the hex canvas (a second full-size canvas froze the browser); not interactive, so clicks still reach the hexes
-      const renderer = hexRenderer;
-      priceHexes = L.layerGroup();
+  const priceHexes = {};
+  function applyPriceOverlay(k) {
+    if (!map || !hasPrice(k)) return;
+    if (!priceHexes[k]) {   // drawn on the hex canvas (a second full-size canvas froze the browser); not interactive, so clicks still reach the hexes
+      const renderer = hexRenderer, g = priceHexes[k] = L.layerGroup();
       for (let i = 0; i < N; i++) {
-        const v = LAY.price_m2[i]; if (Number.isNaN(v)) continue;
-        const flat = HEX.p[i], ring = []; for (let k = 0; k < flat.length; k += 2) ring.push([flat[k + 1], flat[k]]);
-        L.polygon(ring, { renderer, interactive: false, stroke: false, fillColor: priceColor(v), fillOpacity: 0.7 }).addTo(priceHexes);
+        const v = LAY[k + "_m2"][i]; if (Number.isNaN(v)) continue;
+        const flat = HEX.p[i], ring = []; for (let j = 0; j < flat.length; j += 2) ring.push([flat[j + 1], flat[j]]);
+        L.polygon(ring, { renderer, interactive: false, stroke: false, fillColor: priceColor(v, k), fillOpacity: 0.7 }).addTo(g);
       }
     }
-    if (state.priceOverlay) { priceHexes.addTo(map); markers.forEach((m) => m.bringToFront()); } else map.removeLayer(priceHexes);
+    if (state[k + "Overlay"]) { priceHexes[k].addTo(map); markers.forEach((m) => m.bringToFront()); } else map.removeLayer(priceHexes[k]);
+  }
+  // investments behind the asking-price layer (investments.json, loaded on first use): own SVG pane above the hex canvas,
+  // so a click on a point opens its popup and a click next to it still reaches the hexes
+  let offerLayer = null;
+  async function applyOfferPoints() {
+    if (!map || !hasPrice("offer")) return;
+    if (!offerLayer && state.offerPoints) {
+      let pts; try { pts = await fetch(DATA + "investments.json").then((r) => (r.ok ? r.json() : null)); } catch (e) { pts = null; }
+      if (!pts) return;
+      if (!offerLayer) {
+        map.createPane("offerPane").style.zIndex = 450;
+        const renderer = L.svg({ pane: "offerPane" });
+        offerLayer = L.layerGroup(pts.map((p) => L.circleMarker([p.lat, p.lng], { renderer, pane: "offerPane", radius: 6, color: "#fff", weight: 1.5, fillColor: priceColor(p.m2, "offer"), fillOpacity: 1 })
+          .bindPopup(() => "<b>" + escapeHtml(p.name) + "</b><br>" + escapeHtml([p.developer, [p.district, p.street].filter(Boolean).join(", ")].filter(Boolean).join(" · ")) + "<br>" +
+            t("offerPopup", { p: fmt(p.m2), a: fmt(p.area, 1), n: p.offers }) + (p.url ? "<br><a href='" + escapeHtml(p.url) + "' target='_blank' rel='noopener'>deweloperuch.pl</a>" : ""))));
+      }
+    }
+    if (offerLayer) { if (state.offerPoints) offerLayer.addTo(map); else map.removeLayer(offerLayer); }
   }
   let canopyLayer = null;
   function applyCanopyOverlay() {
@@ -604,17 +640,17 @@
       const layers = await get(DATA + "layers.json");
       N = M.n;
       Object.keys(layers).forEach((k) => { LAY[k] = Float32Array.from(layers[k], (v) => (v == null ? NaN : v)); });
-      if (!M.price) ['price_m2', 'price_r', 'price_n'].forEach((k) => delete LAY[k]);   // a price layer without its method block is not used
+      ["price", "offer"].forEach((p) => { if (!M[p]) [p + "_m2", p + "_r", p + "_n"].forEach((k) => delete LAY[k]); });   // a price layer without its method block is not used
       if (!M.canopy) delete LAY.canopy;   // a layer without its method block (year, version) is not used
-      WEIGHT_KEYS.forEach((k) => { state.weights[k] = M.curves.defaults.weights[k] || 0; });
+      WEIGHT_KEYS.concat(["offer"]).forEach((k) => { state.weights[k] = M.curves.defaults.weights[k] || 0; });
       if (M.curves.canopy) state.canopy.min = Math.round(M.curves.canopy.default_hard_min * 100);
-      if (M.curves.price && M.curves.price.default_hard_max_m2) state.price.max = M.curves.price.default_hard_max_m2;
+      ["price", "offer"].forEach((k) => { if (M.curves[k] && M.curves[k].default_hard_max_m2) state[k].max = M.curves[k].default_hard_max_m2; });
       try { SVX = await fetch(DATA + "services/index.json").then((r) => (r.ok ? r.json() : null)); } catch (e) { SVX = null; }
       if (SVX) { SVC = SVX.criteria; SVC_KEYS = SVC.map((k) => "svc_" + k); }
       if (SVX) SVC.forEach((k) => { const d = SVX.defaults[k]; state.svc[k] = { mode: d.mode, y: d.y, x: d.x, hard: false }; state.weights["svc_" + k] = 0; });
       NOISE.forEach((k) => { const c = M.curves.noise[k]; state.noiseCfg[k] = { soft: c.soft_db, hard: c.hard_db, share: Math.round(c.hard_max_share * 100) }; });
       await loadHash();
-      initMap(); renderStatic(); drawMarkers(); drawContext(); applyCanopyOverlay(); applyPriceOverlay();
+      initMap(); renderStatic(); drawMarkers(); drawContext(); applyCanopyOverlay(); applyPriceOverlay("price"); applyPriceOverlay("offer"); applyOfferPoints();
       $("win").onchange = (e) => { state.win = e.target.value; renderStatic(); refreshAllTargets(); recompute(); };
       $("ttype").onchange = (e) => { state.ttype = e.target.value; $("ttypeHint").textContent = t("ttypeHint_" + state.ttype); refreshAllTargets(); recompute(); };
       $("rides").onchange = (e) => { state.rides = e.target.value; refreshAllTargets(); };

@@ -4,7 +4,7 @@ const assert = require("assert");
 
 const ctx = {
   wkeys: ["tram_stop", "bus_stop", "frequency", "green", "canopy", "price", "noise_road", "noise_rail", "noise_industry",
-          "svc_edukacja", "svc_zdrowie", "svc_handel_uslugi", "svc_kultura_rekreacja"],
+          "svc_edukacja", "svc_zdrowie", "svc_handel_uslugi", "svc_kultura_rekreacja", "offer"],
   svc: ["edukacja", "zdrowie", "handel_uslugi", "kultura_rekreacja"], noise: ["road", "rail", "industry"],
   modes: ["transit", "walk", "bike", "car"],
 };
@@ -14,7 +14,7 @@ const BASE = "https://gisboost.github.io/mapy-analizy/gdzie-mieszkac-lodz/";
 const heavy = {
   w: "evening", t: "p85", r: "max1transfer", l: 1, d: "from", b: 1,
   wt: { tram_stop: 3, bus_stop: 1, frequency: 4, green: 5, canopy: 3, price: 4, noise_road: 4, noise_rail: 1, noise_industry: 2,
-        svc_edukacja: 3, svc_zdrowie: 2, svc_handel_uslugi: 4, svc_kultura_rekreacja: 1 },
+        svc_edukacja: 3, svc_zdrowie: 2, svc_handel_uslugi: 4, svc_kultura_rekreacja: 1, offer: 2 },
   hn: { road: true, rail: false, industry: true },
   nc: { road: { soft: 55, hard: 70, share: 10 }, rail: { soft: 65, hard: 70, share: 40 }, industry: { soft: 60, hard: 65, share: 5 } },
   cn: { h: 1, m: 25 }, co: 1, pr: { h: 1, m: 9500 }, po: 1,
@@ -26,6 +26,7 @@ const heavy = {
        { h: 4321, n: "Rodzice", m: "car", x: 30, i: 10, w: 2, k: 0 },
        { h: 0, n: "Szkoła \"Ósemka\" & co.", m: "walk,bike", x: 20, i: 10, w: 0, k: 0 },
        { h: 5661, n: "", m: "transit,walk,bike,car", x: 90, i: 5, w: 5, k: 1 }],
+  of: { h: 1, m: 11000 }, oo: 1, op: 1,
 };
 
 (async () => {
@@ -60,6 +61,10 @@ const heavy = {
   const short = S.unpack(S.pack(heavy, ctx).slice(0, 8), ctx);
   assert.strictEqual(short.w, "evening"); assert.strictEqual(short.wt.green, 5);
   assert.deepStrictEqual(short.tg, []); assert.strictEqual(short.cn, undefined); assert.strictEqual(short.ms, undefined);
+  // a link from before the asking-price fields (array ends with the targets, weights without "offer") keeps them unset
+  const pre = S.pack(heavy, ctx).slice(0, 18); pre[7] = pre[7].slice(0, -1);
+  const old = S.unpack(pre, ctx);
+  assert.strictEqual(old.of, undefined); assert.strictEqual(old.oo, undefined); assert.ok(!("offer" in old.wt)); assert.strictEqual(old.tg.length, 5);
 
   // 6. a weight key added later (not in the link) is simply absent, so app.js keeps its default
   const ctx2 = Object.assign({}, ctx, { wkeys: ctx.wkeys.concat(["new_criterion"]) });

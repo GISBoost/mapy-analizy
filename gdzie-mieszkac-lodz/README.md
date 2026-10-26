@@ -40,7 +40,10 @@ plik, strona działa, tylko wolniej); GitHub Pages obsługuje `Range`.
 - `layers.json` — warstwy per heks: odległość pieszo do przystanku tramwajowego/autobusowego i do zieleni
   (rozdzielczość 20 m, brak wartości > 2 km), częstotliwość per pora dnia, udział powierzchni z hałasem ≥ N dB,
   `canopy` — udział powierzchni heksa pod koronami drzew (0–1; LiDAR GUGiK, nalot IV 2021),
-  `price_m2` / `price_r` / `price_n` — mediana ceny transakcyjnej zł/m² (RCN, od VII 2025), promień (m) i liczba aktów, z których ją wzięto; puste = brak ceny.
+  `price_m2` / `price_r` / `price_n` — mediana ceny transakcyjnej zł/m² (RCN, od VII 2025), promień (m) i liczba aktów, z których ją wzięto; puste = brak ceny,
+  `offer_m2` / `offer_r` / `offer_n` — mediana cen ofertowych zł/m² inwestycji deweloperskich w okolicy (deweloperuch.pl), promień (m) i liczba inwestycji; puste = brak danych.
+- `investments.json` — inwestycje deweloperskie stojące za `offer_m2` (punkt, nazwa, deweloper, średnia cena ofertowa i metraż, liczba aktywnych ofert, link do deweloperuch.pl),
+  ładowane dopiero po włączeniu punktów w panelu.
 - `m/<scenariusz>.r.bin` (wiersz: z heksa) i `.c.bin` (kolumna: do heksa) — macierze czasów O–D. Jeden blok DEFLATE
   na wiersz/kolumnę za tablicą offsetów, więc przeglądarka pobiera jeden wiersz zapytaniem `Range`. Czasy obcięte do
   60 min, kwantyzacja 2 min. Scenariusze tranzytowe poza bazą okna zapisane jako różnica względem
@@ -62,6 +65,9 @@ Metoda, wersje i ograniczenia: [easy-R5/tools/apartment_finder](https://github.c
 - „Zmierzony" = rekonstrukcja GTFS-RT (P50/P85) z 5 dni roboczych (28.09–02.10.2026), nie prawda referencyjna.
 - Auto = przybliżenie korków z prędkości autobusów, nie pomiar.
 - **Cena:** transakcje z Rejestru Cen Nieruchomości od lipca 2025 (rejestr dla Łodzi jest prawie pusty dla lat 2019–2024). To mediana okolicy (do 1000 m), tylko dla heksów zamieszkałych (ok. 69% z nich); brak ceny oznacza brak danych i nie odrzuca heksa. Nie są to ceny ofertowe.
+- **Cena ofertowa:** średnie z aktywnych ofert inwestycji deweloperskich z [deweloperuch.pl](https://deweloperuch.pl/) (pierwotnie raporty deweloperów
+  na dane.gov.pl), stan z jednego dnia (data w manifeście). To cena żądana, nie zapłacona, i tylko rynek pierwotny. Mediana okolicy do 2000 m
+  z co najmniej 3 inwestycji od 2 deweloperów, tylko heksy zamieszkałe (ok. 71%); inwestycje o średnim metrażu poza 25–120 m² (domy) pominięte.
 - **Podkład OSM** ładowany wprost z `tile.openstreetmap.org`, jak na pozostałych stronach tego repo (decyzja
   autora). Polityka kafli OSM zabrania intensywnego użycia; przy większym ruchu zmienić dostawcę.
 - **Dane hałasu** (mapa akustyczna Łodzi, UMŁ): informacja publiczna wg autora (2026-10-05).
@@ -70,4 +76,4 @@ Metoda, wersje i ograniczenia: [easy-R5/tools/apartment_finder](https://github.c
 
 ## Licencja
 
-MIT (kod). Dane pochodne: OpenStreetMap (ODbL), GTFS operatorów, mapa akustyczna Łodzi, GUGiK (NMPT/NMT/BDOT10k, Rejestr Cen Nieruchomości) — patrz zastrzeżenia wyżej.
+MIT (kod). Dane pochodne: OpenStreetMap (ODbL), GTFS operatorów, mapa akustyczna Łodzi, GUGiK (NMPT/NMT/BDOT10k, Rejestr Cen Nieruchomości), ceny ofertowe z deweloperuch.pl — patrz zastrzeżenia wyżej.

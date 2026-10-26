@@ -41,12 +41,12 @@
 
   // ---- main ----
   // inputs: {
-  //   n, curves, weights{tram_stop,bus_stop,frequency,green,noise_road,noise_rail,noise_industry,price},
+  //   n, curves, weights{tram_stop,bus_stop,frequency,green,noise_road,noise_rail,noise_industry,price,offer},
   //   targets: [{times: Uint8Array|Array (minutes per hex, 255 = not reached), idealMin, maxMin, weight, hard}],
   //   layers: {tram_m, bus_m, green_m, freq, noise_road, noise_rail, noise_industry (soft share), hard_road, hard_rail,
   //            hard_industry (hard-limit share)}   // Float32Array each
   //   hardNoise: {road:bool, rail:bool, industry:bool}, canopyHard: {on:bool, min:0..1} (layers.canopy = share of hex area under canopy),
-  //   priceHard: {on:bool, max: PLN/m2} (layers.price_m2; a hex without a price passes), minScore
+  //   priceHard: {on:bool, max: PLN/m2} (layers.price_m2; a hex without a price passes), offerHard: the same for layers.offer_m2, minScore
   // }
   // returns {score: Float32Array (NaN = filtered out), status: Uint8Array (0 ok, 1 hard-fail, 2 below min, 3 no criteria),
   //          contrib(i) -> [{key, score, weight}] for the "why" card}
@@ -66,6 +66,7 @@
         const sv = inp.svc[k]; add("svc_" + k, serviceScore(sv.count[i], sv.x), w["svc_" + k]);
       }
       if (c.price && c.price.enabled && L.price_m2) add("price", priceScore(L.price_m2[i], c.price), w.price);
+      if (c.offer && c.offer.enabled && L.offer_m2) add("offer", priceScore(L.offer_m2[i], c.offer), w.offer);   // asking prices: same curve shape
       inp.targets.forEach((tg, k) => {
         if (!tg.hard && tg.weight > 0) add("target" + k, travelScore(tg.times[i] === 255 ? Infinity : tg.times[i], tg.idealMin, tg.maxMin), tg.weight);
       });
@@ -77,6 +78,7 @@
       for (const k of ["road", "rail", "industry"]) if (inp.hardNoise[k] && L["hard_" + k][i] > (inp.hardShare ? inp.hardShare[k] : c.noise[k].hard_max_share)) fail = true;
       if (inp.canopyHard && inp.canopyHard.on && L.canopy && L.canopy[i] < inp.canopyHard.min) fail = true;   // NaN (no data) passes
       if (inp.priceHard && inp.priceHard.on && L.price_m2 && L.price_m2[i] > inp.priceHard.max) fail = true;   // NaN (no price) passes
+      if (inp.offerHard && inp.offerHard.on && L.offer_m2 && L.offer_m2[i] > inp.offerHard.max) fail = true;   // NaN (no offers nearby) passes
       if (inp.svc) for (const k of Object.keys(inp.svc)) { const sv = inp.svc[k]; if (sv.hard && !Number.isNaN(sv.count[i]) && !(sv.count[i] >= sv.x)) fail = true; }
       if (fail) { score[i] = NaN; status[i] = 1; continue; }
       let sw = 0, ss = 0;

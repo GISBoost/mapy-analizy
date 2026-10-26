@@ -100,4 +100,17 @@ assert.deepStrictEqual(Array.from(r0.score), [100, 100, 100, 100]);        // we
 const rd = S.compute({ n: 4, curves: Object.assign({}, curves, { price: { enabled: false } }), minScore: 0, weights: Object.assign({}, wz, { price: 2, green: 1 }), targets: [],
   hardNoise: { road: false, rail: false, industry: false }, layers: pbase });
 assert.deepStrictEqual(Array.from(rd.score), [100, 100, 100, 100]);        // curve disabled: price ignored
+// asking price (offer): own curve and budget, independent of the RCN price; RCN 6000 everywhere, asking 9000/11000/14000/none
+const ocv = Object.assign({}, pcv, { offer: { enabled: true, low_m2: 9000, high_m2: 13000 } });
+const obase = Object.assign({}, base, { price_m2: L([6000, 6000, 6000, 6000]), offer_m2: L([9000, 11000, 14000, NaN]) });
+const ro = S.compute({ n: 4, curves: ocv, minScore: 0, weights: Object.assign({}, wz, { offer: 2 }), targets: [], hardNoise: { road: false, rail: false, industry: false },
+  priceHard: { on: true, max: 10000 }, offerHard: { on: true, max: 12000 }, layers: obase });
+assert.ok(Math.abs(ro.score[0] - 100) < 1e-4 && Math.abs(ro.score[1] - 50) < 1e-4);   // 9000 -> 1, 11000 -> 0.5
+assert.ok(Number.isNaN(ro.score[2]) && ro.status[2] === 1);                // 14000 > 12000: over the asking-price budget
+assert.ok(Number.isNaN(ro.score[3]) && ro.status[3] === 3);                // no investments nearby: not rejected, criterion skipped
+const rob = S.compute({ n: 4, curves: ocv, minScore: 0, weights: Object.assign({}, wz, { offer: 1, price: 1 }), targets: [], hardNoise: { road: false, rail: false, industry: false }, layers: obase });
+assert.ok(Math.abs(rob.score[1] - 75) < 1e-4);                             // both prices weighted: (1 + 0.5) / 2
+const rod = S.compute({ n: 4, curves: Object.assign({}, ocv, { offer: { enabled: false } }), minScore: 0, weights: Object.assign({}, wz, { offer: 2, green: 1 }), targets: [],
+  hardNoise: { road: false, rail: false, industry: false }, layers: obase });
+assert.deepStrictEqual(Array.from(rod.score), [100, 100, 100, 100]);       // curve disabled: asking price ignored
 console.log("score.js OK");

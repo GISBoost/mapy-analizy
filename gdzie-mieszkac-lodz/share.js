@@ -17,14 +17,15 @@
       [bit(s.pr && s.pr.h), s.pr ? s.pr.m : null], bit(s.po),
       ctx.svc.map((k) => { const c = s.sv && s.sv[k]; return c ? [c.m, c.y, c.x, bit(c.h)] : null; }),
       s.ms, bit(s.sr),
-      (s.tg || []).map((x) => [x.h, x.n, String(x.m || "").split(",").reduce((m, q) => m | (ctx.modes.includes(q) ? 1 << ctx.modes.indexOf(q) : 0), 0), x.x, x.i, x.w, bit(x.k)])];
+      (s.tg || []).map((x) => [x.h, x.n, String(x.m || "").split(",").reduce((m, q) => m | (ctx.modes.includes(q) ? 1 << ctx.modes.indexOf(q) : 0), 0), x.x, x.i, x.w, bit(x.k)]),
+      [bit(s.of && s.of.h), s.of ? s.of.m : null], bit(s.oo), bit(s.op)];   // 10.2026: asking prices (deweloperuch.pl)
   }
 
   function unpack(a, ctx) {
     if (!Array.isArray(a) || a[0] !== VERSION) throw new Error("unknown share link version");
     const arr = (v) => (Array.isArray(v) ? v : []);
     const obj = (keys, vals, f) => { const o = {}; keys.forEach((k, i) => { if (vals[i] != null) o[k] = f(vals[i]); }); return o; };
-    const [, w, t, r, l, d, b, wt, hn, nc, cn, co, pr, po, sv, ms, sr, tg] = a;
+    const [, w, t, r, l, d, b, wt, hn, nc, cn, co, pr, po, sv, ms, sr, tg, of, oo, op] = a;
     return {
       w, t, r, l, d, b, wt: obj(ctx.wkeys, arr(wt), (v) => v),
       hn: obj(ctx.noise, arr(hn), (v) => !!v),
@@ -34,6 +35,7 @@
       sv: obj(ctx.svc, arr(sv), (c) => ({ m: arr(c)[0], y: arr(c)[1], x: arr(c)[2], h: arr(c)[3] })),
       ms, sr,
       tg: arr(tg).map((x) => { x = arr(x); return { h: x[0], n: x[1], m: ctx.modes.filter((q, i) => x[2] & (1 << i)).join(","), x: x[3], i: x[4], w: x[5], k: x[6] }; }),
+      of: of ? { h: arr(of)[0], m: arr(of)[1] } : undefined, oo, op,
     };
   }
 
