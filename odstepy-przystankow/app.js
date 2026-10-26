@@ -58,7 +58,7 @@
       onEachFeature: (f, l) => l.bindTooltip(hexTooltip(f.properties), { sticky: true }),
     });
     const boundaryLayer = L.geoJSON(boundaryGeojson, {
-      style: () => ({ color: cssVar("--boundary"), weight: 1.4, fill: false }),
+      style: () => ({ className: "boundary", weight: 1.4, fill: false }), // colour from --boundary in styles.css
     });
     return { hex: hexLayer, boundary: boundaryLayer };
   }
@@ -217,4 +217,13 @@
       buildWindowbar();
       loadCity(currentCity);
     });
+
+  // Theme button in the top bar: an explicit light/dark choice over the system default, one key for all the map pages
+  // (applied before the first paint by the inline script in index.html). Tiles and boundary follow it through CSS.
+  const isDark = () => (document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
+  });
 })();

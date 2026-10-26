@@ -9,6 +9,8 @@ const LANG_STORAGE_KEY = "mapyAnalizyLang";
 const STRINGS = {
   pl: {
     langToggleAriaLabel: "Przełącz język",
+    themeToggle: "Motyw",
+    themeToggleAriaLabel: "Przełącz motyw jasny/ciemny",
     title: "Dostępność w Łódzkiem — GISBoost",
     h1: "Dostępność transportowa województwa łódzkiego",
     introHtml:
@@ -60,6 +62,8 @@ const STRINGS = {
   },
   en: {
     langToggleAriaLabel: "Switch language",
+    themeToggle: "Theme",
+    themeToggleAriaLabel: "Toggle light/dark theme",
     title: "Accessibility in Łódzkie — GISBoost",
     h1: "Transport accessibility of the Łódzkie voivodeship",
     introHtml:

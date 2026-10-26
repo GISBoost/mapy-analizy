@@ -10,6 +10,8 @@ const LANG_STORAGE_KEY = "mapyAnalizyLang";
 const STRINGS = {
   pl: {
     langToggleAriaLabel: "Przełącz język",
+    themeToggle: "Motyw",
+    themeToggleAriaLabel: "Przełącz motyw jasny/ciemny",
     title: "Jak długo czekać na przystanku — GISBoost",
     h1: "Jak długo trzeba czekać na przystanku?",
     introHtml:
@@ -50,6 +52,8 @@ const STRINGS = {
   },
   en: {
     langToggleAriaLabel: "Switch language",
+    themeToggle: "Theme",
+    themeToggleAriaLabel: "Toggle light/dark theme",
     title: "How long do you wait at the stop — GISBoost",
     h1: "How long do you have to wait at the stop?",
     introHtml:

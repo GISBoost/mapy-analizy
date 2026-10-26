@@ -633,4 +633,17 @@
     } finally { loading.classList.remove("visible"); }
   }
   init();
+
+  // Theme button in the top bar: an explicit light/dark choice over the system default, one key for all the map pages
+  // (applied before the first paint by the inline script in index.html). Tiles and boundary follow it through CSS.
+  // the outline of the open hex takes --ink at draw time: redraw it on a click and on a system switch
+  const onThemeChange = () => { if (selected != null) outlineHex(selected); };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", onThemeChange);
+  const isDark = () => (document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
+    onThemeChange();
+  });
 })();

@@ -11,6 +11,8 @@ const LANG_STORAGE_KEY = "mapyAnalizyLang";
 const STRINGS = {
   pl: {
     langToggleAriaLabel: "Przełącz język",
+    themeToggle: "Motyw",
+    themeToggleAriaLabel: "Przełącz motyw jasny/ciemny",
     title: "Dojazd na uczelnię — GISBoost",
     h1: "Dojazd na uczelnię — 6 miast",
     introHtml:
@@ -46,6 +48,8 @@ const STRINGS = {
   },
   en: {
     langToggleAriaLabel: "Switch language",
+    themeToggle: "Theme",
+    themeToggleAriaLabel: "Toggle light/dark theme",
     title: "Getting to university — GISBoost",
     h1: "Getting to university — 6 cities",
     introHtml:

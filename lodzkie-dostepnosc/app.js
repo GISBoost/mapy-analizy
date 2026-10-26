@@ -34,6 +34,9 @@
   ];
 
   const LEVEL_RAMP = ["#ffffcc", "#c7e9b4", "#7fcdbb", "#41b6c4", "#2c7fb8", "#253494"];
+  // Web-only dark-theme variant: on the inverted OSM tiles (~#18191a) the last two blues fell to 1.67:1; lifted
+  // to 2.94:1 in the same hues (validate_palette.js --ordinal --mode dark). The light ramp still matches QGIS.
+  const LEVEL_RAMP_DARK = ["#ffffcc", "#c7e9b4", "#7fcdbb", "#41b6c4", "#3190d0", "#3a5cc4"];
   const LEVEL_BREAKS = [5, 15, 30, 60, 120]; // matches style_layers.sequential_level_renderer's call
 
   const GROWTH_RAMP = ["#fff7bc", "#fec44f", "#fe9929", "#d95f0e", "#993404"];
@@ -106,11 +109,14 @@
     return (r > 0 ? "+" : "") + r;
   }
 
+  const isDark = () => (document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  const levelRamp = () => (isDark() ? LEVEL_RAMP_DARK : LEVEL_RAMP);
+
   function styleFor(mode, props) {
     const v = props[mode.field];
     if (mode.kind === "level") {
       if (v === null || v === undefined || v < 0.5) return null; // no symbol, same as QGIS min_value=0.5
-      return { fillColor: LEVEL_RAMP[classifySeq(v, LEVEL_BREAKS)] };
+      return { fillColor: levelRamp()[classifySeq(v, LEVEL_BREAKS)] };
     }
     if (mode.kind === "growth") {
       if (v === null || v === undefined) return null;
@@ -184,7 +190,7 @@
   function renderLegend(mode) {
     legendEl.innerHTML = "";
     if (mode.kind === "level") {
-      renderLevelLegend(LEVEL_BREAKS, LEVEL_RAMP);
+      renderLevelLegend(LEVEL_BREAKS, levelRamp());
       legendnoteEl.textContent = t("legendNoteLevel");
     } else if (mode.kind === "growth") {
       renderGrowthLegend(GROWTH_BREAKS, GROWTH_RAMP);
@@ -273,7 +279,7 @@
 
     if (boundaryLayer) map.removeLayer(boundaryLayer);
     boundaryLayer = L.geoJSON(boundaryData, {
-      style: () => ({ color: "#232323", weight: 2, opacity: 0.9, fill: false }),
+      style: () => ({ className: "boundary", weight: 2, opacity: 0.9, fill: false }), // colour from --boundary in styles.css
       interactive: false,
     }).addTo(map);
 
@@ -324,4 +330,16 @@
   currentRegion = REGION_ORDER[0];
   buildRegionSelect();
   loadRegion(currentRegion, true);
+
+  // Theme button in the top bar: an explicit light/dark choice over the system default, one key for all the map pages
+  // (applied before the first paint by the inline script in index.html). Tiles and boundary follow it through CSS;
+  // the level ramp (levelRamp) is baked into layer and legend, so redraw them on a click and on a system switch.
+  const onThemeChange = () => { if (currentMode) render(modeDef()); };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", onThemeChange);
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
+    onThemeChange();
+  });
 })();

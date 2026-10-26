@@ -21,7 +21,7 @@
     --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
     --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
     --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
-    --boundary: #212223;
+    --boundary: #e7ecf2;
     --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
   }
 }
@@ -29,7 +29,7 @@
   --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
   --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
   --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
-  --boundary: #212223;
+  --boundary: #e7ecf2;
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
 }
 
@@ -149,6 +149,12 @@ main { position: relative; min-width: 0; min-height: 0; }
   :root:not([data-theme="light"]) .leaflet-control-attribution { background: rgba(23, 28, 36, 0.75); color: var(--ink-muted); }
 }
 :root[data-theme="dark"] .leaflet-control-attribution { background: rgba(23, 28, 36, 0.75); color: var(--ink-muted); }
+/* Dark basemap: the same OSM tiles, inverted (filter as in schemat-linii-lodz); only the tile pane, the data keeps its colours */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
+}
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
+.boundary { stroke: var(--boundary); }  /* via CSS, not the style option, so it follows a theme switch live */
 
 .badge {
   display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 0.68rem;

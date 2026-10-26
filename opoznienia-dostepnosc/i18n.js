@@ -10,6 +10,8 @@ const LANG_STORAGE_KEY = "mapyAnalizyLang";
 const STRINGS = {
   pl: {
     langToggleAriaLabel: "Przełącz język",
+    themeToggle: "Motyw",
+    themeToggleAriaLabel: "Przełącz motyw jasny/ciemny",
     title: "Ile kosztują opóźnienia? — GISBoost",
     h1: "Ile kosztują opóźnienia? — 6 miast",
     introHtml:
@@ -59,6 +61,8 @@ const STRINGS = {
   },
   en: {
     langToggleAriaLabel: "Switch language",
+    themeToggle: "Theme",
+    themeToggleAriaLabel: "Toggle light/dark theme",
     title: "What do delays cost? — GISBoost",
     h1: "What do delays cost? — 6 cities",
     introHtml:

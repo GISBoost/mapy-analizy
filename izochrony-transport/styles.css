@@ -8,10 +8,12 @@
   --chrome: #33465c;
   --chrome-ink: #f3f6fa;
   --accent: #2c5c94;
-  /* Cutoff bands + pin + boundary sit ON the OSM tile layer, which is always
-     light regardless of UI theme -- so unlike the chrome/surface tokens
-     below, these are deliberately NOT overridden per color-scheme. One
-     definition, always applied. Sequential: one hue (blue-cyan), light ->
+  /* Cutoff bands + pin sit ON the OSM tile layer and were picked for the light
+     tiles. The dark theme inverts the tiles (surface ~#18191a), where --cut-15
+     fell to 1.28:1 and the three stacked bands blurred into one blue, so the
+     dark blocks below flip the anchor: same hue, 15min brightest, 45min dimmest
+     (validate_palette.js --ordinal --mode dark: all pass, dimmest 2.65:1).
+     --pin stays. Light ramp, sequential: one hue (blue-cyan), light ->
      dark, 45min = widest/most permissive (bottom) -> 15min = narrowest/most
      useful (top). Checked against a light surface with dataviz's
      validate_palette.js: CVD/normal-vision separation passes (dE 21.7+
@@ -30,14 +32,14 @@
   :root:not([data-theme="light"]) {
     --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
     --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
-    --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+    --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8; --boundary: #e7ecf2; --cut-45: #1d5f9a; --cut-30: #3a9ad8; --cut-15: #a9defa;
     --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
   }
 }
 :root[data-theme="dark"] {
   --bg: #10141a; --surface: #171c24; --surface-2: #1e2530;
   --ink: #e7ecf2; --ink-muted: #8ca0b3; --border: #2a3240;
-  --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8;
+  --chrome: #0d1117; --chrome-ink: #e7ecf2; --accent: #5588c8; --boundary: #e7ecf2; --cut-45: #1d5f9a; --cut-30: #3a9ad8; --cut-15: #a9defa;
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
 }
 
@@ -147,6 +149,12 @@ main { position: relative; min-width: 0; min-height: 0; }
   :root:not([data-theme="light"]) .leaflet-control-attribution { background: rgba(23, 28, 36, 0.75); color: var(--ink-muted); }
 }
 :root[data-theme="dark"] .leaflet-control-attribution { background: rgba(23, 28, 36, 0.75); color: var(--ink-muted); }
+/* Dark basemap: the same OSM tiles, inverted (filter as in schemat-linii-lodz); only the tile pane, the data keeps its colours */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
+}
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
+.boundary { stroke: var(--boundary); }  /* via CSS, not the style option, so it follows a theme switch live */
 
 footer.note {
   flex: none; padding: 8px 28px; font-size: 0.72rem; color: var(--ink-muted);

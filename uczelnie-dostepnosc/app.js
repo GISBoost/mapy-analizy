@@ -269,4 +269,23 @@
       buildTabs();
       loadCity(currentCity);
     });
+
+  // Theme button in the top bar: an explicit light/dark choice over the system default, one key for all the map pages
+  // (applied before the first paint by the inline script in index.html). Tiles and boundary follow it through CSS.
+  // the palette tokens (--pl, --seq-*, ...) differ per theme and are baked into the layers at build time: rebuild them
+  // in place (no fitBounds, unlike loadCity) on a click and on a system switch
+  const onThemeChange = () => {
+    if (!currentCity || !cache[currentCity]) return;
+    clearMapLayers();
+    Object.assign(layers, buildLayersForCity(currentCity));
+    render(currentMode);
+  };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", onThemeChange);
+  const isDark = () => (document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
+    onThemeChange();
+  });
 })();

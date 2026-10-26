@@ -115,3 +115,9 @@ footer.note a { color: var(--accent); }
 .hint.warn { color: #8a5a00; }
 
 .howto{margin:6px 0 10px;font-size:13px}.howto summary{cursor:pointer;font-weight:600}.howto ul{padding-left:18px;margin:6px 0}.howto li{margin-bottom:4px}
+
+/* Dark basemap: the same OSM tiles, inverted (filter as in schemat-linii-lodz); only the tile pane, the data keeps its colours */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }
+}
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) grayscale(.7) brightness(.85) contrast(.9); }

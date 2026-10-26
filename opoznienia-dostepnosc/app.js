@@ -213,7 +213,7 @@
 
     if (boundaryLayer) map.removeLayer(boundaryLayer);
     boundaryLayer = L.geoJSON(boundaryData, {
-      style: () => ({ color: "#232323", weight: 2, opacity: 0.9, fill: false }),
+      style: () => ({ className: "boundary", weight: 2, opacity: 0.9, fill: false }), // colour from --boundary in styles.css
       interactive: false,
     }).addTo(map);
 
@@ -302,5 +302,14 @@
     buildCitySelect();
     buildModeswitch();
     loadCity(currentCity, true);
+  });
+
+  // Theme button in the top bar: an explicit light/dark choice over the system default, one key for all the map pages
+  // (applied before the first paint by the inline script in index.html). Tiles and boundary follow it through CSS.
+  const isDark = () => (document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
   });
 })();

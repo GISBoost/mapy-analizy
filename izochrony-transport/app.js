@@ -80,13 +80,12 @@
   const hourValEl = document.getElementById("hourval");
   const statlineEl = document.getElementById("statline");
 
-  // Colors never change at runtime (no theme toggle), so resolve each custom
-  // property once instead of forcing a getComputedStyle() on every render.
-  const cssVar = (() => {
-    const style = getComputedStyle(document.documentElement);
-    const resolved = {};
-    return (name) => resolved[name] || (resolved[name] = style.getPropertyValue(name).trim());
-  })();
+  // Resolve each custom property once instead of forcing a getComputedStyle()
+  // on every render; a theme switch (the cutoff bands have dark variants)
+  // empties the memo, see onThemeChange at the bottom.
+  const rootStyle = getComputedStyle(document.documentElement);
+  let resolved = {};
+  const cssVar = (name) => resolved[name] || (resolved[name] = rootStyle.getPropertyValue(name).trim());
 
   const map = L.map("map", { zoomControl: true, minZoom: 10 });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -100,7 +99,7 @@
   // to the map first.
   const boundaryLayer = L.geoJSON(null, {
     interactive: false,
-    style: () => ({ color: cssVar("--boundary"), weight: 1.4, fill: false }),
+    style: () => ({ className: "boundary", weight: 1.4, fill: false }), // colour from --boundary in styles.css
   }).addTo(map);
 
   const isoLayers = {}; // cutoff_min -> persistent L.geoJSON layer
@@ -398,4 +397,20 @@
       buildCityTabs();
       loadCity(currentCity);
     });
+
+  // Theme button in the top bar: an explicit light/dark choice over the system default, one key for all the map pages
+  // (applied before the first paint by the inline script in index.html). Tiles and boundary follow it through CSS.
+  // the --cut-* bands differ per theme and are baked into the band styles: re-read them on a click and on a system switch
+  const onThemeChange = () => {
+    resolved = {};
+    for (const c of CUTOFFS) isoLayers[c.min].setStyle({ fillColor: cssVar(c.css) });
+  };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", onThemeChange);
+  const isDark = () => (document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  document.getElementById("themeToggleBtn").addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
+    onThemeChange();
+  });
 })();

@@ -37,6 +37,10 @@ Wdrożenie: GitHub Pages z brancha `main`, `index.html` w korzeniu = strona-spis
 Górna belka (`.topbar`, tokeny w `gisboost-1.css`) jest teraz na każdej podstronie —
 `href="../"` do spisu + link/aria-current do bieżącej strony + przełącznik języka, ten sam
 markup wszędzie (kontrakt opisany w `gisboostgithub/PROMPT_redesign-system.md` §6.1).
+Strony z mapą mają w belce też przycisk „Motyw”: jawny wybór jasny/ciemny ponad ustawieniem systemu,
+jeden klucz `mapyAnalizyTheme` w `localStorage` dla wszystkich map (poza `schemat-linii-lodz`, który ma własny).
+Ciemny podkład to te same kafle OSM odwrócone filtrem CSS na `.leaflet-tile-pane` (bez innego dostawcy), a granice
+biorą kolor z `--boundary` przez CSS, więc zmieniają się od razu po przełączeniu.
 
 Współdzielenie kodu między folderami ma sens dopiero gdy widać, co faktycznie się powtarza:
 `charts.js` (korzeń repo) powstał dopiero przy trzecim raporcie typu `badanie-*` (obok
