@@ -53,6 +53,10 @@ const STRINGS = {
     card8Desc:
       "Nagranie jednej doby ruchu samochodów z symulacji MATSim: wybierz scenariusz i oglądaj auta na mapie, także z budynkami 3D " +
       "(obrót i pochylenie kamery). Działa w przeglądarce na komputerze.",
+    card9Title: "Łódź godzina po godzinie",
+    card9Desc:
+      "Animacja od 6:00 do 22:00: ile miejsc (szkoły, przychodnie, sklepy, kultura) osiągniesz w 30 minut komunikacją miejską, " +
+      "w sierpniu, wrześniu i październiku 2026, na zrealizowanych rozkładach.",
     tagTool: "narzędzie",
     tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
@@ -126,6 +130,10 @@ const STRINGS = {
     card8Desc:
       "A recording of one day of car traffic from a MATSim simulation: pick a scenario and watch the cars on the map, with 3D buildings " +
       "(rotate and tilt the camera). Works in a desktop browser.",
+    card9Title: "Lodz hour by hour",
+    card9Desc:
+      "An animation from 6:00 to 22:00: how many places (schools, clinics, shops, culture) you reach in 30 minutes by public transport, " +
+      "in August, September and October 2026, on realized timetables.",
     tagTool: "tool",
     tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",
