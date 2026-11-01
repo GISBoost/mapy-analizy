@@ -13,14 +13,19 @@
   const DIFF_MULT = [-0.5, -0.2, -0.04, 0.04, 0.2, 0.5];
   const SPEEDS = [1, 2, 4];
   const STEP_MS = 1100;
-  const FILL_OPACITY = 0.82;
+  const HEIGHT_M = 1500;                 // bar height (m) of a hex at the reference value, times the height slider
+  const GROW_MS = 1300;
+  const UI_KEY = "mapyAnalizyHexUi";
+  const isPhone = () => matchMedia("(max-width: 700px)").matches;
 
   const isDark = () => document.documentElement.getAttribute("data-theme") !== "light";
   const $ = (id) => document.getElementById(id);
 
   let man, counts, N, H, M, C;          // manifest, data, hexes, hours, months, meta count
-  let layers = [], lastClass = [], map, tip, hoverId = -1;
-  const state = { month: 1, cat: "all", view: "values", base: 0, hour: 2, playing: false, speed: 0 };
+  let map, hoverId = -1;
+  let target, colors, lastH, lastC, grow, delay;   // per hex: bar height 0..1.2, colour, last pushed height (m) / colour, grow 0..1, wave delay 0..1
+  let growRaf = 0;
+  const state = { month: 1, cat: "all", view: "values", base: 0, hour: 2, playing: false, speed: 0, three: false, opacity: 0.82, hscale: 1 };
   let timer = null;
   const scaleCache = {};
 
@@ -52,7 +57,7 @@
       vals.sort((x, y) => x - y);
       const br = [0.1, 0.3, 0.5, 0.7, 0.9].map((q) => quantile(vals, q));
       for (let i = 1; i < br.length; i++) br[i] = Math.max(br[i], br[i - 1] + 1);
-      s = { breaks: br };
+      s = { breaks: br, ref: Math.max(1, quantile(vals, 0.99)) };
     } else {
       const d = [], tmp2 = new Int32Array(N);
       for (let m = 0; m < M; m++) for (let b = m + 1; b < M; b++) for (let h = 0; h < H; h++) {
@@ -61,7 +66,7 @@
       }
       d.sort((x, y) => x - y);
       const L = Math.max(4, d.length ? quantile(d, 0.98) : 4);
-      s = { edges: DIFF_MULT.map((k) => k * L) };
+      s = { edges: DIFF_MULT.map((k) => k * L), ref: L };
     }
     return (scaleCache[key] = s);
   }
@@ -83,19 +88,61 @@
   const fmtNum = (v) => (Math.round(v * 10) / 10).toString();
   const signed = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmtNum(Math.abs(v));
 
-  function renderMap() {
+  const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+  const TRANSPARENT = "rgba(0,0,0,0)";
+
+  function computeTargets() {
     const [a, b] = currentFrames();
     const s = scaleFor(state.cat, state.view);
     for (let i = 0; i < N; i++) {
       const v = b ? a[i] - b[i] : a[i];
       const cls = classOf(v, s, state.view);
-      if (cls === lastClass[i]) continue;
-      lastClass[i] = cls;
-      const col = cls < 0 ? null : colorOf(cls, state.view);
-      // a thin stroke in the fill colour hides the anti-aliasing seams between neighbouring hexes on the canvas
-      layers[i].setStyle(col ? { fillColor: col, fillOpacity: FILL_OPACITY, stroke: true, color: col, opacity: FILL_OPACITY, weight: 1 } : { fillOpacity: 0, stroke: false });
+      colors[i] = cls < 0 ? TRANSPARENT : colorOf(cls, state.view);
+      target[i] = cls < 0 ? 0 : state.view === "values" ? Math.sqrt(Math.min(1.2, v / s.ref)) : Math.min(1.2, Math.abs(v) / s.ref);
     }
+  }
+  // push only what changed to the GPU (feature-state), heights = target * slider * per-hex grow
+  function pushStates() {
+    const k = HEIGHT_M * state.hscale;
+    for (let i = 0; i < N; i++) {
+      const h = Math.round(target[i] * grow[i] * k), c = colors[i];
+      if (h === lastH[i] && c === lastC[i]) continue;
+      lastH[i] = h; lastC[i] = c;
+      map.setFeatureState({ source: "hex", id: i }, { c, h });
+    }
+  }
+  // extrusions ignore colour alpha, so hexes with no place in reach are cut out with a layer filter (only re-set when the set changes)
+  let emptyKey = null;
+  function filterEmpty() {
+    const ids = [];
+    for (let i = 0; i < N; i++) if (colors[i] === TRANSPARENT) ids.push(i);
+    const key = ids.join(",");
+    if (key === emptyKey) return;
+    emptyKey = key;
+    map.setFilter("hex", ids.length ? ["!", ["in", ["get", "hex_id"], ["literal", ids]]] : null);
+  }
+  function renderMap() {
+    computeTargets(); filterEmpty(); pushStates();
     if (hoverId >= 0) showTip();
+  }
+
+  // 2D <-> 3D: the map tilts while the hexes grow out of the ground in a wave from the centre (and sink back the same way)
+  function setThree(on) {
+    state.three = on;
+    map.easeTo({ pitch: on ? 58 : 0, bearing: on ? -20 : 0, duration: 1100 });
+    cancelAnimationFrame(growRaf);
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches, t0 = performance.now(), dur = reduce ? 1 : GROW_MS;
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      for (let i = 0; i < N; i++) {
+        grow[i] = on ? easeOut(clamp01((p - delay[i] * 0.45) / 0.55)) : 1 - easeOut(clamp01((p - (1 - delay[i]) * 0.45) / 0.55));
+      }
+      pushStates();
+      if (p < 1) growRaf = requestAnimationFrame(step);
+    };
+    growRaf = requestAnimationFrame(step);
+    buildControls(); legend();
   }
 
   function tipHtml(id) {
@@ -105,10 +152,19 @@
     if (b) h += "<div>" + t("tipValue", { m: mName(state.base), v: "<b>" + b[id] + "</b>" }) + "</div><div>" + t("tipDiff", { v: "<b>" + signed(a[id] - b[id]) + "</b>" }) + "</div>";
     return h;
   }
-  function showTip(latlng) {
-    if (latlng) tip.setLatLng(latlng);
-    tip.setContent(tipHtml(hoverId));
-    if (!map.hasLayer(tip)) tip.addTo(map);
+  let tipPt = { x: 0, y: 0 };
+  function showTip(pt) {
+    if (pt) tipPt = pt;
+    const el = $("tip");
+    el.innerHTML = tipHtml(hoverId);
+    el.style.left = tipPt.x + "px"; el.style.top = tipPt.y + "px"; el.hidden = false;
+  }
+  function hideTip() { hoverId = -1; $("tip").hidden = true; }
+  function pick(e) {
+    const f = map.queryRenderedFeatures(e.point, { layers: ["hex"] })[0];
+    const id = f ? f.properties.hex_id : -1;
+    if (id < 0) return hideTip();
+    hoverId = id; showTip(e.point);
   }
 
   function legend() {
@@ -128,7 +184,7 @@
     }
     el.innerHTML = rows.map((r) => '<div class="legend-row"><i style="background:' + r[0] + '"></i><span>' + r[1] + "</span></div>").join("");
     $("legendTitle").textContent = t(state.view === "values" ? "legendValues" : "legendDiff");
-    $("legendNote").textContent = t(state.view === "values" ? "legendNoteValues" : "legendNoteDiff");
+    $("legendNote").textContent = t(state.view === "values" ? "legendNoteValues" : "legendNoteDiff") + (state.three ? " " + t(state.view === "values" ? "legendNote3dValues" : "legendNote3dDiff") : "");
   }
 
   // population-weighted mean by hour for a category, from the manifest
@@ -193,6 +249,9 @@
     seg("viewSeg", [["values", t("viewValues")], ["diff", t("viewDiff")]], state.view, (v) => { state.view = v; update(); });
     seg("baseSeg", man.months.map((m, i) => [i, mn[m]]).filter(([i]) => i !== state.month), state.base, (i) => { state.base = i; update(); });
     $("baseRow").hidden = state.view !== "diff";
+    seg("modeSeg", [[false, "2D"], [true, "3D"]], state.three, (v) => { if (v !== state.three) setThree(v); });
+    $("heightRow").hidden = !state.three;
+    $("btn3d").setAttribute("aria-pressed", String(state.three));
   }
 
   function update() { buildControls(); legend(); renderMap(); renderChart(); renderPill(); }
@@ -222,18 +281,45 @@
       else if (e.key === "ArrowRight") setHour(state.hour + 1);
       else if (e.key === "ArrowLeft") setHour(state.hour - 1);
     });
-    $("panelToggle").addEventListener("click", () => {
-      const closed = document.body.classList.toggle("panel-closed");
-      $("panelToggle").setAttribute("aria-expanded", String(!closed));
+    // collapsible islands, remembered per browser (desktop); phone has one bottom sheet instead
+    let ui = {};
+    try { ui = JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch (e) { /* private mode */ }
+    const saveUi = () => { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) { /* private mode */ } };
+    const setPanel = (closed) => { document.body.classList.toggle("panel-closed", closed); $("panelToggle").setAttribute("aria-expanded", String(!closed)); ui.panelClosed = closed; saveUi(); };
+    const setChart = (closed) => { document.body.classList.toggle("chart-closed", closed); ui.chartClosed = closed; saveUi(); };
+    setPanel(!!ui.panelClosed); setChart(!!ui.chartClosed);
+    $("panelToggle").addEventListener("click", () => setPanel(false));
+    $("panelHide").addEventListener("click", () => setPanel(true));
+    $("chartToggle").addEventListener("click", () => setChart(false));
+    $("chartHide").addEventListener("click", () => setChart(true));
+    $("grab").addEventListener("click", () => { const o = document.body.classList.toggle("sheet-open"); $("grab").setAttribute("aria-expanded", String(o)); map.easeTo({ padding: { bottom: o ? $("sheet").offsetHeight : 0 }, duration: 400 }); });
+
+    $("zoomIn").addEventListener("click", () => map.zoomIn());
+    $("zoomOut").addEventListener("click", () => map.zoomOut());
+    $("btn3d").addEventListener("click", () => setThree(!state.three));
+    $("opacitySlider").addEventListener("input", (e) => {
+      state.opacity = +e.target.value / 100; $("opacityVal").textContent = e.target.value + "%";
+      map.setPaintProperty("hex", "fill-extrusion-opacity", state.opacity);
     });
-    if (matchMedia("(max-width: 700px)").matches) { document.body.classList.add("panel-closed"); $("panelToggle").setAttribute("aria-expanded", "false"); }
+    $("heightSlider").addEventListener("input", (e) => {
+      state.hscale = +e.target.value / 100; $("heightVal").textContent = "×" + state.hscale.toFixed(1).replace(".", ",");
+      pushStates();
+    });
+
     $("themeToggleBtn").addEventListener("click", () => {
       const next = isDark() ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
       try { localStorage.setItem("mapyAnalizyTheme", next); } catch (e) { /* private mode */ }
-      lastClass = lastClass.map(() => null); update();
+      basemapTheme(); update();
     });
     setLangChangeHandler(() => { play(state.playing); update(); });
+  }
+
+  // dark mode = inverted OSM raster (brightness min/max swapped), like the CSS filter used before on the Leaflet page
+  function basemapTheme() {
+    const dark = isDark(), set = (k, v) => map.setPaintProperty("osm", k, v);
+    set("raster-brightness-min", dark ? 0.86 : 0); set("raster-brightness-max", dark ? 0.04 : 1);
+    set("raster-hue-rotate", dark ? 180 : 0); set("raster-saturation", dark ? -0.7 : 0); set("raster-contrast", dark ? -0.1 : 0);
   }
 
   // ---- start ----
@@ -247,28 +333,40 @@
     counts = new Uint16Array(buf);
     if (counts.length !== M * C * H * N || geo.features.length !== N) throw new Error("data size mismatch");
     bufs[0] = new Int32Array(N); bufs[1] = new Int32Array(N);
-    lastClass = new Array(N).fill(null);
+    target = new Float32Array(N); colors = new Array(N).fill(TRANSPARENT); grow = new Float32Array(N);
+    lastH = new Int32Array(N).fill(-1); lastC = new Array(N).fill(null); delay = new Float32Array(N);
 
-    map = L.map("map", { zoomControl: false, preferCanvas: true, renderer: L.canvas({ padding: 0.5 }) });
-    L.control.zoom({ position: "topright" }).addTo(map);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(map);
-    tip = L.tooltip({ className: "hex-tip", direction: "top", offset: [0, -6], opacity: 1 });
-    const gl = L.geoJSON(geo, {
-      style: () => ({ stroke: false, fillOpacity: 0, fillColor: "#000" }),
-      onEachFeature: (f, layer) => {
-        const id = f.properties.hex_id;
-        layers[id] = layer;
-        layer.on("mouseover mousemove click", (e) => { hoverId = id; showTip(e.latlng); });
-        layer.on("mouseout", () => { hoverId = -1; map.removeLayer(tip); });
-      },
-    }).addTo(map);
-    map.fitBounds(gl.getBounds(), { paddingTopLeft: [window.innerWidth > 700 ? 330 : 0, 60], paddingBottomRight: [0, 90] });
+    // hex centroids -> wave delay by distance from the middle of the extent, plus the bounds for the first view
+    const cen = geo.features.map((f) => { const r = f.geometry.coordinates[0]; return [r.reduce((s, p) => s + p[0], 0) / r.length, r.reduce((s, p) => s + p[1], 0) / r.length]; });
+    const xs = cen.map((c) => c[0]), ys = cen.map((c) => c[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const kx = Math.cos(((y0 + y1) / 2) * Math.PI / 180), mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const dist = cen.map((c) => Math.hypot((c[0] - mx) * kx, c[1] - my)), dmax = Math.max(...dist);
+    dist.forEach((d, i) => { delay[i] = d / dmax; });
+
+    const phone = isPhone();
+    map = new maplibregl.Map({
+      container: "map", attributionControl: false, maxPitch: 75, dragRotate: true, pitchWithRotate: true,
+      bounds: [[x0, y0], [x1, y1]], fitBoundsOptions: { padding: { top: 70, bottom: phone ? 220 : 90, left: phone ? 10 : 330, right: 10 } },
+      style: { version: 8, sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19 } }, layers: [{ id: "osm", type: "raster", source: "osm" }] },
+    });
+    await new Promise((res) => map.once("load", res));
+    basemapTheme();
+    map.addSource("hex", { type: "geojson", data: geo, promoteId: "hex_id" });
+    map.addLayer({ id: "hex", type: "fill-extrusion", source: "hex", paint: {
+      "fill-extrusion-color": ["to-color", ["coalesce", ["feature-state", "c"], TRANSPARENT]],
+      "fill-extrusion-height": ["to-number", ["coalesce", ["feature-state", "h"], 0]],
+      "fill-extrusion-base": 0, "fill-extrusion-opacity": state.opacity,
+    } });
+    map.on("mousemove", pick); map.on("click", pick);
+    map.getCanvas().addEventListener("mouseleave", hideTip);
 
     $("hourSlider").value = state.hour;
     $("speedBtn").textContent = SPEEDS[state.speed] + "×";
     bindUi();
     update();
     $("mapLoading").classList.add("hidden");
+    if (phone) setTimeout(() => setThree(true), 500);   // phone opens in 3D: the hexes grow in once the map is up
   }
 
   document.addEventListener("DOMContentLoaded", () => {

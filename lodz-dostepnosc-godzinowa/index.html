@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Łódź godzina po godzinie — GISBoost</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Ile miejsc (szkoły, przychodnie, sklepy, kultura) osiągniesz z domu w 30 minut komunikacją miejską w Łodzi, godzina po godzinie, w sierpniu, wrześniu i październiku 2026 — animowana mapa heksagonalna na zrealizowanych rozkładach, dane Easy-R5, GISBoost.">
+<meta name="description" content="Ile miejsc (szkoły, przychodnie, sklepy, kultura) osiągniesz z domu w 30 minut komunikacją miejską w Łodzi, godzina po godzinie, w sierpniu, wrześniu i październiku 2026 — animowana mapa heksagonalna (2D i 3D) na zrealizowanych rozkładach, dane Easy-R5, GISBoost.">
 <link rel="icon" href="../favicon.ico">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GISBoost">
@@ -17,7 +17,7 @@
 <meta name="twitter:description" content="Dostępność komunikacją miejską w Łodzi od 6:00 do 22:00: sierpień, wrzesień i październik 2026.">
 <meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
 <style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk=" crossorigin="">
 <script>try{const v=localStorage.getItem('mapyAnalizyTheme'); document.documentElement.setAttribute('data-theme', v==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
 <link rel="stylesheet" href="styles.css">
@@ -42,37 +42,61 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
   </button>
 
-  <section id="panel" class="glass">
-    <h1 data-i18n="h1">Łódź godzina po godzinie</h1>
-    <p class="lead" data-i18n-html="leadHtml">Ile miejsc osiągniesz z domu w 30 minut komunikacją miejską.</p>
+  <div id="sheet">
+    <button id="grab" type="button" aria-expanded="false" data-i18n-aria-label="sheetAria" aria-label="Rozwiń lub zwiń menu"><i></i></button>
 
-    <div class="sec">
-      <p class="eyebrow" data-i18n="eyebrowMonth">Miesiąc</p>
-      <div class="seg" id="monthSeg" role="group"></div>
-    </div>
-
-    <div class="sec">
-      <p class="eyebrow" data-i18n="eyebrowCategory">Rodzaj miejsc</p>
-      <div class="chips" id="catChips" role="group"></div>
-    </div>
-
-    <div class="sec">
-      <p class="eyebrow" data-i18n="eyebrowView">Widok</p>
-      <div class="seg" id="viewSeg" role="group"></div>
-      <div id="baseRow" class="subrow" hidden>
-        <span data-i18n="minus">minus</span>
-        <div class="seg small" id="baseSeg" role="group"></div>
+    <section id="panel" class="glass">
+      <div class="hd more">
+        <h1 data-i18n="h1">Łódź godzina po godzinie</h1>
+        <button id="panelHide" class="ib" type="button" data-i18n-aria-label="hidePanelAria" aria-label="Zwiń panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
       </div>
-    </div>
+      <p class="lead more" data-i18n-html="leadHtml">Ile miejsc osiągniesz z domu w 30 minut komunikacją miejską.</p>
 
-    <div class="sec">
-      <p class="eyebrow" id="legendTitle"></p>
-      <div class="legend" id="legend"></div>
-      <p class="note" id="legendNote"></p>
-    </div>
+      <div class="sec">
+        <p class="eyebrow" data-i18n="eyebrowMonth">Miesiąc</p>
+        <div class="seg" id="monthSeg" role="group"></div>
+      </div>
 
-    <p class="note small" data-i18n-html="methodHtml"></p>
-  </section>
+      <div class="sec more">
+        <p class="eyebrow" data-i18n="eyebrowView">Widok</p>
+        <div class="seg" id="viewSeg" role="group"></div>
+        <div id="baseRow" class="subrow" hidden>
+          <span data-i18n="minus">minus</span>
+          <div class="seg small" id="baseSeg" role="group"></div>
+        </div>
+      </div>
+
+      <div class="sec more">
+        <p class="eyebrow" data-i18n="eyebrowCategory">Rodzaj miejsc</p>
+        <div class="chips" id="catChips" role="group"></div>
+      </div>
+
+      <div class="sec more">
+        <p class="eyebrow" data-i18n="eyebrowLook">Wygląd</p>
+        <div class="seg" id="modeSeg" role="group"></div>
+        <label class="rngrow"><span data-i18n="opacity">Przezroczystość</span><input type="range" id="opacitySlider" min="20" max="100" value="82"><em id="opacityVal">82%</em></label>
+        <label class="rngrow" id="heightRow"><span data-i18n="heightScale">Wysokość słupków</span><input type="range" id="heightSlider" min="40" max="250" value="100"><em id="heightVal">×1,0</em></label>
+      </div>
+
+      <div class="sec more">
+        <p class="eyebrow" id="legendTitle"></p>
+        <div class="legend" id="legend"></div>
+        <p class="note" id="legendNote"></p>
+      </div>
+
+      <p class="note small more" data-i18n-html="methodHtml"></p>
+    </section>
+
+    <div id="capsule" class="glass">
+      <button id="playBtn" type="button" data-i18n-aria-label="playAria" aria-label="Odtwórz">
+        <svg id="playIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
+        <svg id="pauseIcon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <input id="hourSlider" type="range" min="0" max="15" step="1" value="1" data-i18n-aria-label="sliderAria" aria-label="Godzina odjazdu">
+      <button id="speedBtn" type="button" data-i18n-aria-label="speedAria" aria-label="Prędkość animacji">1×</button>
+      <span class="attrib">© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span>
+    </div>
+  </div>
 
   <div id="pill" class="glass" role="status" aria-live="off">
     <span id="pillClock">07:00–08:00</span>
@@ -82,26 +106,34 @@
     <span id="pillStat"></span>
   </div>
 
+  <div id="mapTools" class="glass-group">
+    <div class="glass zoomcap">
+      <button id="zoomIn" type="button" data-i18n-aria-label="zoomInAria" aria-label="Przybliż"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <hr>
+      <button id="zoomOut" type="button" data-i18n-aria-label="zoomOutAria" aria-label="Oddal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    </div>
+    <button id="btn3d" class="glass fab" type="button" aria-pressed="false" data-i18n-aria-label="btn3dAria" aria-label="Widok 3D">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+    </button>
+  </div>
+
   <section id="chart" class="glass">
-    <p class="eyebrow" id="chartTitle"></p>
+    <div class="chart-hd">
+      <p class="eyebrow" id="chartTitle"></p>
+      <button id="chartHide" class="ib sm" type="button" data-i18n-aria-label="hideChartAria" aria-label="Ukryj wykres"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    </div>
     <svg id="chartSvg" viewBox="0 0 300 140" role="img" data-i18n-aria-label="chartAria" aria-label="Wykres średniej liczby miejsc według godziny"></svg>
     <div class="chart-legend" id="chartLegend"></div>
   </section>
+  <button id="chartToggle" class="glass fab" type="button" data-i18n-aria-label="showChartAria" aria-label="Pokaż wykres">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+  </button>
 
-  <div id="capsule" class="glass">
-    <button id="playBtn" type="button" data-i18n-aria-label="playAria" aria-label="Odtwórz">
-      <svg id="playIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>
-      <svg id="pauseIcon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor" stroke="none"/></svg>
-    </button>
-    <input id="hourSlider" type="range" min="0" max="15" step="1" value="1" data-i18n-aria-label="sliderAria" aria-label="Godzina odjazdu">
-    <button id="speedBtn" type="button" data-i18n-aria-label="speedAria" aria-label="Prędkość animacji">1×</button>
-    <span class="attrib">© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span>
-  </div>
-
+  <div id="tip" class="hex-tip" hidden></div>
   <div class="map-loading" id="mapLoading" data-i18n="loadingText">wczytywanie danych…</div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
 <script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
