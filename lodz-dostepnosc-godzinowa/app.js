@@ -23,9 +23,9 @@
 
   let man, counts, N, H, M, C;          // manifest, data, hexes, hours, months, meta count
   let map, hoverId = -1;
-  let target, colors, lastH, lastC, grow, delay;   // per hex: bar height 0..1.2, colour, last pushed height (m) / colour, grow 0..1, wave delay 0..1
-  let growRaf = 0;
-  const state = { month: 1, cat: "all", view: "values", base: 0, hour: 2, playing: false, speed: 0, three: false, opacity: 0.82, hscale: 1 };
+  let target, shown, colors, lastH, lastC, grow, delay;   // per hex: bar height 0..1.2, colour, last pushed height (m) / colour, grow 0..1, wave delay 0..1
+  let growRaf = 0, tweenRaf = 0, loadTimer = 0;
+  const state = { month: 2, cat: "all", view: "diff", base: 0, hour: 2, playing: false, speed: 0, three: false, opacity: 0.82, hscale: 1 };
   let timer = null;
   const scaleCache = {};
 
@@ -98,20 +98,35 @@
     for (let i = 0; i < N; i++) {
       const v = b ? a[i] - b[i] : a[i];
       const cls = classOf(v, s, state.view);
-      colors[i] = cls < 0 ? TRANSPARENT : colorOf(cls, state.view);
-      target[i] = cls < 0 ? 0 : state.view === "values" ? Math.sqrt(Math.min(1.2, v / s.ref)) : Math.min(1.2, Math.abs(v) / s.ref);
+      const none = cls < 0 || (b && v === 0);   // nothing in reach, or exactly no change between the two months
+      colors[i] = none ? TRANSPARENT : colorOf(cls, state.view);
+      target[i] = none ? 0 : state.view === "values" ? Math.sqrt(Math.min(1.2, v / s.ref)) : Math.min(1.2, Math.abs(v) / s.ref);
     }
   }
   // push only what changed to the GPU (feature-state), heights = target * slider * per-hex grow
   function pushStates() {
     const k = HEIGHT_M * state.hscale;
     for (let i = 0; i < N; i++) {
-      const h = Math.round(target[i] * grow[i] * k), c = colors[i];
+      const h = Math.round(shown[i] * grow[i] * k), c = colors[i];
       if (h === lastH[i] && c === lastC[i]) continue;
       lastH[i] = h; lastC[i] = c;
       map.setFeatureState({ source: "hex", id: i }, { c, h });
     }
   }
+  // in 3D a change of hour/month/category slides every bar to its new height instead of jumping
+  function tweenHeights() {
+    cancelAnimationFrame(tweenRaf);
+    if (!state.three || matchMedia("(prefers-reduced-motion: reduce)").matches) { shown.set(target); pushStates(); return; }
+    const from = Float32Array.from(shown), t0 = performance.now(), dur = Math.min(550, (STEP_MS / SPEEDS[state.speed]) * 0.9);
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      for (let i = 0; i < N; i++) shown[i] = from[i] + (target[i] - from[i]) * e;
+      pushStates();
+      if (p < 1) tweenRaf = requestAnimationFrame(step);
+    };
+    tweenRaf = requestAnimationFrame(step);
+  }
+
   // extrusions ignore colour alpha, so hexes with no place in reach are cut out with a layer filter (only re-set when the set changes)
   let emptyKey = null;
   function filterEmpty() {
@@ -123,13 +138,14 @@
     map.setFilter("hex", ids.length ? ["!", ["in", ["get", "hex_id"], ["literal", ids]]] : null);
   }
   function renderMap() {
-    computeTargets(); filterEmpty(); pushStates();
+    computeTargets(); filterEmpty(); tweenHeights();
     if (hoverId >= 0) showTip();
   }
 
   // 2D <-> 3D: the map tilts while the hexes grow out of the ground in a wave from the centre (and sink back the same way)
   function setThree(on) {
     state.three = on;
+    cancelAnimationFrame(tweenRaf); shown.set(target);
     map.easeTo({ pitch: on ? 58 : 0, bearing: on ? -20 : 0, duration: 1100 });
     cancelAnimationFrame(growRaf);
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches, t0 = performance.now(), dur = reduce ? 1 : GROW_MS;
@@ -319,21 +335,63 @@
   function basemapTheme() {
     const dark = isDark(), set = (k, v) => map.setPaintProperty("osm", k, v);
     set("raster-brightness-min", dark ? 0.86 : 0); set("raster-brightness-max", dark ? 0.04 : 1);
+    map.setPaintProperty("border", "line-color", dark ? "#ffffff" : "#000000");
     set("raster-hue-rotate", dark ? 180 : 0); set("raster-saturation", dark ? -0.7 : 0); set("raster-contrast", dark ? -0.1 : 0);
+  }
+
+  // outline of the hex grid: edges that belong to exactly one hex = the dissolved boundary (outer edge and holes)
+  function outline(geo) {
+    const key = (p) => p[0].toFixed(4) + "," + p[1].toFixed(4), edges = new Map();
+    for (const f of geo.features) {
+      const r = f.geometry.coordinates[0];
+      for (let j = 0; j < r.length - 1; j++) {
+        const ka = key(r[j]), kb = key(r[j + 1]), k = ka < kb ? ka + "|" + kb : kb + "|" + ka, e = edges.get(k);
+        if (e) e.n++; else edges.set(k, { n: 1, a: r[j], b: r[j + 1] });
+      }
+    }
+    return { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: [...edges.values()].filter((e) => e.n === 1).map((e) => [e.a, e.b]) } };
+  }
+
+  // ---- loading screen: progress bar + one-liners that swap every ~2.4 s ----
+  async function fetchBuf(url, onChunk) {
+    const r = await fetch(url), total = +r.headers.get("content-length") || 0;
+    if (!r.body || !total) { const b = await r.arrayBuffer(); onChunk(1, 1); return b; }
+    const rd = r.body.getReader(), parts = [];
+    let got = 0;
+    for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onChunk(got, total); }
+    return new Blob(parts).arrayBuffer();
+  }
+  function loadProgress(p) { $("loadBar").style.width = p + "%"; $("loadPct").textContent = Math.round(p) + "%"; }
+  function startLoader() {
+    const msgs = t("loadMsgs"), el = $("loadMsg");
+    let i = 0;
+    el.textContent = msgs[0];
+    loadTimer = setInterval(() => {
+      el.classList.add("out");
+      setTimeout(() => { i = (i + 1) % msgs.length; el.textContent = msgs[i]; el.classList.remove("out"); }, 350);
+    }, 2400);
+  }
+  function endLoader() {
+    clearInterval(loadTimer); loadProgress(100);
+    setTimeout(() => $("mapLoading").classList.add("hidden"), 250);
   }
 
   // ---- start ----
   async function init() {
+    startLoader();
+    const frac = [0, 0];
+    const bump = (k) => (got, total) => { frac[k] = Math.min(1, got / total); loadProgress(((frac[0] * 2.2 + frac[1] * 1.6) / 3.8) * 55); };
     const [m, buf, geo] = await Promise.all([
       fetch("data/manifest.json").then((r) => r.json()),
-      fetch("data/counts.bin").then((r) => r.arrayBuffer()),
-      fetch("data/hex.geojson").then((r) => r.json()),
+      fetchBuf("data/counts.bin", bump(0)),
+      fetchBuf("data/hex.geojson", bump(1)).then((b) => JSON.parse(new TextDecoder().decode(b))),
     ]);
+    loadProgress(60);
     man = m; N = m.hexes; H = m.hours.length; M = m.months.length; C = m.meta.length;
     counts = new Uint16Array(buf);
     if (counts.length !== M * C * H * N || geo.features.length !== N) throw new Error("data size mismatch");
     bufs[0] = new Int32Array(N); bufs[1] = new Int32Array(N);
-    target = new Float32Array(N); colors = new Array(N).fill(TRANSPARENT); grow = new Float32Array(N);
+    target = new Float32Array(N); shown = new Float32Array(N); colors = new Array(N).fill(TRANSPARENT); grow = new Float32Array(N);
     lastH = new Int32Array(N).fill(-1); lastC = new Array(N).fill(null); delay = new Float32Array(N);
 
     // hex centroids -> wave delay by distance from the middle of the extent, plus the bounds for the first view
@@ -351,13 +409,16 @@
       style: { version: 8, sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19 } }, layers: [{ id: "osm", type: "raster", source: "osm" }] },
     });
     await new Promise((res) => map.once("load", res));
-    basemapTheme();
+    loadProgress(80);
     map.addSource("hex", { type: "geojson", data: geo, promoteId: "hex_id" });
     map.addLayer({ id: "hex", type: "fill-extrusion", source: "hex", paint: {
       "fill-extrusion-color": ["to-color", ["coalesce", ["feature-state", "c"], TRANSPARENT]],
       "fill-extrusion-height": ["to-number", ["coalesce", ["feature-state", "h"], 0]],
       "fill-extrusion-base": 0, "fill-extrusion-opacity": state.opacity,
     } });
+    map.addSource("border", { type: "geojson", data: outline(geo) });
+    map.addLayer({ id: "border", type: "line", source: "border", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-width": 2, "line-opacity": 0.9, "line-color": "#ffffff" } });
+    basemapTheme();
     map.on("mousemove", pick); map.on("click", pick);
     map.getCanvas().addEventListener("mouseleave", hideTip);
 
@@ -365,11 +426,13 @@
     $("speedBtn").textContent = SPEEDS[state.speed] + "×";
     bindUi();
     update();
-    $("mapLoading").classList.add("hidden");
-    if (phone) setTimeout(() => setThree(true), 500);   // phone opens in 3D: the hexes grow in once the map is up
+    loadProgress(92);
+    await Promise.race([new Promise((res) => map.once("idle", res)), new Promise((res) => setTimeout(res, 8000))]);
+    endLoader();
+    setTimeout(() => setThree(true), 500);   // opens in 3D (October minus August): the hexes grow in once the map is up
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    init().catch((e) => { console.error(e); $("mapLoading").textContent = t("loadError"); });
+    init().catch((e) => { console.error(e); clearInterval(loadTimer); $("loadMsg").textContent = t("loadError"); });
   });
 })();

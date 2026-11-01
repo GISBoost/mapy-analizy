@@ -50,6 +50,7 @@ const STRINGS = {
     speedAria: "Prędkość animacji",
     panelToggleAria: "Pokaż lub ukryj ustawienia",
     loadingText: "wczytywanie danych…",
+    loadMsgs: ["Ładujemy Twoją mapę…", "Rozkładamy heksagony na siatce…", "Ustawiamy zegar na 6:00…", "Zapraszamy tramwaje na pętle…", "Liczymy miejsca w zasięgu 30 minut…", "Jeszcze tylko chwilka…"],
     loadError: "Nie udało się wczytać danych.",
     methodHtml:
       "Dla każdego heksagonu (250 m) liczymy, ile z ok. 4500 miejsc z OpenStreetMap (21 typów w 4 grupach) można osiągnąć w ≤ 30 min " +
@@ -101,6 +102,7 @@ const STRINGS = {
     speedAria: "Animation speed",
     panelToggleAria: "Show or hide the settings",
     loadingText: "loading data…",
+    loadMsgs: ["Loading your map…", "Laying out the hexagons…", "Setting the clock to 6:00…", "Sending the trams to the terminus…", "Counting places within 30 minutes…", "Just a moment more…"],
     loadError: "Could not load the data.",
     methodHtml:
       "For every 250 m hexagon we count how many of ~4,500 OpenStreetMap places (21 types in 4 groups) can be reached within 30 min " +

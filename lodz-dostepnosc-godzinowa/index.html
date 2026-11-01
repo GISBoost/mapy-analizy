@@ -130,7 +130,9 @@
   </button>
 
   <div id="tip" class="hex-tip" hidden></div>
-  <div class="map-loading" id="mapLoading" data-i18n="loadingText">wczytywanie danych…</div>
+  <div class="map-loading" id="mapLoading" role="status">
+    <div class="ld"><p class="ld-msg" id="loadMsg">Ładujemy Twoją mapę…</p><div class="ld-bar"><i id="loadBar"></i></div><span class="ld-pct" id="loadPct">0%</span></div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
