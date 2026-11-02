@@ -25,7 +25,8 @@
   let map, hoverId = -1;
   let target, shown, colors, lastH, lastC, grow, delay;   // per hex: bar height 0..1.2, colour, last pushed height (m) / colour, grow 0..1, wave delay 0..1
   let growRaf = 0, tweenRaf = 0, loadTimer = 0;
-  const state = { month: 2, cat: "all", view: "diff", base: 0, hour: 2, playing: false, speed: 0, three: false, opacity: 0.82, hscale: 1 };
+  const state = { month: 2, cat: "all", view: "diff", base: 0, hour: 2, playing: false, speed: 0, three: false, opacity: 0.82, hscale: 1, inspect: false };
+  let info = null, sheetClose = () => {};   // info = data/hexinfo.json (estate + nearest stop per hex), null if it failed to load
   let timer = null;
   const scaleCache = {};
 
@@ -164,7 +165,12 @@
   function tipHtml(id) {
     const [a, b] = currentFrames();
     const mName = (k) => t("monthSeg")[man.months[k]];
-    let h = "<div>" + t("tipHex", { id }) + "</div><div>" + t("tipValue", { m: mName(state.month), v: "<b>" + a[id] + "</b>" }) + "</div>";
+    let place = "<div>" + t("tipHex", { id }) + "</div>";
+    if (info) {
+      const o = info.o[id], s = info.stops[info.s[id]];
+      place = "<div><b>" + (o >= 0 ? info.estates[o] : t("tipNoEstate")) + "</b></div><div class=\"tip-stop\">" + t(s[1] ? "tipStopTram" : "tipStopBus", { n: s[0], d: info.d[id] }) + "</div>";
+    }
+    let h = place + "<div>" + t("tipValue", { m: mName(state.month), v: "<b>" + a[id] + "</b>" }) + "</div>";
     if (b) h += "<div>" + t("tipValue", { m: mName(state.base), v: "<b>" + b[id] + "</b>" }) + "</div><div>" + t("tipDiff", { v: "<b>" + signed(a[id] - b[id]) + "</b>" }) + "</div>";
     return h;
   }
@@ -173,7 +179,9 @@
     if (pt) tipPt = pt;
     const el = $("tip");
     el.innerHTML = tipHtml(hoverId);
-    el.style.left = tipPt.x + "px"; el.style.top = tipPt.y + "px"; el.hidden = false;
+    el.hidden = false;
+    const half = el.offsetWidth / 2;   // keep the tip inside the screen
+    el.style.left = Math.max(half + 8, Math.min($("stage").clientWidth - half - 8, tipPt.x)) + "px"; el.style.top = tipPt.y + "px";
   }
   function hideTip() { hoverId = -1; $("tip").hidden = true; }
   function pick(e) {
@@ -308,7 +316,29 @@
     $("panelHide").addEventListener("click", () => setPanel(true));
     $("chartToggle").addEventListener("click", () => setChart(false));
     $("chartHide").addEventListener("click", () => setChart(true));
-    $("grab").addEventListener("click", () => { const o = document.body.classList.toggle("sheet-open"); $("grab").setAttribute("aria-expanded", String(o)); map.easeTo({ padding: { bottom: o ? $("sheet").offsetHeight : 0 }, duration: 400 }); });
+    // phone sheet: tap or drag the handle (up = open, down = close); drag down from the top of the content or tap the map = close
+    const setSheet = (o) => {
+      document.body.classList.toggle("sheet-open", o); $("grab").setAttribute("aria-expanded", String(o));
+      map.easeTo({ padding: { bottom: o ? $("sheet").offsetHeight : 0 }, duration: 400 });
+    };
+    sheetClose = () => { if (document.body.classList.contains("sheet-open")) setSheet(false); };
+    const isOpen = () => document.body.classList.contains("sheet-open");
+    let gy = null;
+    const grab = $("grab");
+    grab.addEventListener("pointerdown", (e) => { gy = e.clientY; try { grab.setPointerCapture(e.pointerId); } catch (err) { /* synthetic pointer */ } });
+    grab.addEventListener("pointerup", (e) => {
+      if (gy === null) return;
+      const dy = e.clientY - gy; gy = null;
+      setSheet(Math.abs(dy) < 10 ? !isOpen() : dy < 0);
+    });
+    grab.addEventListener("pointercancel", () => { gy = null; });
+    let sy = null;
+    $("sheet").addEventListener("touchstart", (e) => { sy = $("sheet").scrollTop === 0 ? e.touches[0].clientY : null; }, { passive: true });
+    $("sheet").addEventListener("touchend", (e) => { if (sy !== null && isOpen() && e.changedTouches[0].clientY - sy > 60) setSheet(false); sy = null; }, { passive: true });
+    $("inspectBtn").addEventListener("click", () => {
+      state.inspect = !state.inspect; $("inspectBtn").setAttribute("aria-pressed", String(state.inspect));
+      if (!state.inspect) hideTip();
+    });
 
     $("zoomIn").addEventListener("click", () => map.zoomIn());
     $("zoomOut").addEventListener("click", () => map.zoomOut());
@@ -381,6 +411,7 @@
     startLoader();
     const frac = [0, 0];
     const bump = (k) => (got, total) => { frac[k] = Math.min(1, got / total); loadProgress(((frac[0] * 2.2 + frac[1] * 1.6) / 3.8) * 55); };
+    fetch("data/hexinfo.json").then((r) => r.json()).then((j) => { info = j; }).catch(() => {});
     const [m, buf, geo] = await Promise.all([
       fetch("data/manifest.json").then((r) => r.json()),
       fetchBuf("data/counts.bin", bump(0)),
@@ -419,9 +450,15 @@
     map.addSource("border", { type: "geojson", data: outline(geo) });
     map.addLayer({ id: "border", type: "line", source: "border", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-width": 2, "line-opacity": 0.9, "line-color": "#ffffff" } });
     basemapTheme();
-    map.on("mousemove", pick); map.on("click", pick);
+    // inspection is off until the Inspect button is on: then hover (desktop) or tap (phone) shows the hex; a tap on the map first closes an open phone sheet
+    map.on("mousemove", (e) => { if (state.inspect) pick(e); });
+    map.on("click", (e) => {
+      if (isPhone() && document.body.classList.contains("sheet-open")) return sheetClose();
+      if (state.inspect) pick(e);
+    });
     map.getCanvas().addEventListener("mouseleave", hideTip);
 
+    $("inspectBtn").setAttribute("aria-pressed", String(state.inspect));
     $("hourSlider").value = state.hour;
     $("speedBtn").textContent = SPEEDS[state.speed] + "×";
     bindUi();
