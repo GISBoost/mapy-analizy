@@ -433,10 +433,54 @@ if LM:
         dx, dy = B[0] - A[0], B[1] - A[1]; d = min(abs(dx), abs(dy)); ddx, ddy = math.copysign(d, dx), math.copysign(d, dy)
         c1 = [tuple(A), (A[0] + ddx, A[1] + ddy), tuple(B)]; c2 = [tuple(A), (B[0] - ddx, B[1] - ddy), tuple(B)]
         return min((c1, c2), key=lambda c: LineString(c).distance(Point(M)))
+    # a drawn railway edge may cross a drawn tram edge only where the real track crosses the real tram edge: the diagonal + straight
+    # run is tried both ways and, when that still crosses a tram edge it should not (or misses one it should cross), through a
+    # few waypoints taken from the warped real track
+    real_e = {k: LineString(mtr(f['geometry']['coordinates'])) for f in gf if f['geometry']['type'] == 'LineString' for k in [(f['properties']['from'], f['properties']['to'])]}
+    drawn_e = {k: LineString(egeo[k]) for k in real_e if k in egeo and len(egeo[k]) > 1 and not set(k) & inset_}  # tails moved into boxes are not where they were
+    def rail_legs(P, Q):
+        dx, dy = Q[0] - P[0], Q[1] - P[1]; d = min(abs(dx), abs(dy)); ddx, ddy = math.copysign(d, dx), math.copysign(d, dy)
+        return [[tuple(P), (P[0] + ddx, P[1] + ddy), tuple(Q)], [tuple(P), (Q[0] - ddx, Q[1] - ddy), tuple(Q)]]
+    dk = list(drawn_e); dtree = STRtree([drawn_e[k] for k in dk])
+    sm0 = [(s, np.array([sll[nodes[s['id']]['sid']][0] * KX, sll[nodes[s['id']]['sid']][1] * KY])) for s in stations if s['id'] in nodes and nodes[s['id']]['sid'] in sll]
+    def rail_ends(k):  # where the railway edge may end at node k: its own place, or at a stop that carries the station's pictogram
+        out = [wp[k]]
+        if sname.get(k) in rst:
+            q = np.array(rst[sname[k]][0].coords[0])
+            out += [np.array(s['poly'].centroid.coords[0]) for s, v in sm0 if math.dist(v, q) <= 350]
+        return out
+    def rail_route(ends_a, ends_b, g):
+        smp = [q for q in (warp(np.array([g.interpolate(t, normalized=True).coords[0]]))[0] for t in (.15, .3, .5, .7, .85)) if not np.isnan(q[0])]
+        real = {k for k, e_ in real_e.items() if k in drawn_e and g.crosses(e_)}
+        def bad(c):
+            L = LineString(c); hit = {dk[i] for i in dtree.query(L) if L.crosses(drawn_e[dk[i]])}
+            return len(hit ^ real)
+        A0, B0 = ends_a[0], ends_b[0]; M = smp[len(smp) // 2] if smp else (A0 + B0) / 2
+        first = octi(A0, B0, M)
+        if bad(first) == 0 or not smp: return first
+        def pool(A, B, wide):
+            c = rail_legs(A, B) + [c1[:-1] + c2 for q in smp for c1 in rail_legs(A, q) for c2 in rail_legs(q, B)]
+            if wide:  # waypoints beside the chord A-B
+                n_ = np.array([-(B[1] - A[1]), B[0] - A[0]]); n_ = n_ / (np.hypot(*n_) or 1)
+                ws = [A + (B - A) * t + n_ * o for t in (.2, .35, .5, .65, .8) for o in (-600, -450, -300, -200, -120, -60, 60, 120, 200, 300, 450, 600)]
+                c += [c1[:-1] + c2 for q in ws for c1 in rail_legs(A, q) for c2 in rail_legs(q, B)]
+            return c
+        move = lambda A, B: math.dist(A, A0) + math.dist(B, B0)  # ending at a neighbouring stop costs a little
+        cost = lambda c, A, B: (bad(c), np.mean([LineString(c).distance(Point(q)) for q in smp]) + 0.01 * LineString(c).length + 0.3 * move(A, B))
+        best = None
+        for wide in (False, True):
+            for A in ends_a:
+                for B in ends_b:
+                    for c in pool(A, B, wide):
+                        k_ = cost(c, A, B)
+                        if best is None or k_ < best[0]: best = (k_, c)
+            if best[0][0] == 0: break
+        if os.environ.get('RAIL_DEBUG'): print('RAIL reroute', bad(first), '->', best[0][0], [(k, 'drawn' if LineString(best[1]).crosses(drawn_e[k]) else 'real-only') for k in drawn_e if LineString(best[1]).crosses(drawn_e[k]) != (k in real)])
+        return best[1] if best[0][0] < bad(first) else first
     for (a, b), (tn, g) in redg.items():
-        A, B, M = wp[a], wp[b], warp(np.array([g.interpolate(0.5, normalized=True).coords[0]]))[0]
+        A, B = wp[a], wp[b]
         if np.isnan(A[0]) or np.isnan(B[0]): continue
-        (tun_l if tn else rail_l).append(octi(A, B, M if not np.isnan(M[0]) else (A + B) / 2))
+        (tun_l if tn else rail_l).append(rail_route(rail_ends(a), rail_ends(b), g))
     rexit = []  # bars across the railway where it leaves the city
     for k in {fnd(x) for x in exits} & used:
         e = next(e for e in redg if k in e); o = e[1] if e[0] == k else e[0]

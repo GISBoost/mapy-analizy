@@ -2,7 +2,7 @@
 # usage: run.sh mode gtfs2graph-mot octi-args...
 # env: LOOM_BUILD (loom/build dir), WORK (work dir), SUF (version suffix, e.g. _przed; empty = current)
 # OCTI=ls: lay the graph out with octls.py (own solver, see OCTLS.md) instead of LOOM's octi; octi-args are then ignored.
-#   env: OCTLS_ARGS (solver options; default = tram preset), GOALS (goals json, default goals/<m>.json), HUB_MERGE ('keep|drop' station labels), PY_LS (python with numpy)
+#   env: OCTLS_ARGS (solver options; default = tram preset), GOALS (goals json, default goals/<m>.json), HUB_MERGE ('keep|drop' station labels, pairs separated by ';'), DIRS (edge directions to start from and keep), PY_LS (python with numpy)
 m=$1; mot=$2; shift 2; B=${LOOM_BUILD:-/home/claude/loom/build}; W=${WORK:-/home/claude}; O=$W/out$SUF
 mkdir -p $O
 $B/gtfs2graph -m $mot $W/data$SUF/$m > $O/$m.raw.json 2> $O/$m.log1 || { cat $O/$m.log1; exit 1; }
@@ -12,10 +12,15 @@ python3 $(dirname $0)/hubsnap.py $O/$m.topo.json ${HUB_R:-300} 2>> $O/$m.logfix 
 $B/loom < $O/$m.topo.json > $O/$m.loom.json 2> $O/$m.log3 || { tail -3 $O/$m.log3; exit 1; }
 if [ "$OCTI" = ls ]; then
   D=$(dirname $0); OIN=$O/$m.loom.json; SL=$OIN
-  [ "$m" = tram ] && HUB_MERGE=${HUB_MERGE-Pabianicka-Rondo Lotników Lwowskich|Paderewskiego-Rondo Lotników Lwowskich}
-  if [ -n "${HUB_MERGE-}" ]; then python3 $D/merge_nodes.py $OIN $O/$m.merged.json "${HUB_MERGE%%|*}" "${HUB_MERGE##*|}" 2>> $O/$m.logfix || exit 1; OIN=$O/$m.merged.json; SL=$OIN; fi
+  [ "$m" = tram ] && HUB_MERGE=${HUB_MERGE-Pabianicka-Rondo Lotników Lwowskich|Paderewskiego-Rondo Lotników Lwowskich;Zgierska-Bałucki Rynek|Limanowskiego-Bałucki Rynek;Dąbrowskiego-Kilińskiego|Dąbrowskiego-Kilińskiego;Kilińskiego-Dąbrowskiego|Dąbrowskiego-Kilińskiego;Bandurskiego-Dw. Łódź Kaliska|-}
+  if [ -n "${HUB_MERGE-}" ]; then  # 'keep|drop' pairs separated by ';', applied one after the other
+    IFS=';' read -ra PR <<< "$HUB_MERGE"; i=0
+    for p in "${PR[@]}"; do i=$((i+1)); python3 $D/merge_nodes.py $OIN $O/$m.merged$i.json "${p%%|*}" "${p##*|}" 2>> $O/$m.logfix || exit 1; OIN=$O/$m.merged$i.json; done
+    cp $OIN $O/$m.merged.json; OIN=$O/$m.merged.json; SL=$OIN
+  fi
   G=${GOALS-$D/goals/$m.json}; [ -f "$G" ] && GA="--goals $G"
-  ${PY_LS:-python3} $D/octls.py $OIN $O/$m.octi.json ${OCTLS_ARGS---theta 8 --anchor 0.4 --lenw 1.0 --escale 5e5 --bend45 3 --bend90 6 --bend135 20 --minlen 150 --win 0 --xpen 100 --passes 4} ${GA-} 2> $O/$m.log4 || { tail -3 $O/$m.log4; exit 1; }
+  I=${DIRS-$D/goals/${m}_dirs.json}; [ -f "$I" ] && GA="${GA-} --init $I --freeze-init"  # edge directions of the published layout
+  ${PY_LS:-python3} $D/octls.py $OIN $O/$m.octi.json ${OCTLS_ARGS---theta 8 --anchor 0.4 --lenw 1.0 --escale 5e5 --bend45 3 --bend90 6 --bend135 20 --minlen 150 --win 0 --xpen 100 --passes 4} ${GA-} 2> $O/$m.log4 || { tail -n 3 $O/$m.log4; exit 1; }
 else
   OIN=$O/$m.loom.json; FISHEYE=${FISHEYE-2.5 650 19.4687 51.7703, 1.5 2500}; if [ -n "$FISHEYE" ]; then python3 $(dirname $0)/fisheye.py $OIN $O/$m.fish.json "$FISHEYE" || exit 1; OIN=$O/$m.fish.json; fi
   $B/octi "$@" < $OIN > $O/$m.octi.json 2> $O/$m.log4 || { tail -3 $O/$m.log4; exit 1; }

@@ -54,7 +54,8 @@ class Layout:
         self.deg = [len(i) for i in self.inc]
         # constant parts of H
         wd, lw, al = a.wdir, a.lenw, a.anchor
-        self.s = wd * wd + lw * lw
+        self.lw2 = np.full(self.m, lw * lw)   # per-edge weight of the length term (goals with "len" raise it)
+        self.s = wd * wd + self.lw2
         self.al2 = al * al
         self.iu, self.iv = E[:, 0], E[:, 1]
         # edge ordering along chains (maximal paths through degree-2 nodes)
@@ -80,7 +81,7 @@ class Layout:
 
     # ---- continuous part
     def solve(self, dr):
-        a = self.a; wd, lw, s = a.wdir, a.lenw, self.s
+        a = self.a; wd, s = a.wdir, self.s
         D = DIRS[dr]
         n, m = self.n, self.m
         H = np.zeros((2 * n, 2 * n)); f = np.zeros(2 * n)
@@ -89,7 +90,7 @@ class Layout:
         M[:, 0, 0] = wd * wd - wd ** 4 / s * D[:, 0] * D[:, 0]
         M[:, 1, 1] = wd * wd - wd ** 4 / s * D[:, 1] * D[:, 1]
         M[:, 0, 1] = M[:, 1, 0] = -wd ** 4 / s * D[:, 0] * D[:, 1]
-        g = wd * wd * lw * lw / s * self.L0           # linear coeff: E has -2 g (d.Delta)
+        g = wd * wd * self.lw2 / s * self.L0          # linear coeff: E has -2 g (d.Delta)
         iu, iv = self.iu, self.iv
         for r in range(2):
             for c in range(2):
@@ -105,9 +106,9 @@ class Layout:
         x = np.linalg.solve(H, f)
         P = x.reshape(-1, 2)
         dl = P[iv] - P[iu]
-        l = (wd * wd * np.einsum('ij,ij->i', dl, D) + lw * lw * self.L0) / s
+        l = (wd * wd * np.einsum('ij,ij->i', dl, D) + self.lw2 * self.L0) / s
         res = dl - l[:, None] * D
-        E = wd * wd * np.sum(res ** 2) + lw * lw * np.sum((l - self.L0) ** 2) + self.al2 * np.sum((P - self.p0) ** 2)
+        E = wd * wd * np.sum(res ** 2) + np.sum(self.lw2 * (l - self.L0) ** 2) + self.al2 * np.sum((P - self.p0) ** 2)
         return P, l, E, float(np.sum(res ** 2) ** 0.5)
 
     # ---- discrete part
@@ -155,32 +156,43 @@ class Layout:
         return E / a.escale + bp + a.xpen * cr + short, (E / a.escale, bp, cr, short, rs), P, l
 
 
-def goal_edges(lay, goals):
+def goal_paths(lay, goal):
+    """edges (index, stored forward?) along the shortest paths between the consecutive waypoints of a goal"""
     import heapq
     lab = {}
     for i, n in enumerate(lay.sta): lab.setdefault(n, []).append(i)
     adj = [[] for _ in range(lay.n)]
     for k, (u, v) in enumerate(lay.E):
         adj[u].append((v, lay.L0[k], k)); adj[v].append((u, lay.L0[k], k))
-    fixed = {}
-    miss = sorted({w for gl in goals for w in gl['path'] if w not in lab})
+    miss = sorted({w for w in goal['path'] if w not in lab})
     if miss: sys.exit('goals: no station named %s in the graph (goals are tied to one feed, see OCTLS.md)' % miss)
+    wp = goal['path']; res = []
+    for w0, w1 in zip(wp[:-1], wp[1:]):
+        a = lab[w0][0]; b = lab[w1][0]
+        if len(lab[w1]) > 1:
+            b = min(lab[w1], key=lambda i: np.hypot(*(lay.p0[i] - lay.p0[a])))
+        D = {a: 0}; Pr = {}; q = [(0, a)]
+        while q:
+            d, u = heapq.heappop(q)
+            if u == b: break
+            if d > D[u]: continue
+            for v, w, k in adj[u]:
+                if d + w < D.get(v, 1e18): D[v] = d + w; Pr[v] = (u, k); heapq.heappush(q, (d + w, v))
+        v = b; ks = []; fw = []
+        while v != a:
+            u, k = Pr[v]; ks.append(k); fw.append(lay.E[k][0] == u); v = u
+        res.append((a, b, ks, fw))
+    return res
+
+
+def goal_edges(lay, goals):
+    """{edge: direction} for the goals with an axis; goals with "len" set the target length of their edges (lay.L0) instead"""
+    fixed = {}
     for gl in goals:
-        wp = gl['path']
-        for w0, w1 in zip(wp[:-1], wp[1:]):
-            a = lab[w0][0]; b = lab[w1][0]
-            if len(lab[w1]) > 1:
-                b = min(lab[w1], key=lambda i: np.hypot(*(lay.p0[i] - lay.p0[a])))
-            D = {a: 0}; Pr = {}; q = [(0, a)]
-            while q:
-                d, u = heapq.heappop(q)
-                if u == b: break
-                if d > D[u]: continue
-                for v, w, k in adj[u]:
-                    if d + w < D.get(v, 1e18): D[v] = d + w; Pr[v] = (u, k); heapq.heappush(q, (d + w, v))
-            v = b; ks = []; fw = []
-            while v != a:
-                u, k = Pr[v]; ks.append(k); fw.append(lay.E[k][0] == u); v = u
+        for a, b, ks, fw in goal_paths(lay, gl):
+            if 'len' in gl:
+                for k in ks: lay.L0[k] = gl['len']; lay.lw2[k] = gl.get('weight', 30.0) ** 2; lay.s[k] = lay.a.wdir ** 2 + lay.lw2[k]
+            if 'axis' not in gl: continue
             cls = {'V': (0, 4), 'H': (2, 6), 'D': (1, 3, 5, 7)}[gl['axis']]
             dv = lay.p0[b] - lay.p0[a]; ang = math.degrees(math.atan2(dv[0], dv[1])) % 360
             cp = min(cls, key=lambda c: abs((c * 45 - ang + 180) % 360 - 180))
@@ -207,6 +219,38 @@ def smooth_dirs(lay, win=1):
         ang = math.degrees(math.atan2(v[0], v[1])) % 360
         dr[k] = int(round(ang / 45.0)) % 8
     return dr
+
+
+def edge_keys(lay):
+    """stable key of every edge: its two end points (lon,lat of the input graph, 1 m) in sorted order; ids change from one loom run to the next"""
+    pt = [tuple(round(c, 5) for c in nd['geometry']['coordinates']) for nd in lay.nodes]
+    out = []
+    for u, v in lay.E:
+        a, b = pt[u], pt[v]; out.append(('%.5f,%.5f|%.5f,%.5f' % (a + b), +1) if a <= b else ('%.5f,%.5f|%.5f,%.5f' % (b + a), -1))
+    return out
+
+
+def init_dirs(lay, dr, path):
+    """overwrite the labels of the edges that also exist in an earlier layout (same node ids) with that layout's directions"""
+    g = json.load(open(path, encoding='utf-8'))
+    if 'features' not in g:  # a dump of --dump-dirs: {edge key: direction of the edge from its first to its second end}
+        hit = []
+        for k, (key, sg) in enumerate(edge_keys(lay)):
+            if key in g: dr[k] = (g[key] + (0 if sg > 0 else 4)) % 8; hit.append(k)
+        return hit
+    F = g['features']
+    pos = {f['properties']['id']: np.array([f['geometry']['coordinates'][0] * C * K, f['geometry']['coordinates'][1] * K]) for f in F if f['geometry']['type'] == 'Point'}
+    ids = [n['properties']['id'] for n in lay.nodes]; old = {}
+    for f in F:
+        if f['geometry']['type'] != 'LineString': continue
+        p = f['properties']
+        if p['from'] in pos and p['to'] in pos:
+            d = pos[p['to']] - pos[p['from']]; old[p['from'], p['to']] = int(round(math.degrees(math.atan2(d[0], d[1])) / 45)) % 8
+            old[p['to'], p['from']] = (old[p['from'], p['to']] + 4) % 8
+    hit = []
+    for k, (u, v) in enumerate(lay.E):
+        if (ids[u], ids[v]) in old: dr[k] = old[ids[u], ids[v]]; hit.append(k)
+    return hit
 
 
 def search(lay, dr, log, passes=4, tlimit=600, fixed={}):
@@ -335,6 +379,9 @@ def args(argv=None):
     ap.add_argument('--passes', type=int, default=4)
     ap.add_argument('--tlimit', type=float, default=600)
     ap.add_argument('--goals', default=None)
+    ap.add_argument('--freeze-init', action='store_true', help='with --init: the edges taken over from it are not moved by the search (only new edges are)')
+    ap.add_argument('--dump-dirs', default=None, help='write the final edge directions as {edge key: direction}, the form --init also reads')
+    ap.add_argument('--init', default=None, help='earlier octi.json of (nearly) the same graph: its edge directions are the starting labels')
     return ap.parse_args(argv)
 
 
@@ -342,13 +389,17 @@ def run(a, log=lambda s: None):
     g, nodes, edges, p0, c0, E = load(a.inp, a.theta)
     lay = Layout(nodes, edges, p0, E, a)
     dr = smooth_dirs(lay, a.win)
+    taken = init_dirs(lay, dr, a.init) if a.init else []
+    if a.init: log('init: %d of %d edges from %s' % (len(taken), lay.m, a.init))
     fixed = {}
     if a.goals:
         fixed = goal_edges(lay, json.load(open(a.goals, encoding='utf-8')))
         for k, c in fixed.items(): dr[k] = c
+    if a.freeze_init: fixed = {**{k: int(dr[k]) for k in taken}, **fixed}
     dr, best, parts = search(lay, dr, log, a.passes, a.tlimit, fixed)
     if a.ils: dr, best = ils(lay, dr, best, fixed, a.ils, a.seed, log)
     v, pt, P, l = lay.J(dr)
+    if a.dump_dirs: json.dump({key: int((dr[k] + (0 if sg > 0 else 4)) % 8) for k, (key, sg) in enumerate(edge_keys(lay))}, open(a.dump_dirs, 'w', encoding='utf-8'), indent=0, sort_keys=True)
     nub = write(g, lay, dr, P, c0, a.out)
     return dict(J=round(v, 2), E=round(pt[0], 2), bend=round(pt[1], 2), cross=pt[2], short=round(pt[3], 2), resid=round(pt[4], 3), nubs=len(nub), nubmax=round(max(nub), 2) if nub else 0)
 

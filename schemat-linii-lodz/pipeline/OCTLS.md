@@ -15,10 +15,11 @@ Historia decyzji i pomiary: `../NOTATKI.md`, zgłoszenie
 
 | Plik | Rola |
 |---|---|
-| `octls.py` | solver (numpy, ok. 360 linii): wczytanie, model, wyszukiwanie, zapis |
-| `merge_nodes.py` | przed solverem: skleja dwa węzły przystanków w jeden hub (Rondo Lotników Lwowskich) |
-| `goals/tram.json` | osie wymuszane dla tramwajów od 5.10.2026 (nazwy przystanków z tego feedu) |
-| `test_octls.py` | test na małym grafie: kierunki oktylinearne, cel wymuszony, brak przecięć |
+| `octls.py` | solver (numpy, ok. 430 linii): wczytanie, model, wyszukiwanie, zapis |
+| `merge_nodes.py` | przed solverem: skleja węzły przystanków w jeden hub (Rondo Lotników, Bałucki Rynek, Kilińskiego/Dąbrowskiego, Kaliska) i sprząta po sklejeniu |
+| `goals/tram.json` | cele dla tramwajów od 5.10.2026: osie (V/H/D) i długości wybranych krawędzi (nazwy przystanków z tego feedu) |
+| `goals/tram_dirs.json` | kierunki wszystkich krawędzi opublikowanego układu tramwajów (10 KB), patrz „Zachowanie układu” |
+| `test_octls.py` | test na małych grafach: kierunki oktylinearne, cel osi i długości, zrzut/wczytanie kierunków, sprzątanie po sklejeniu |
 | `run.sh` | z `OCTI=ls` wywołuje `merge_nodes.py` i `octls.py` zamiast `fisheye.py` + `octi` |
 
 ## Użycie
@@ -32,8 +33,12 @@ OCTI=ls PY_LS=<python z numpy> LOOM_BUILD=... WORK=... SUF=_TF150 TOPO_D=150 bas
 - `PY_LS`: interpreter z numpy (domyślnie `python3`). Reszta `run.sh` działa na samym stdlib, więc numpy jest
   jedyną zależnością, którą dodaje `octls`. Gdy w WSL nie ma numpy, wskaż skrypt uruchamiający Windowsowe `py`.
 - `GOALS`: plik celów (domyślnie `goals/<tryb>.json`; brak pliku = układ bez celów).
-- `HUB_MERGE`: `'zostaje|znika'`, etykiety dwóch przystanków do sklejenia. Dla `tram` domyślnie
-  `Pabianicka-Rondo Lotników Lwowskich|Paderewskiego-Rondo Lotników Lwowskich`; `HUB_MERGE=` (puste) wyłącza.
+- `HUB_MERGE`: pary `'zostaje|znika'` (etykiety przystanków do sklejenia) rozdzielone `;`, stosowane po kolei.
+  Dla `tram` domyślnie pięć: Rondo Lotników Lwowskich (Pabianicka + Paderewskiego), Bałucki Rynek (Zgierska + Limanowskiego),
+  dwa przystanki „Dąbrowskiego-Kilińskiego” i „Kilińskiego-Dąbrowskiego” w jeden węzeł oraz Bandurskiego z bezimiennym węzłem
+  obok (`-`). `HUB_MERGE=` (puste) wyłącza.
+- `DIRS`: plik kierunków krawędzi (domyślnie `goals/<tryb>_dirs.json`). Gdy istnieje, solver startuje od niego i **nie rusza**
+  krawędzi, które w nim są (`--init` + `--freeze-init`). Usuń plik albo ustaw `DIRS=/dev/null`, żeby układ policzyć od nowa.
 - `OCTLS_ARGS`: opcje solvera. Domyślnie „preset tramwajowy” (wariant `lv048`):
   `--theta 8 --anchor 0.4 --lenw 1.0 --escale 5e5 --bend45 3 --bend90 6 --bend135 20 --minlen 150 --win 0 --xpen 100 --passes 4`.
 - Soczewka (`fisheye.py`) w tym trybie jest pominięta, a argumenty `octi` ignorowane.
@@ -45,17 +50,30 @@ py -X utf8 octls.py loom.json out.octi.json --goals goals/tram.json --theta 8 ..
 py -X utf8 test_octls.py
 ```
 
-Odtwarzalność: solver jest deterministyczny (bez losowości, `--ils 0`). Dla wejścia `loom_merged.json` i presetu
-powyżej wynik jest bajt w bajt taki sam jak wybrany wariant `lv048` (sprawdzone 14.10.2026), czas ok. 25–30 s
-na grafie 233 węzłów i 245 krawędzi.
+Solver jest deterministyczny (bez losowości, `--ils 0`); policzenie układu od zera trwa ok. 25–30 s na grafie 233 węzłów
+i 245 krawędzi.
+
+### Zachowanie układu
+
+Wyszukiwanie lokalne jest wrażliwe na drobne zmiany grafu: dodanie jednego sklejenia potrafi przestawić pół schematu
+(Włókniarzy dostała wtedy dodatkowe zagięcia). Dlatego opublikowany układ jest przechowywany jako kierunki krawędzi
+(`goals/tram_dirs.json`, klucz = współrzędne dwóch końców krawędzi w `loom.json`, które nie zmieniają się między uruchomieniami
+`loom`, w przeciwieństwie do identyfikatorów węzłów):
+- `--dump-dirs plik.json` zapisuje kierunki wyliczonego układu;
+- `--init plik.json` zaczyna od nich (także od starego `octi.json`, wtedy kierunek bierze się z cięciwy krawędzi);
+- `--freeze-init` zamraża krawędzie z pliku, wyszukiwanie rusza tylko nowe, np. po sklejeniu węzłów.
+
+Położenia węzłów i tak liczy najmniejsze kwadraty, więc zmiana celu długości albo sklejenie przesuwa tylko to, co trzeba.
+Z plikiem kierunków `run.sh` odtwarza układ z `loom.json` co do współrzędnych (sprawdzone 15.10.2026).
 
 ## Jak to działa
 
 ```
 loom.json ──► merge_nodes.py ──► octls.py ──► octi.json ──► serving.py ──► transitmap / render.py
- (węzły,        (hub Ronda)       │  ▲
-  krawędzie,                      │  └── goals/tram.json (osie V/H/D wzdłuż ścieżek przystanków)
-  linie)                          ▼
+ (węzły,        (huby)            │  ▲  ▲
+  krawędzie,                      │  │  └── goals/tram_dirs.json (kierunki opublikowanego układu)
+  linie)                          │  └── goals/tram.json (osie V/H/D, długości)
+                                  ▼
                        1. obrót o theta, metry
                        2. etykiety kierunków (8 na krawędź)
                        3. pozycje z najmniejszych kwadratów
@@ -112,10 +130,11 @@ sąsiednich krawędzi tego samego łańcucha (do N po każdej stronie), co wygł
 
 ### 4. Cele (`goals/*.json`, `goal_edges`)
 
-Plik to lista obiektów:
+Plik to lista obiektów dwóch rodzajów:
 
 ```json
 {"name": "Zgierska-Piotrkowska", "axis": "V", "path": ["Zgierska-Helenówek-pętla", "Zgierska-Dolna", "…"]}
+{"name": "Kaliska-odstep", "len": 330, "path": ["Bandurskiego-Dw. Łódź Kaliska", "Włókniarzy-Mickiewicza (Dw. Ł. Kaliska)"]}
 ```
 
 - `path`: nazwy przystanków (`station_label`) jako punkty orientacyjne. Między kolejnymi parami solver szuka
@@ -125,12 +144,17 @@ Plik to lista obiektów:
   w którą stronę jest zapisana.
 - Zamrożone krawędzie nie biorą udziału w wyszukiwaniu. Pozycje węzłów nadal wynikają z najmniejszych
   kwadratów, więc ulica nie musi być idealnie prosta, jeśli reszta grafu ją ciągnie, ale kierunek jest wymuszony.
+- `len`: obiekt bez `axis` (albo z nim) ustawia docelową długość krawędzi ścieżki w metrach, z dużą wagą (`weight`, domyślnie 30,
+  czyli kara za odchyłkę 900 razy większa niż zwykle). Służy do rozsuwania blisko leżących przystanków: `transitmap` skleja
+  w jeden symbol przystanki, których węzły są zbyt blisko, i traci nazwę jednego z nich (tak znikał „Włókniarzy-Mickiewicza”
+  przy Kaliskiej, 118 m od Bandurskiego). `--minlen` tego nie załatwia, bo karze tylko wybór etykiet, a nie wpływa na położenia.
 - Nazwa nieistniejąca w grafie kończy program komunikatem z listą brakujących nazw. **Cele są związane z jednym
   feedem**: po zmianie rozkładu, który przemianowuje przystanki, trzeba je zaktualizować.
 
 `goals/tram.json` (feed od 5.10.2026) zawiera osie: Mickiewicza–Piłsudskiego (H), Pabianicka (D),
 Zgierska–Piotrkowska (V, Helenówek → pl. Reymonta przez Zachodnią i Kościuszki-Mickiewicza), Kochanówka,
-Retkinia i Olechów (D), Dąbrowa (H) oraz Gdańska (poziomo, potem pionowo).
+Retkinia i Olechów (D), Dąbrowa (H) oraz Gdańska (poziomo, potem pionowo), a z `len`: odstęp 330 m między Bandurskiego
+a Włókniarzy-Mickiewicza przy Kaliskiej.
 
 ### 5. Wyszukiwanie lokalne (`search`)
 
@@ -170,13 +194,33 @@ załamaniem 45°. Wszystkie atrybuty węzłów i krawędzi (linie, kolory, `stat
 | `--passes`, `--tlimit` | 4, 600 | 4 | liczba przebiegów, limit czasu (s) |
 | `--ils`, `--seed` | 0, 0 | 0 | opcjonalne zaburzenia losowe |
 | `--goals` | brak | `goals/tram.json` | plik celów |
+| `--init`, `--freeze-init` | brak | `goals/tram_dirs.json`, włączone | kierunki startowe i ich zamrożenie |
+| `--dump-dirs` | brak | | zapis kierunków wyliczonego układu |
 
 Preset tramwajowy to wynik przeglądu wielu konfiguracji (`NOTATKI.md`); parametry nie są niezależne,
 więc zmieniaj je pojedynczo i porównuj z pomiarami (odchyłki osi, liczba zagięć 45°/90°, przecięcia).
 
+## Sklejanie węzłów (`merge_nodes.py`)
+
+```
+merge_nodes.py in.json out.json 'zostaje' 'znika'
+```
+
+Ściąga krawędź między dwoma przystankami w jeden węzeł (w połowie odcinka), z krawędziami obu. Po co: przystanki jednego miejsca,
+które w GTFS mają dwie nazwy (po jednej na ulicę) albo leżą 100–150 m od siebie, na schemacie wyglądają na „podwójny przystanek”,
+a `topo -d 150` ich nie skleił. Składnia etykiet:
+- `'A' 'B'`: węzły o etykietach (`station_label`) A i B;
+- `'A' 'A'`: dwa węzły o tej samej etykiecie połączone krawędzią (bliźniaki);
+- `'A' '-'`: bezimienny węzeł sąsiadujący z A (zwykle rozjazd tuż przy przystanku).
+
+Po sklejeniu skrypt sprząta: usuwa pętle własne, scala równoległe krawędzie z tymi samymi liniami i usuwa bezimienne ślepe końce.
+Przystanek zostaje pod etykietą pierwszego argumentu; krótszą nazwę na planszy ustawia `LABELS` w `render.py`
+(np. `{"Zgierska-Bałucki Rynek":"Bałucki Rynek"}`).
+
 ## Ograniczenia
 
-- Heurystyka, nie optimum; inne parametry dają inny układ. Wybrany układ i jego pomiary są w NOTATKACH.
+- Heurystyka, nie optimum; inne parametry albo inny graf (np. dodatkowe sklejenie) dają inny układ. Dlatego opublikowany układ
+  trzyma się w `goals/tram_dirs.json`. Wybrany układ i jego pomiary są w NOTATKACH.
 - Cele są związane z nazwami przystanków jednego feedu i z `loom.json` powstałym z tych samych ustawień
   `topo`/`hubsnap` (inaczej nazwy mogą się nie znaleźć).
 - Układ jest obrócony o `theta` względem północy.

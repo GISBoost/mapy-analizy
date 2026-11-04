@@ -90,8 +90,9 @@ OCTI=ls PY_LS=<python z numpy> TOPO_D=150 LOOM_BUILD=... WORK=... SUF=_TF150 bas
 py -X utf8 test_octls.py        # test solvera na małym grafie
 ```
 
-Zmienne trybu: `PY_LS` (domyślnie `python3`), `GOALS`, `HUB_MERGE`, `OCTLS_ARGS` (domyślnie preset z wariantu `lv048`).
-Opublikowany jest nim stan „po” tramwajów, patrz [Tramwaje „po”: układ z `octls`](#tramwaje-po-układ-z-octls-14102026).
+Zmienne trybu: `PY_LS` (domyślnie `python3`), `GOALS`, `HUB_MERGE` (pary `keep|drop` rozdzielone `;`), `DIRS` (kierunki opublikowanego układu),
+`OCTLS_ARGS` (domyślnie preset z wariantu `lv048`).
+Opublikowany jest nim stan „po” tramwajów, patrz [Tramwaje „po”: układ z `octls`](#tramwaje-po-układ-z-octls-14102026-poprawki-15102026).
 
 ## 3. Rendering: `render.py`
 
@@ -123,6 +124,7 @@ render.py tm.svg octi.json meta.json out.svg tytuł podtytuł czcionka(9, autobu
 | `PIOTRKOWSKA` | `0` wyłącza ul. Piotrkowską i pl. Wolności |
 | `LABELS` | JSON `{nazwa: podpis}`, ręczne poprawki sklejeń, których nie da się nazwać z danych (tramwaje: `{"Północna":"Północna / Nowomiejska"}`) |
 | `OCTLS` | `1` zmienia napis o autorstwie układu (LOOM + `octls`) na planszy i w stopce plakatu |
+| `RAIL_DEBUG` | wypisuje, które odcinki kolei trzeba było przeprowadzić inaczej, żeby nie przecinały linii tramwajowych |
 | `FONT_DIR` | katalog z czcionką Inter |
 
 ### Wycinki ogonów (`CUTS`)
@@ -300,7 +302,7 @@ liczbie konfliktów etykiet i niedopasowanych przystankach w `render.py` oraz zr
 `octi` + `transitmap` na gotowym `loom.json` (ok. 20 s). Opublikowane soczewki: stan „po” `FISHEYE="2.2 650 19.4687 51.7703, 1.5 2500"`,
 stan „przed” `"2.5 700 19.4687 51.7703, 1.5 2500"`.
 
-### Tramwaje „po”: układ z `octls` (14.10.2026)
+### Tramwaje „po”: układ z `octls` (14.10.2026, poprawki 15.10.2026)
 
 Opublikowany schemat tramwajów (stan od 5.10.2026) liczy własny solver [`octls.py`](OCTLS.md), nie `octi`: Piotrkowska pionowo,
 Mickiewicza i Piłsudskiego poziomo, Pabianicka jedną linią 45° (wariant `lv048`, zgłoszenie
@@ -308,31 +310,54 @@ Mickiewicza i Piłsudskiego poziomo, Pabianicka jedną linią 45° (wariant `lv0
 
 **Poprzedni układ** (`octi`) jest zachowany w tagu gita `schemat-lodz-tram-octi-2026-10-12` i w `archiwum_tram_octi/` w katalogu roboczym.
 
+**Poprawki z uwag użytkowników (15.10.2026)**
+
+| Uwaga | Przyczyna | Co zrobiono |
+|---|---|---|
+| przystanki przy Rynku Bałuckim są dwa razy | dwa przystanki Z1 (Zgierska i Limanowskiego), 128 m od siebie | sklejone w jeden węzeł „Bałucki Rynek” (`HUB_MERGE`, `LABELS`) |
+| podwójny przystanek Kilińskiego/Dąbrowskiego | trzy węzły w jednym skrzyżowaniu (dwa „Dąbrowskiego-Kilińskiego” i „Kilińskiego-Dąbrowskiego”) i trójkąt linii 2 | sklejone w jeden węzeł „Kilińskiego-Dąbrowskiego”, `merge_nodes.py` usuwa też pętlę |
+| brak przystanku Włókniarzy/Mickiewicza | `transitmap` skleił go w jeden symbol z Bandurskiego (118 m) i nazwa zniknęła (`unmatched stations` w logu `render.py`) | cel długości 330 m dla tej krawędzi (`goals/tram.json`, `len`) |
+| Włókniarzy przecina tory kolejowe, chociaż nic takiego nie ma | kolej była rysowana jako skos i prosta między końcami, niezależnie od linii tramwajowych | `render.py` zmienia trasę rysowanej kolei, gdy przecina linię tramwajową, której prawdziwy tor nie przecina (patrz niżej) |
+| Piotrkowska połamana i nie trafia w pl. Niepodległości | po 5.10 między pl. Reymonta a pl. Niepodległości nie ma kursów: linie skręcają w Przybyszewskiego, Kilińskiego, Dąbrowskiego i Rzgowską (zgłoszenie #1) | bez zmian, nie do narysowania |
+| Północna w miejscu pl. Kościelnego, kolizja z pl. Wolności | pl. Wolności leży 300 m od Północnej; schemat skraca ten odcinek prawie dwukrotnie (477 m zamiast 1015 m od węzła Limanowskiego-Zachodnia) | bez zmian |
+
 **Kroki** (wejście: `loom.json` z `run.sh` albo gotowy `out_TF150_octls/tram.loom.json`):
-1. `OCTI=ls bash run.sh tram tram` (patrz [krok 2](#2-układ-loom-i-octls)) albo sam `octls.py` na `loom.json` po `merge_nodes.py`. Wynik: `tram.octi.json`.
-2. `serving.py tram.octi.json tram.loom.json <data>/tram` oraz `transitmap` (`tm.svg`, `tl.svg`), jak w `run.sh`.
-3. `render.py` z `OCTLS=1`, `LANDMARKS`, `RAIL_STYLE=double`, `CUT_GAP=3`, `CUTS` jak w [ustawieniach map](#ustawienia-opublikowanych-map)
-   i kolorami przypiętymi `colors/tram.json` (kolory zostają takie same jak w widoku mapy i w stanie „przed”).
-   Lupa z nowej listy przystanków:
+1. `OCTI=ls bash run.sh tram tram` (patrz [krok 2](#2-układ-loom-i-octls)). Sklejenia węzłów (`HUB_MERGE`) i kierunki krawędzi
+   (`goals/tram_dirs.json`) są domyślne dla `tram`, więc to jedno polecenie odtwarza opublikowany układ. Wynik: `tram.octi.json`
+   i `tram.merged.json` (graf po sklejeniach, potrzebny w kolejnych krokach jako `loom.json`).
+2. `serving.py tram.octi.json tram.merged.json <data>/tram` oraz `transitmap` (`tm.svg`, `tl.svg`), jak w `run.sh`.
+3. `render.py` z `OCTLS=1`, `LANDMARKS`, `RAIL_STYLE=double`, `CUT_GAP=3`, `CUTS` jak w [ustawieniach map](#ustawienia-opublikowanych-map),
+   `LABELS='{"Zgierska-Bałucki Rynek":"Bałucki Rynek"}'`, grafem `tram.merged.json` jako `loom.json` i kolorami przypiętymi
+   `colors/tram.json` (kolory zostają takie same jak w widoku mapy i w stanie „przed”). Lupa z nowej listy przystanków:
    ```
    ZOOM='{"stations":["Bandurskiego-Dw. Łódź Kaliska","Mickiewicza-Żeromskiego","Kościuszki-Mickiewicza","Piotrkowska Centrum",
    "Piłsudskiego-Sienkiewicza","Piłsudskiego-Kilińskiego","Piłsudskiego-Śmigłego-Rydza"],"k":2.2,"title":"Centrum"}'
    ```
    Stara lista, dobrana pod układ z `octi`, dawała w nowym układzie lupę ×1,0 i ucinała centrum. Krzyż Mickiewicza/Piłsudskiego jest teraz
-   poziomy, więc lupa jest szerokim pasem wzdłuż niego.
+   poziomy, więc lupa jest szerokim pasem wzdłuż niego. `verify.py` zgłasza dla skróconej nazwy „Bałucki Rynek” linię Z1; to znane
+   i w porządku (nazwy przystanków to „Zgierska-Bałucki Rynek” i „Limanowskiego-Bałucki Rynek”).
 4. `build_page.py`, `pdf.py`, `jpg.py` bez zmian. Pliki tramwajów „po”: `mapy/tram.svg`, `druk/lodz_tramwaje[_ciemny].{svg,pdf,jpg}`.
    Powtórne zbudowanie strony ze starych wsadów daje identyczne `mapy/*.svg` i `druk/*.svg` autobusów i nocnych.
 
-**Warstwa orientacyjna** działa na nowym układzie bez zmian w kodzie, bo odwzorowanie odcinkowo-afiniczne jest liczone z położeń przystanków.
-Przeliczenie 14.10.2026:
+**Kolej a linie tramwajowe (`render.py`).** Dla każdego odcinka rysowanej kolei porównywane jest, z którymi krawędziami tramwajowymi
+przecina się on na rysunku i w rzeczywistości (prawdziwy tor z OSM kontra prawdziwa krawędź z `loom.json`). Rozjazd to błąd. Wtedy
+renderer próbuje po kolei: obu wariantów skos + prosta, tras przez punkty z odwzorowanego prawdziwego toru, tras przez punkty obok
+cięciwy oraz zakończenia toru przy innym przystanku z piktogramem stacji (do 350 m). Wybiera trasę bez błędów, a z nich bliższą
+prawdziwej. Z `RAIL_DEBUG=1` wypisuje przeprowadzone odcinki. Na układzie `octi` ten sam rachunek nie znajduje żadnego błędu;
+na `octls` sześć odcinków kolei miało błąd (okolice Kaliskiej, Stoków, Zarzewa i Widzewa), pięć udało się naprawić. Został jeden, przy Widzewie
+(kolej styka się z zagięciem Piłsudskiego/Rokicińskiej).
 
-| | `octi` (dotychczas) | `octls` |
+**Warstwa orientacyjna** działa na nowym układzie, bo odwzorowanie odcinkowo-afiniczne jest liczone z położeń przystanków.
+Przeliczenie 15.10.2026:
+
+| | `octi` (do 14.10) | `octls` |
 |---|---|---|
-| zagięte trójkąty odwzorowania | 25 | 21 |
+| zagięte trójkąty odwzorowania | 25 | 19 |
 | `gate.py` | bez zgłoszeń | bez zgłoszeń |
-| piktogramy | 19 | 18 |
-| konflikty etykiet | 1 | 2 |
-| podpis „Park na Zdrowiu” | jest | brak (nie mieści się) |
+| piktogramy | 19 | 19 |
+| konflikty etykiet | 1 | 1 |
+| przystanki bez wielokąta w `transitmap` (`unmatched stations`) | 0 | 0 |
+| fałszywe przecięcia kolei z tramwajem | 0 | 1 (Widzew) |
 
 Ramki 41 i 43 renderer sam ustawia pod mapą, bo dolny lewy róg zajmuje ogon Pabianickiej.
 
@@ -351,7 +376,8 @@ Jest na stronie i w `druk/`, na wszystkich sześciu schematach (oba stany).
 - *Geografia na schemacie:* odwzorowanie odcinkowo-afiniczne na trójkątach rozpiętych na przystankach; poza siecią działa jedno przekształcenie
   afiniczne dopasowane do wszystkich przystanków.
 - *Kolej:* tory pasażerskie (relacje `route=train`) sklejone w jedną linię na korytarz, przecięte na stacjach i rozjazdach (węzły bliższe niż 350 m
-  łączone), każdy odcinek narysowany jako skos + prosta (kąty 45/90°), do granicy miasta. `RAIL_STYLE=double` daje kolej jak na mapie NYC
+  łączone), każdy odcinek narysowany jako skos + prosta (kąty 45/90°), do granicy miasta. Trasa odcinka jest zmieniana, gdy przecina
+  linię tramwajową, której prawdziwy tor nie przecina (patrz [Tramwaje „po”](#tramwaje-po-układ-z-octls-14102026-poprawki-15102026)). `RAIL_STYLE=double` daje kolej jak na mapie NYC
   (podwójna linia).
 - *Parki i granica:* wielokąty uproszczone i dociągnięte do siatki, boki tylko co 45/90°; parki z zaokrąglonymi narożnikami.
 - *Parki a linie:* parki nie przechodzą przez linie (wyglądałoby to jak przejście na drugą stronę ulicy), są cięte wzdłuż każdej linii z odstępem,
@@ -412,7 +438,7 @@ Wyniki z `octi` (zgłoszenie #1):
 - Kary faworyzujące 90° (`--pen-90` 0–0,5 przy `--pen-135` 2–3) same prostują Piotrkowską, ale rozjeżdżają resztę (średni błąd kierunku 23° zamiast 17°),
   a dodane do zestawu wyżej tylko dokładają schodków (61 → 127–142 załamań).
 
-Ostatecznie Piotrkowską prostuje solver `octls`, patrz [Tramwaje „po”](#tramwaje-po-układ-z-octls-14102026).
+Ostatecznie Piotrkowską prostuje solver `octls`, patrz [Tramwaje „po”](#tramwaje-po-układ-z-octls-14102026-poprawki-15102026).
 
 ---
 
@@ -456,4 +482,4 @@ Ostatecznie Piotrkowską prostuje solver `octls`, patrz [Tramwaje „po”](#tra
 - N4B i N9 kursują tylko w weekendy; lista linii nocnych o tym mówi.
 
 ### 14.10.2026
-Tramwaje „po” z układem `octls`, patrz [Tramwaje „po”: układ z `octls`](#tramwaje-po-układ-z-octls-14102026).
+Tramwaje „po” z układem `octls`, patrz [Tramwaje „po”: układ z `octls`](#tramwaje-po-układ-z-octls-14102026-poprawki-15102026).
