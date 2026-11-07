@@ -1,0 +1,32 @@
+{
+  "day": "2026-10-06",
+  "timezone": "Europe/Warsaw",
+  "feed": "lodz_realized_2026-10-06_p50.zip",
+  "release": "lodz-realized-2026-10",
+  "percentile": 50,
+  "max_minutes": 60,
+  "sentinel": 255,
+  "n_hex": 5662,
+  "n_stops": 2333,
+  "showcase_hex": 2315,
+  "osm_sha256": "2b0c2511ef79193661b64c6bfc62f394bbb66f113fbecf1ac1f3a4c925ea0674",
+  "gtfs_sha256": "e4cf88062ba0a5d54bcbdecb3ebd0d5b5bdc86993cc28622eee62ad5c8048cd5",
+  "r5": "7.6",
+  "walk_kmh": 3.6,
+  "max_rides": 8,
+  "windows": {
+    "morning": {
+      "label": "7:00–9:00",
+      "departure": "07:00",
+      "window_minutes": 120,
+      "file": "morning.bin.gz"
+    },
+    "afternoon": {
+      "label": "14:00–18:00",
+      "departure": "14:00",
+      "window_minutes": 240,
+      "file": "afternoon.bin.gz"
+    }
+  },
+  "note": "Minuta odcinka to P50 czasu do przystanku na jego końcu. Suwak tylko porównuje próg z tą tablicą."
+}

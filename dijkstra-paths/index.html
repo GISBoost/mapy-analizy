@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Jak rosną linie w Łodzi — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Prawdziwe odcinki tramwajów i autobusów w Łodzi kolorowane medianą czasu dojazdu. Wtorek 6.10.2026, rano 7–9 i popołudnie 14–18.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Jak rosną linie w Łodzi — GISBoost">
+<meta property="og:description" content="Najedź na heks, przypnij punkt i suwakiem 0–60 min wydłuż zasięg po prawdziwych liniach.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/dijkstra-paths/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk=" crossorigin="">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="styles.css">
+<script>try{const v=localStorage.getItem("mapyAnalizyTheme"); if(v==="dark"||v==="light") document.documentElement.setAttribute("data-theme",v)}catch(e){}</script>
+</head>
+<body>
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../">Analizy</a>
+    <a class="topnav-link" href="./" aria-current="page">Linie Łodzi</a>
+    <button class="topnav-link lang" id="themeBtn" type="button">Motyw</button>
+    <button class="topnav-link lang" id="langBtn" type="button">EN</button>
+  </nav>
+</div>
+<div id="stage">
+  <div id="map"></div>
+  <aside id="panel" class="glass">
+    <div class="hd">
+      <h1 id="title">Jak rosną linie</h1>
+    </div>
+    <p class="lead" id="lead">Najedź na miasto. Klik przypina heks i oddaje suwak czasu podróży.</p>
+    <div>
+      <p class="eyebrow" id="winLabel">Okno odjazdu</p>
+      <div class="seg" id="windows" role="group"></div>
+    </div>
+    <div id="timeBlock">
+      <p class="eyebrow" id="timeLabel">Czas podróży</p>
+      <div class="timerow">
+        <button class="ib" id="playBtn" type="button" aria-label="Odtwarzaj">▶</button>
+        <input id="slider" type="range" min="0" max="60" step="1" value="30" disabled>
+        <span id="timeVal">30 min</span>
+      </div>
+      <div class="speeds" id="speeds"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <p class="stat" id="stat">Ładowanie danych…</p>
+    <p class="note" id="note"></p>
+    <button class="textbtn" id="unpinBtn" type="button" hidden>Odepnij</button>
+  </aside>
+  <div id="loading" class="glass"><span id="loadMsg">Ładowanie sieci…</span></div>
+</div>
+<footer class="note">
+  <a href="../">← wszystkie analizy</a>
+  · dane: GTFS zrealizowany P50, 6.10.2026, Conveyal R5 7.6
+  · podkład © OpenStreetMap contributors
+</footer>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>
