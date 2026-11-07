@@ -86,9 +86,11 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 .bars { display: flex; align-items: flex-end; gap: 6px; height: 118px; }
 .bar { all: unset; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
 .bar .track { width: 100%; flex: 1; display: flex; align-items: flex-end; }
-.bar .fill { width: 100%; height: var(--p); min-height: 2px; border-radius: 5px 5px 2px 2px; background: var(--accent); transition: height .4s ease, width .4s ease, opacity .2s; }
-.bar.po .fill { background: #ffd60a; } .bar.nodata .fill { background: repeating-linear-gradient(45deg, var(--fill-active) 0 3px, transparent 3px 6px); }
-.bar .v { font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar .fill { width: 100%; height: var(--p); min-height: 2px; border-radius: 5px 5px 2px 2px; overflow: hidden; display: flex; flex-direction: column-reverse; transition: height .4s ease, width .4s ease, opacity .2s; }
+.bar .fill i { display: block; min-height: 1px; }  /* stacked segments, colours from the map legend */
+.bar.nodata .fill { background: repeating-linear-gradient(45deg, var(--fill-active) 0 3px, transparent 3px 6px); }
+.bar .v { font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; line-height: 1.05; }
+.bar .v small { display: block; font-size: 0.62rem; color: #bf5af2; font-weight: 700; }
 .bar .y { font-size: 0.68rem; color: var(--ink-2); }
 .bars.sel .bar:not([aria-pressed="true"]) .fill, .bar.future .fill { opacity: .35; }
 .bar.cur .y { color: var(--ink); font-weight: 700; } .bar.cur .fill { box-shadow: 0 0 0 1.5px var(--ink); }
@@ -108,18 +110,24 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 .dekl b { color: var(--ink); }
 
 /* Bottom bar: one row, two columns */
-#bar { user-select: none; -webkit-user-select: none; position: absolute; z-index: 650; left: 12px; right: 12px; bottom: 12px; height: var(--bar-h); border-radius: 26px; padding: 10px 14px 10px 10px;
-  display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: center; }
-#bar .col { min-width: 0; height: 100%; }
-#bar .time { display: flex; align-items: center; gap: 10px; }
-#bar .src { display: grid; grid-template-columns: 1fr auto; gap: 7px 8px; align-content: center; border-left: .5px solid var(--glass-line); padding-left: 14px; }
-#bar .src #srcChips { grid-column: 1 / -1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+/* The bar sizes to its content; app.js copies its height into --bar-h so legend, report and card clear it. */
+#bar { user-select: none; -webkit-user-select: none; position: absolute; z-index: 650; left: 12px; right: 12px; bottom: 12px; border-radius: 26px; padding: 10px 14px 10px 10px;
+  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+#bar .col { min-width: 0; }
+#bar .time { display: flex; align-items: center; gap: 10px; height: 78px; }
+#bar .src { display: flex; flex-direction: column; gap: 7px; justify-content: center; border-left: .5px solid var(--glass-line); padding-left: 14px; }
+#bar .src .seg { align-self: stretch; }
+#bar .src #colorSeg { align-self: flex-start; }
 #bar .chips button { white-space: nowrap; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 1px 9px; font-size: 0.64rem; line-height: 1.25; color: var(--ink-2); align-items: center; }
+.legend-inline i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; }
+.legend-inline i.ln { width: 12px; height: 3px; border-radius: 2px; vertical-align: 2px; }
 .play { all: unset; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; flex: none; }
 .play svg { width: 22px; height: 22px; }
 .speed { all: unset; cursor: pointer; min-width: 56px; height: 30px; border-radius: 15px; background: var(--fill); text-align: center; line-height: 30px; font-size: 0.74rem; font-weight: 600; flex: none; }
-.chartwrap { flex: 1; min-width: 0; height: 100%; }
-#chart { position: relative; height: 100%; cursor: ew-resize; touch-action: none; }
+.chartwrap { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 3px; }
+.chartwrap .legend-inline { flex: none; max-height: 2.6em; overflow: hidden; }
+#chart { position: relative; flex: 1; min-height: 0; cursor: ew-resize; touch-action: none; }
 #chart svg { position: absolute; inset: 0 0 14px 0; width: 100%; height: calc(100% - 14px); }
 #chart .ax { position: absolute; bottom: 0; font-size: 0.64rem; color: var(--ink-2); transform: translateX(-50%); }
 #chart .tag { font-family: inherit; position: absolute; top: 0; font-size: 0.62rem; color: #64d2ff; pointer-events: none; white-space: nowrap; }
@@ -140,12 +148,13 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 #card dl { margin: 0; display: grid; grid-template-columns: 74px 1fr; gap: 3px 8px; } #card dt { font-weight: 600; } #card dd { margin: 0; color: var(--ink-2); }
 #card ul { margin: 0; padding-left: 16px; color: var(--ink-2); }
 
-/* Narrow desktop: bar in two rows so chips and toggles stay visible */
+/* Narrow desktop: one column; time row, then switches, then chips (all inside the capsule) */
 @media (max-width: 1600px) and (min-width: 761px) {
-  :root { --bar-h: 132px; }
-  #bar { grid-template-columns: 1fr; grid-template-rows: 60px auto; gap: 8px; }
-  #bar .src { border-left: 0; padding-left: 0; }
-  #bar .src #srcChips { flex-wrap: wrap; }
+  #bar { grid-template-columns: 1fr; gap: 8px; }
+  #bar .src { border-left: 0; padding-left: 0; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  #bar .src .seg { align-self: auto; }
+  #bar .src #viewSeg { flex: 1 1 280px; }
+  #bar .src #srcChips { flex: 1 1 100%; }
 }
 
 /* Phone */
@@ -155,17 +164,22 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
   .topbar .brand .sub, .topbar .topnav-link[aria-current] { display: none; }
   #counter { left: 8px; top: 8px; padding: 8px 12px; max-width: 62vw; } #counter .big { font-size: 38px; } #counter .lbl { font-size: 12px; }
   #zoom { display: none; }
-  #bar { left: 0; right: 0; bottom: 0; border-radius: 22px 22px 0 0; grid-template-columns: 1fr; grid-template-rows: 56px auto; gap: 8px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); height: auto; }
-  #bar .src { border-left: 0; padding-left: 0; grid-template-columns: 1fr auto; }
+  #bar { left: 0; right: 0; bottom: 0; border-radius: 22px 22px 0 0; grid-template-columns: 1fr; gap: 8px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+  #bar .time { height: 72px; }
+  #bar .src { border-left: 0; padding-left: 0; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  #bar .src .seg { align-self: auto; } #bar .src #viewSeg { flex: 1 1 100%; } #bar .src #srcChips { flex: 1 1 100%; }
+  .seg button { padding: 5px 6px; font-size: 0.72rem; }
   #chart .tag.gap { display: none; }
-  .legend { left: 8px; right: 8px; max-width: none; bottom: calc(var(--bar-h) + 8px); font-size: 0.64rem; }
+  .legend { display: none; }  /* the same legend sits under the chart in the bar */
+  #bar .src #colorSeg { flex: 1 1 100%; } #bar .src #colorSeg button { flex: 1; }
   .play { width: 40px; height: 40px; } .speed { min-width: 48px; }
-  #report { left: auto; right: 0; top: 0; bottom: 0; width: min(92vw, 400px); border-radius: 22px 0 0 22px; }
+  #report { left: auto; right: 0; top: 0; bottom: 0; width: min(92vw, 400px); border-radius: 22px 0 0 22px; padding-bottom: calc(var(--bar-h) + 14px); }
   #reportBtn { top: 10px; right: 10px; }
   .bars { flex-direction: column; align-items: stretch; height: auto; gap: 5px; }
   .bar { flex-direction: row; height: 22px; gap: 8px; }
   .bar .y { order: -1; width: 34px; } .bar .track { height: 14px; align-items: stretch; }
-  .bar .fill { height: 100%; width: var(--p); border-radius: 2px 5px 5px 2px; } .bar .v { width: 34px; text-align: right; }
+  .bar .fill { height: 100%; width: var(--p); border-radius: 2px 5px 5px 2px; flex-direction: row; } .bar .v { width: 34px; text-align: right; }
+  .bar .v small { display: inline; margin-left: 3px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .cmp { grid-template-columns: 1fr; }
   #card { left: 8px !important; right: 8px; width: auto; top: auto !important; bottom: calc(var(--bar-h) + 50px); }

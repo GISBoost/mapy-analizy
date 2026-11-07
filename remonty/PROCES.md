@@ -57,3 +57,16 @@ Publikacja: mapa `mapy-analizy/remonty-lodz/`, raport `mapy-analizy/badanie-remo
 - `e7`: seria dzienna obcięta do daty danych 2026-11-07.
 - `e9_osm_construction.py` (sesja b6-metryki): historia OSM `highway=construction` z ohsome, 2531 epizodów; pokrycie z danymi urzędu niskie (147 epizodów z odpowiednikiem). W `e8` jako osobna warstwa (≥7 dni, od 2021): 1852 odcinki.
 - Wniosek zmieniony: luka po 2024 zamknięta; 2025: 65 robót, 365 dni z ≥5 umowami w toku (2021–2024: średnio 38,5 robót/rok).
+
+## 7. Krok OSM: granica, reguła 100 m, kategoria „tylko OSM” (2026-11-07)
+
+`pipeline/e10_osm_balance.py` (wołany z `e8_web_export.py`; samotest: `py -I -X utf8 pipeline/e10_osm_balance.py`). Skrypt, bez modelu.
+
+1. Wejście: epizody E9 (≥7 dni, kończące się od 2021, tylko linie): 1852.
+2. **Przycięcie do granicy Łodzi**: relacja OSM 2413295 (Nominatim, pobrana raz, `work/osm/lodz_boundary_nominatim.json`; 292,9 km², zgodne z powierzchnią miasta). Poza granicą w całości: 266 epizodów (usunięte); częściowo przycięte: 57. Zostaje 1586 epizodów = 1590 odcinków na mapie.
+3. **Bez nazwy** (pole `n` puste): 618 epizodów. Zostają na mapie (klasa `u`, półprzezroczyste), nie liczą się do żadnych liczb.
+4. **Potwierdzone** (klasa `p`): odcinek z nazwą, w którego buforze **100 m** (EPSG:2180) leży punkt albo odcinek z danych urzędu (BZP/plan), a lata roboty urzędu (okres umowy albo rok planu) różnią się od lat epizodu OSM o najwyżej ±1. Uznany za tę samą robotę: nie liczy się podwójnie, pozycja urzędu dostaje `osm` (liczba odcinków), karta pokazuje „potwierdzone w OSM”. 118 epizodów, 31 pozycji urzędu.
+5. **Tylko OSM** (klasa `x`): odcinek z nazwą bez takiego odpowiednika: 850 epizodów. Odcinki o tej samej nazwie, nakładające się lub oddalone o ≤30 dni, to jedna robota (`g`): **252 roboty**. Seria roczna (roboty / dni z ≥1 w trakcie / szczyt) i dzienna w `osm_bilans` w `remonty.json`; roboty tylko OSM wg lat 2021–2026: 75, 80, 63, 81, 67, 49 (2026 do 7 XI).
+6. Kontrola: `assert` w skrypcie (bufor: punkt 99 m trafia, 101 m nie; podział epizodów na klasy jest rozłączny i kompletny; liczenie dni).
+
+Ograniczenia: reguła 100 m i ±1 rok jest przybliżeniem (długa ulica z robotą w innym miejscu może „potwierdzić się” cudzym punktem; krótka robota urzędu bez geometrii nie potwierdzi odcinka OSM). Oznaczenie „w budowie” w OSM obejmuje też budowy osiedli i inwestycje prywatne, a bywa usuwane z opóźnieniem (szczyt „tylko OSM” w jednym dniu to kilkadziesiąt robót, więc dni z ≥1 w roku to praktycznie wszystkie dni). Kategoria jest pokazywana osobno i nie jest dodawana do serii z danych urzędu. Dane ohsome kończą się 2026-07-27, otwarte epizody są liczone do 2026-11-07.

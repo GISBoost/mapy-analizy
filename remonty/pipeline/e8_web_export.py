@@ -5,8 +5,11 @@ Input:  work/dashboard_data.json (E7), work/records_geo.jsonl, work/sections.geo
 Output: ../remonty-lodz/data/remonty.json
 Every item gets a source URL: BZP notice page (by objectId) or the BIP file the plan item was read from.
 """
-import csv, json, sys, datetime as dt
+import collections, csv, json, sys, datetime as dt
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import e10_osm_balance as e10
 
 ROOT = Path(__file__).resolve().parent.parent
 WORK, OUT = ROOT / "work", ROOT.parent / "remonty-lodz" / "data" / "remonty.json"
@@ -47,19 +50,23 @@ def main(dekl_path):
         f["geometry"]["coordinates"] = [[round(x, 5), round(y, 5)] for x, y in f["geometry"]["coordinates"]]
 
     # OSM "highway under construction" episodes (e9), as a separate layer: >= 7 days, overlapping 2021-01-01..data date
-    osm = []
+    cand = []
     for f in json.load(open(WORK / "osm_construction.geojson", encoding="utf-8"))["features"]:
         p = f["properties"]
         od, do = p["od"][:10], (p["do"] or "2026-11-07")[:10]
         if do < "2021-01-01" or (dt.date.fromisoformat(do) - dt.date.fromisoformat(od)).days < 7 or f["geometry"]["type"] != "LineString":
             continue
-        c = f["geometry"]["coordinates"]
-        osm.append(dict(type="Feature", properties=dict(n=p["name"] or "", od=od, do=do, w=p["way_id"], o=p["otwarty"]),
-                        geometry=dict(type="LineString", coordinates=[[round(x, 5), round(y, 5)] for x, y in c[::2] + ([c[-1]] if len(c) % 2 == 0 else [])])))
+        cand.append(f)
+    # E10: clip to the city boundary, classify (unnamed / confirmed by city data / only OSM), balance of "only OSM"
+    osm, bal = e10.process(cand, items, feats)
+    conf = collections.Counter(f["properties"]["m"] for f in osm if f["properties"]["k"] == "p")
+    for it in items:
+        if conf.get(it["id"]):
+            it["osm"] = conf[it["id"]]
     dekl = json.load(open(dekl_path, encoding="utf-8"))
     out = dict(meta=D["meta"], roczne=D["roczne"], dzienne=D["dzienne"], items=items,
                odcinki=dict(type="FeatureCollection", features=feats), deklaracje=dekl,
-               osm=dict(type="FeatureCollection", features=osm))
+               osm=dict(type="FeatureCollection", features=osm), osm_bilans=bal)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"items={len(items)} with_point={sum(1 for i in items if i['lat'])} sections={len(feats)} "

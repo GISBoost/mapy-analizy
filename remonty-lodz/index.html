@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk=" crossorigin="">
 <script>try{const v=localStorage.getItem('mapyAnalizyTheme'); document.documentElement.setAttribute('data-theme', v==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=8">
 <script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
@@ -40,7 +40,7 @@
 
   <div id="counter" class="glass" aria-live="polite">
     <div class="big" id="cNum">–</div>
-    <div class="lbl"><span id="cWhat">robót drogowych w toku</span><br><b id="cDate">–</b></div>
+    <div class="lbl"><span id="cWhat">robót drogowych w trakcie</span><br><b id="cDate">–</b></div>
   </div>
 
   <div id="zoom" class="glass zoomcap">
@@ -61,12 +61,14 @@
     <section class="sec">
       <div class="row"><p class="eyebrow">Rok po roku</p><div class="seg" id="metricSeg" role="group" aria-label="Miara"></div></div>
       <div class="bars" id="bars"></div>
+      <div class="legend-inline" id="barsLeg"></div>
       <p class="note" id="barsNote"></p>
     </section>
 
     <section class="sec" id="kpiSec">
       <div class="row"><p class="eyebrow" id="kpiTitle">Wszystkie lata</p><button class="linkbtn" id="yearClear" type="button" hidden>wszystkie lata ×</button></div>
       <div class="kpis" id="kpis"></div>
+      <p class="note" id="osmLine"></p>
     </section>
 
     <section class="sec">
@@ -91,6 +93,7 @@
       <button id="speed" class="speed" type="button" aria-label="Prędkość odtwarzania">1 tydz.</button>
       <div class="chartwrap">
         <div id="chart" role="slider" tabindex="0" aria-label="Dzień na osi czasu" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></div>
+        <div class="legend-inline" id="chartLeg" aria-label="Legenda wykresu"></div>
       </div>
     </div>
     <div class="col src">
@@ -103,6 +106,6 @@
 </div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
