@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Badanie: remonty dróg w Łodzi a wydłużony bilet MPK — GISBoost</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Skąd wzięliśmy dane o remontach jezdni i torowisk w Łodzi (BZP, plany zamówień UMŁ, OSM), jak je przetworzyliśmy, jakie mają ograniczenia i co wynika z porównania okresu wydłużonego biletu MPK z okresem po nim.">
+<link rel="icon" href="../favicon.ico">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="GISBoost">
+<meta property="og:title" content="Badanie: remonty dróg w Łodzi a wydłużony bilet MPK — GISBoost">
+<meta property="og:description" content="Dane, metoda, ograniczenia i wniosek: ile remontów jezdni i torowisk trwało w Łodzi w okresie wydłużonego biletu MPK i po nim.">
+<meta property="og:url" content="https://gisboost.github.io/mapy-analizy/badanie-remonty-lodz/">
+<meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Badanie: remonty dróg w Łodzi a wydłużony bilet MPK — GISBoost">
+<meta name="twitter:description" content="Dane, metoda, ograniczenia i wniosek z analizy remontów dróg w Łodzi 2021–2026.">
+<meta name="twitter:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
+<style>:root{--paper:#fff;--ink:#16241c;--line:#d7e2dc}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="report.css">
+<style>
+  .verdict { border-left: 4px solid var(--accent); background: var(--surface-2); border-radius: 8px; padding: 14px 16px; font-size: 0.95rem; line-height: 1.6; margin: 0 0 18px; }
+  ol.steps { padding-left: 20px; font-size: 0.88rem; line-height: 1.6; } ol.steps li { margin-bottom: 8px; }
+  ul.lim { padding-left: 20px; font-size: 0.88rem; line-height: 1.6; } ul.lim li { margin-bottom: 6px; }
+  table.datatable td.b { font-weight: 600; } table.datatable tr.po td { background: rgba(255, 214, 10, .08); }
+  .cta { display: inline-block; margin-top: 6px; padding: 9px 16px; border-radius: 20px; background: var(--accent); color: #fff !important; text-decoration: none; font-weight: 600; font-size: 0.88rem; }
+  @media (max-width: 640px) { .report { padding: 28px 16px 60px; } }
+</style>
+<script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/">/ analizy mapowe</a></span>
+  <nav class="topnav">
+    <a class="topnav-link" href="../">Analizy</a>
+    <a class="topnav-link" href="../remonty-lodz/">Mapa remontów</a>
+    <a class="topnav-link" href="./" aria-current="page">Badanie: remonty dróg</a>
+  </nav>
+</div>
+
+<main class="report">
+  <div class="crumbs"><a href="../">Analizy</a><span class="sep">/</span><span>Badanie: remonty dróg w Łodzi</span></div>
+
+  <div class="hero">
+    <p class="kicker">Raport metodologiczny · stan na 7 listopada 2026</p>
+    <h1>Remonty dróg w Łodzi a wydłużony bilet MPK</h1>
+    <p class="lede">Od 11 października 2018 do 31 grudnia 2024 bilety czasowe MPK Łódź były wydłużone (20 → 40 min, 40 → 60 min). Miasto uzasadniało to remontami, a na koniec okresu ogłosiło zakończenie głównych prac. Sprawdzamy, ile remontów jezdni i torowisk trwało w Łodzi w czasie obowiązywania wydłużonego biletu i po nim (do listopada 2026), gdzie były i jak długo trwały. Nie mierzymy opóźnień komunikacji: na to nie ma danych za cały okres.</p>
+    <p class="lede"><a class="cta" href="../remonty-lodz/">Otwórz mapę remontów →</a></p>
+  </div>
+
+  <div class="stat-tiles">
+    <div class="stat-tile"><div class="stat-value">265</div><div class="stat-label">robót na jezdniach i torowiskach w bazie (plany + przetargi ZDiT, ZIM, UMŁ)</div></div>
+    <div class="stat-tile"><div class="stat-value">174</div><div class="stat-label">z lokalizacją na mapie (ulica dopasowana do OSM)</div></div>
+    <div class="stat-tile"><div class="stat-value">38,5 → 65</div><div class="stat-label">robót rocznie: średnio 2021–2024 → w 2025</div></div>
+    <div class="stat-tile"><div class="stat-value">365 dni</div><div class="stat-label">w 2025 r. z co najmniej 5 umowami w toku (tak samo jak w 2022 i 2023)</div></div>
+  </div>
+
+  <section class="section">
+    <h2>1. Główny wniosek</h2>
+    <div class="verdict"><b>Po zniesieniu wydłużonego biletu remontów dróg w Łodzi nie ubyło, a w 2025 r. było ich najwięcej w całej serii.</b> W latach 2021–2024 w bazie jest średnio 38,5 robót na jezdniach i torowiskach rocznie, w 2025 r. 65. Liczba umów trwających jednocześnie w szczycie roku nie spadła (średnio 25 w latach 2021–2024, 25 w 2025), a dni z co najmniej pięcioma umowami w toku było w 2025 r. tyle samo co w 2022 i 2023: cały rok. Komunikaty miasta mówią to samo: 107 ulic gotowych w 2025 r. wobec średnio ok. 44 rocznie w latach 2019–2023. Uzasadnienie „bilet był wydłużony, bo trwały remonty, a teraz się skończyły” nie znajduje oparcia w danych.</div>
+    <div class="table-wrap"><table class="datatable">
+      <tr><th></th><th>2021–2024 (bilet wydłużony)</th><th>2025</th><th>2026 (do 7 XI)</th></tr>
+      <tr><td class="b">Roboty w bazie</td><td>24 · 46 · 39 · 45 (średnio 38,5)</td><td>65</td><td>20</td></tr>
+      <tr><td class="b">Przetargi BZP w zakresie</td><td>15 · 33 · 33 · 26</td><td>31</td><td>19</td></tr>
+      <tr><td class="b">Dni z ≥5 umowami w toku</td><td>200 · 365 · 365 · 359</td><td>365</td><td>217 z 311</td></tr>
+      <tr><td class="b">Maks. umów naraz</td><td>23 · 30 · 26 · 22</td><td>25</td><td>13</td></tr>
+      <tr><td class="b">Komunikaty miasta</td><td>2019–2023: 221 ulic, 127 km; I–VIII 2024: 28 ulic</td><td>107 ulic gotowych, 65 km, 30 gruntówek</td><td>plan: 82 ulice + 50 gruntówek</td></tr>
+    </table></div>
+    <p class="source-note">Rok 2026 jest niepełny z dwóch powodów: kończy się 7 listopada, a ogłoszenia o wykonaniu umów trafiają do BZP dopiero po zakończeniu robót. Dlatego nie porównujemy go wprost z pełnymi latami. Rok 2021 jest zaniżony: brakuje umów zawartych przed 2021 r., które wtedy jeszcze trwały.</p>
+  </section>
+
+  <section class="section">
+    <h2>2. Skąd są dane</h2>
+    <p class="sub">Nie istnieje publiczny rejestr robót drogowych w Łodzi z datami i lokalizacją. Warstwa „Road works (ZDiT)” w miejskim ArcGIS ma ok. 10 bieżących obiektów bez atrybutów, a mapa „Drogi wyremontowane od 2011 r.” nie ma lat. Dlatego zebraliśmy dane z pięciu źródeł.</p>
+    <div class="table-wrap"><table class="datatable">
+      <tr><th>Źródło</th><th>Co daje</th><th>Zakres</th></tr>
+      <tr><td class="b">Biuletyn Zamówień Publicznych (<a href="https://ezamowienia.gov.pl/">ezamowienia.gov.pl</a>)</td><td>Ogłoszenia o zamówieniu, o wyniku i o wykonaniu umowy: przedmiot, wartość, data zawarcia, termin wykonania</td><td>Trzech kolejnych zamawiających robót drogowych: ZDiT (NIP 7251859255): 26 ogłoszeń; ZIM (NIP 7252132934): 739; Urząd Miasta Łodzi (NIP 7250028902): 4199. Lata 2021–2026 → 602 postępowania</td></tr>
+      <tr><td class="b">BIP Urzędu Miasta Łodzi i ZDiT</td><td>Plany postępowań o udzielenie zamówień (zamiar: ulica, kwota szacunkowa, kwartał), ogłoszenia, SWZ, umowy</td><td>273 pliki → 773 dokumenty po rozpakowaniu → 383 unikalne (sha1); 234 plany postępowań 2017–2025</td></tr>
+      <tr><td class="b">OpenStreetMap (Overpass)</td><td>Geometria i nazwy ulic Łodzi</td><td>11 061 odcinków, 2521 nazw, pobrane 7.11.2026</td></tr>
+      <tr><td class="b">Historia OpenStreetMap (ohsome API)</td><td>Odcinki oznaczone przez społeczność jako droga w budowie (<code>highway=construction</code>) i okres tego oznaczenia</td><td>2531 epizodów na 2288 drogach, 2018–2026; na mapie 1852 (≥7 dni, od 2021 r.)</td></tr>
+      <tr><td class="b">Komunikaty lodz.pl i uml.lodz.pl</td><td>Deklarowana skala remontów (ulice, km), do porównania</td><td>19 wskaźników z linkami, 2019–2026</td></tr>
+    </table></div>
+  </section>
+
+  <section class="section">
+    <h2>3. Metoda</h2>
+    <p class="sub"><b>Co liczymy.</b> Robota drogowa = remont, przebudowa, modernizacja lub budowa nawierzchni jezdni (w tym utwardzenie gruntówki) albo torowiska tramwajowego. Poza zakresem (zostają w danych z flagą): chodniki i ciągi piesze, drogi rowerowe, oświetlenie, odwodnienie i kanalizacja, sygnalizacja, oznakowanie, elewacje, budynki, zieleń i sama dokumentacja projektowa. Osobna kategoria to <b>umowy utrzymaniowe</b> (np. „Remonty dróg o nawierzchni twardych… w latach 2020–2022 z podziałem na 4 rejony”, naprawy gruntówek): to realne roboty, ale bez konkretnej lokalizacji i ciągłe, więc nie wchodzą do serii (36 postępowań). <b>Jednostka</b> = jedna inwestycja: pozycja planu albo jedno postępowanie BZP. <b>Robota w toku danego dnia</b> = dzień mieści się między datą zawarcia umowy a terminem jej wykonania.</p>
+    <ol class="steps">
+      <li><b>Inwentarz i tekst.</b> Każdy plik z BIP dostał identyfikator sha1 (duplikaty z http/https usunięte). Tekst wyciągnięty pdftotext z zachowaniem stron; pliki .doc skonwertowane LibreOffice; 17 skanów (ok. 100 stron) przepisanych OCR.</li>
+      <li><b>Pozycje z planów zamówień.</b> Skrypt dzieli plan na pozycje, wyciąga przedmiot, ulice, kwotę i kwartał, klasyfikuje zakres regułami słownikowymi. Kontrola próby: 11 z 12 pozycji poprawnie. Pilotażowa ekstrakcja modelem językowym (35 rekordów) została dołączona.</li>
+      <li><b>Geokodowanie.</b> Nazwa ulicy z dokumentu (w dopełniaczu, np. „ul. Ozorkowskiej”) jest sprowadzana do mianownika i dopasowywana do nazw ulic w OSM. Gdy dokument podaje „od ul. X do ul. Y”, odcinek jest wycinany z geometrii ulicy (najkrótsza ścieżka między węzłami najbliżej X i Y).</li>
+      <li><b>Łączenie wzmianek z planów.</b> Ta sama ulica, ten sam zakres, okno ±2 lat i nakładające się odcinki tworzą jedno zdarzenie (235 rekordów → 180 zdarzeń). Ręczna kontrola 31 zdarzeń wielowzmiankowych wykryła 5 klas błędów; poprawione, łańcuch przeliczony.</li>
+      <li><b>Przetargi BZP.</b> Ogłoszenia pobrane z API w oknach miesięcznych (API zwraca maks. 500 wyników i ignoruje filtr NIP, więc NIP filtrujemy lokalnie; żadne okno nie trafiło w limit). Scalone po identyfikatorze postępowania. Urząd Miasta zleca też wiele rzeczy niedrogowych, więc przedmiot musi zawierać słowo drogowe i słowo o robotach, a nie może dotyczyć obiektów spoza drogi. Kontrola: losowa próba 20 przetargów UMŁ zaliczonych do zakresu, 17 poprawnych (85%). Daty z ogłoszenia o wykonaniu umowy (pkt 4.1 i 5.2) albo z ogłoszenia o wyniku (data zawarcia + okres realizacji).</li>
+      <li><b>Seria roczna i dzienna.</b> Przetarg łączony z pozycją planu (ta sama główna ulica, rok przetargu w [rok planu − 1, rok planu + 3]) liczy się raz, w roku przetargu (39 takich par). Dla każdego dnia do 7.11.2026 liczymy umowy w toku i dni w roku z ≥1, ≥3 i ≥5 umowami.</li>
+      <li><b>Historia OSM.</b> Z pełnej historii obiektów OSM (ohsome) wyciągnięte okresy, w których droga miała oznaczenie „w budowie”. Pokazujemy je jako osobną warstwę, nie wliczamy do serii.</li>
+    </ol>
+    <p class="source-note">Wszystkie kroki to skrypty Pythona, bez ręcznej edycji danych. Każdy rekord na mapie ma link do źródła: ogłoszenia w BZP, pliku planu w BIP albo historii obiektu w OSM.</p>
+  </section>
+
+  <section class="section">
+    <h2>4. Wyniki rok po roku</h2>
+    <div class="table-wrap"><table class="datatable">
+      <tr><th>Rok</th><th class="num">Roboty</th><th class="num">Przetargi (ZDiT/ZIM/UMŁ)</th><th class="num">Na mapie</th><th class="num">Dni ≥1</th><th class="num">Dni ≥3</th><th class="num">Dni ≥5</th><th class="num">Maks. naraz</th></tr>
+      <tr><td>2017–2020</td><td class="num">8</td><td class="num">–</td><td class="num">3</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+      <tr><td>2021</td><td class="num">24</td><td class="num">0 / 13 / 2</td><td class="num">15</td><td class="num">218</td><td class="num">206</td><td class="num">200</td><td class="num">23</td></tr>
+      <tr><td>2022</td><td class="num">46</td><td class="num">3 / 21 / 9</td><td class="num">30</td><td class="num">365</td><td class="num">365</td><td class="num">365</td><td class="num">30</td></tr>
+      <tr><td>2023</td><td class="num">39</td><td class="num">0 / 11 / 22</td><td class="num">31</td><td class="num">365</td><td class="num">365</td><td class="num">365</td><td class="num">26</td></tr>
+      <tr><td>2024</td><td class="num">45</td><td class="num">0 / 10 / 16</td><td class="num">25</td><td class="num">366</td><td class="num">366</td><td class="num">359</td><td class="num">22</td></tr>
+      <tr class="po"><td>2025</td><td class="num">65</td><td class="num">0 / 0 / 31</td><td class="num">46</td><td class="num">365</td><td class="num">365</td><td class="num">365</td><td class="num">25</td></tr>
+      <tr class="po"><td>2026 (do 7 XI)</td><td class="num">20</td><td class="num">0 / 0 / 19</td><td class="num">14</td><td class="num">311</td><td class="num">253</td><td class="num">217</td><td class="num">13</td></tr>
+      <tr><td>bez roku</td><td class="num">18</td><td class="num">–</td><td class="num">10</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>
+    </table></div>
+    <p class="source-note">„Roboty” = plany + przetargi w zakresie, bez powtórzeń i bez umów utrzymaniowych. Dni liczone tylko z umów BZP z datami. Kolumna przetargów pokazuje przejęcie zleceń: ZDiT → ZIM → Urząd Miasta. Wartość umów BZP w zakresie w 2024 r. (321 mln zł) obejmuje m.in. 85,6 mln zł za przebudowę linii tramwajowej w al. Śmigłego-Rydza.</p>
+  </section>
+
+  <section class="section">
+    <h2>5. Ograniczenia</h2>
+    <ul class="lim">
+      <li><b>Okres umowy to nie zamknięcie drogi.</b> Umowa obejmuje też przygotowanie, a przy „zaprojektuj i wybuduj” projektowanie. Liczba dni w toku to górna granica zajęcia jezdni. Wniosek o braku spadku opiera się na porównaniu tej samej miary w obu okresach, więc ta górna granica go nie podważa.</li>
+      <li><b>Klasyfikacja regułami.</b> Ok. 15% przetargów UMŁ zaliczonych do zakresu w próbie kontrolnej to nie roboty jezdni (np. dostawa pojazdu, remont chodnika). Błąd dotyczy w podobnym stopniu obu okresów, ale liczby bezwzględne należy czytać z tą tolerancją.</li>
+      <li><b>2026 i 2021 są niepełne</b> (opóźnienie publikacji ogłoszeń o wykonaniu; brak umów sprzed 2021 r.). Lata 2017–2020 są prawie puste z powodu braku źródeł, a nie remontów.</li>
+      <li><b>Plany to zamiar, nie wykonanie.</b> Pozycje z planów mają rok i kwotę szacunkową, ale nie mają dat ani potwierdzenia realizacji. Tylko 39 przetargów udało się połączyć z pozycjami planów.</li>
+      <li><b>Wielkości robót.</b> Długość, powierzchnia i liczba pasów prawie nie występują w dokumentach; próba wyciągnięcia ich regułami miała precyzję 0–10%. 91 robót nie ma lokalizacji (brak nazwy ulicy albo „droga bez nazwy”).</li>
+      <li><b>OSM to inne zjawisko.</b> Oznaczenie „w budowie” w OSM obejmuje też budowy osiedli, dróg wewnętrznych i inwestycje prywatne, a usuwanie oznaczeń bywa opóźnione. Tylko 147 z 2531 epizodów OSM (6%) ma odpowiednik w danych urzędu; 22 z 51 sprawdzonych przetargów ZIM/ZDiT ma odpowiednik w OSM. Dlatego OSM jest osobną warstwą, a nie częścią serii.</li>
+      <li><b>Komunikaty miasta</b> używają różnych definicji („ulica”, odcinek, km, gruntówka) i nie są jednolitą serią. Służą tylko do porównania skali.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>6. Co dalej</h2>
+    <p class="sub">Przecięcie odcinków z trasami MPK (ile remontów dotyczyło ulic z komunikacją i ile kursów przez nie jechało), sprawdzenie TED dla dużych przetargów, ręczna weryfikacja przetargów UMŁ w zakresie, a dla wybranych remontów pomiar faktycznego zajęcia jezdni z danych o organizacji ruchu.</p>
+  </section>
+
+  <p class="source-note">Komunikaty miasta: <a href="https://lodz.pl/artykul/az-107-nowych-drog-w-lodzi-w-2025-roku-to-65-km-nawierzchni-po-remoncie-lista-71217/">107 dróg w 2025</a>, <a href="https://lodz.pl/artykul/az-130-remontow-ulic-w-lodzi-sprawdz-gdzie-w-2026-roku-pojawia-sie-drogowcy-adresy-71634/">plan 2026</a> i pozostałe linki w panelu „Co mówi miasto” na mapie. Dane OSM © współtwórcy OpenStreetMap (ODbL).</p>
+</main>
+
+<footer class="report-footer">
+  <a href="../remonty-lodz/">← Mapa remontów</a>
+  <a href="../">Wszystkie analizy</a>
+</footer>
+</body>
+</html>
