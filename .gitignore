@@ -13,3 +13,10 @@ remonty/pobrane/
 remonty/index_fixed.csv
 index.csv
 remonty/work/
+# B6 remonty: raw downloads, crawler logs, caches and design mockups are local only
+__pycache__/
+remonty/bzp/
+remonty/ted/
+remonty/*.log
+remonty/index_*.csv
+moodboard-remonty/
