@@ -42,7 +42,8 @@ const STR = {
 
 const SPEEDS = [0.5, 1, 2, 4];
 const PREVIEW = 30;
-const RAMP = ["#67e8f9", "#22d3ee", "#3b82f6", "#818cf8", "#e9d5ff"];
+// Viridis, lifted off black so 0 min shows on the dark map. 0–30 takes most of the ramp.
+const RAMP = ["#414487", "#228d8d", "#6ccd5a", "#b5de2b", "#fde725"];
 const M = ["coalesce", ["feature-state", "m"], 255];
 const HIDDEN = ["==", M, -1];
 
