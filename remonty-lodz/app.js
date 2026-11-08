@@ -42,22 +42,32 @@
     weekly = [];
     const its = D.items.filter((i) => shown(i) && i.od);
     for (let ms = t(T0); ms <= t(T1); ms += 7 * DAY) {
-      let m = 0;
-      for (let k = 0; k < 7; k++) { const d = iso(ms + k * DAY); let n = 0; for (const i of its) if (activeOn(i, d)) n++; if (n > m) m = n; }
-      weekly.push([iso(ms), m]);
+      let m = 0, sp = {};
+      for (let k = 0; k < 7; k++) {
+        const d = iso(ms + k * DAY), c = {}; let n = 0;
+        for (const i of its) if (activeOn(i, d)) { n++; c[i.status] = (c[i.status] || 0) + 1; }
+        if (n > m) { m = n; sp = c; }
+      }
+      weekly.push([iso(ms), m, sp]);
     }
   }
   function drawChart() {
     const mx = Math.max(10, ...weekly.map((w) => w[1])), Y = (n) => 100 - (n / mx) * 94;
-    let p = "M0 100";
-    for (const [d, n] of weekly) p += `L${X(d).toFixed(1)} ${Y(n).toFixed(1)}`;
-    p += "L1000 100Z";
+    // stacked by status, same colours as the map and the yearly bars (bottom layer first)
+    const layers = ["wykonane", "udzielone"].map((st, li) => {
+      const top = (w) => ["wykonane", "udzielone"].slice(0, li + 1).reduce((a, q) => a + (w[2][q] || 0), 0);
+      const below = (w) => li ? top(w) - (w[2].udzielone || 0) : 0;
+      let p = "M0 100";
+      for (const w of weekly) p += `L${X(w[0]).toFixed(1)} ${Y(top(w)).toFixed(1)}`;
+      for (const w of [...weekly].reverse()) p += `L${X(w[0]).toFixed(1)} ${Y(below(w)).toFixed(1)}`;
+      return `<path d="${p}Z" fill="${ST[st]}" fill-opacity=".85" stroke="none"/>`;
+    }).join("");
     const lines = [1, 3, 5].map((n) => `<path d="M0 ${Y(n)}H1000" stroke="var(--grid)" stroke-width="1" vector-effect="non-scaling-stroke" ${n === 5 ? 'stroke-dasharray="4 3"' : ""}/>`).join("");
     const years = ["2021", "2022", "2023", "2024", "2025", "2026"].map((y) => `<span class="ax" style="left:${X(y + "-07-01") / 10}%">${y}</span>`).join("");
     $("chart").innerHTML = `<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
         <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="var(--gap)" stroke-width="3"/></pattern></defs>
         <rect x="0" y="0" width="${X(BILET_END)}" height="100" fill="var(--bilet)" stroke="none"/>
-        ${lines}<path d="${p}" fill="rgba(255,159,10,.35)" stroke="var(--work)" stroke-width="1.4" vector-effect="non-scaling-stroke"/></svg>
+        ${lines}${layers}</svg>
       <span class="tag" style="left:4px">wydłużony bilet MPK (do 31.12.2024)</span>
       <span class="tag gap" style="left:${X("2025-01-01") / 10 + 0.5}%">po bilecie</span>
       ${years}<div class="cursor" id="cursor"></div>`;
@@ -104,11 +114,11 @@
       if (i >= 0) vals[i] = D.dzienne.filter(([d, n]) => d.startsWith(cy) && d <= state.day && n >= th).length;
     }
     $("bars").classList.toggle("sel", !!sel);
-    if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span></span><span class="y">${y}</span></button>`).join("");
+    if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span></span><span class="osm"></span><span class="y">${y}</span></button>`).join("");
     // "Roboty": stacked by status (legend colours) + "only OSM" on top. Day metrics come from BZP contracts only: one colour.
-    const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y)), tot = vals.map((v, i) => v + osmV[i]), mxT = Math.max(...tot, 1);
+    const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y)), mxO = Math.max(...osmV, 1);
     const parts = (y, i) => dayMetric ? [[ST.udzielone, vals[i]]]
-      : [...Object.keys(ST).map((s) => [ST[s], D.items.filter((x) => x.rok === y && x.status === s).length]), [OSM_COLOR, osmV[i]]];
+      : Object.keys(ST).map((s) => [ST[s], D.items.filter((x) => x.rok === y && x.status === s).length]);
     [...$("bars").children].forEach((b, i) => {
       const y = YEARS[i], nodata = dayMetric && y < "2021";
       b.classList.toggle("nodata", nodata); b.classList.toggle("cur", y === cy); b.classList.toggle("future", !!cy && y > cy);
@@ -116,11 +126,12 @@
       b.setAttribute("aria-label", `${y}: ${nodata ? "brak danych" : vals[i]}${osmV[i] ? `, plus ${osmV[i]} tylko OSM` : ""}`);
       b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
       const f = b.querySelector(".fill");
-      f.style.setProperty("--p", (nodata ? 100 : (tot[i] / mxT) * 100) + "%");
+      f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mx) * 100) + "%");
+      b.style.setProperty("--o", (osmV[i] / mxO) * 100 + "%");
       f.innerHTML = nodata ? "" : parts(y, i).filter(([, n]) => n > 0).map(([c, n]) => `<i style="flex:${n};background:${c}"></i>`).join("");
     });
     $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span>`
-      : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (+ liczba)</span>`;
+      : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (pasek pod słupkiem, osobna skala)</span>`;
     $("barsNote").textContent = dayMetric
       ? "Dni w roku, w których trwało co najmniej tyle umów z BZP. Okres umowy to górna granica zajęcia drogi. 2026: do 7 listopada."
       : "Roboty na jezdniach i torowiskach (plany + przetargi ZDiT, ZIM, UMŁ), bez umów utrzymaniowych. Lata przed 2021 mają tylko plany zamówień, 2026 jest niepełny.";
@@ -265,7 +276,7 @@
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
     $("legend").innerHTML = h;
-    $("chartLeg").innerHTML = h;  // the chart in the bar uses the same legend as the map (colours unchanged)
+    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + "<span>wysokość = maks. umów w tygodniu</span>";
   }
   let paintView = () => {};
 
