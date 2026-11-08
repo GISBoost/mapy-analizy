@@ -42,13 +42,14 @@
       <p class="eyebrow" id="timeLabel">Czas podróży</p>
       <div class="timerow">
         <button class="ib" id="playBtn" type="button" aria-label="Odtwarzaj">▶</button>
-        <input id="slider" type="range" min="0" max="60" step="1" value="30" disabled>
+        <input id="slider" type="range" min="0" max="60" step="1" value="30">
         <span id="timeVal">30 min</span>
       </div>
       <div class="speeds" id="speeds"></div>
     </div>
     <div class="legend" id="legend"></div>
     <p class="stat" id="stat">Ładowanie danych…</p>
+    <p class="inspect" id="inspect" hidden></p>
     <p class="note" id="note"></p>
     <button class="textbtn" id="unpinBtn" type="button" hidden>Odepnij</button>
   </aside>
@@ -60,6 +61,7 @@
   · podkład © OpenStreetMap contributors
 </footer>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
+<script src="inspect-rules.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

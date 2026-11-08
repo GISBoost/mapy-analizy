@@ -44,6 +44,28 @@ body {
 h1 { margin: 0; font-family: Archivo, "Segoe UI", sans-serif; font-size: 1.25rem; letter-spacing: -0.02em; }
 .lead, .note, .stat { margin: 0; font-size: 0.84rem; line-height: 1.4; color: var(--ink-2); }
 .stat { color: var(--ink); }
+.inspect { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+.inspect[hidden] { display: none; }
+.inspect-pop .maplibregl-popup-content {
+  background: var(--glass);
+  color: var(--ink);
+  border: 0.5px solid var(--glass-line);
+  box-shadow: var(--shadow);
+  border-radius: 10px;
+  padding: 8px 28px 8px 12px;
+  font: 0.85rem/1.35 "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+.inspect-pop .maplibregl-popup-tip { border-top-color: var(--glass); }
+.inspect-pop.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--glass); border-top-color: transparent; }
+.inspect-pop.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--glass); border-top-color: transparent; }
+.inspect-pop.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--glass); border-top-color: transparent; }
+.inspect-x {
+  position: absolute; top: 2px; right: 4px;
+  width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px;
+  background: transparent; color: var(--ink); font-size: 1.15rem; line-height: 20px;
+  cursor: pointer;
+}
+.inspect-x:hover { background: var(--fill); }
 .eyebrow { margin: 0 0 6px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
 .seg { display: flex; gap: 6px; }
 .seg button, .speeds button, .textbtn {
@@ -66,7 +88,7 @@ h1 { margin: 0; font-family: Archivo, "Segoe UI", sans-serif; font-size: 1.25rem
 .ramp i { display: block; height: 8px; border-radius: 4px; margin-bottom: 3px; }
 .modes { font-size: 0.72rem; color: var(--ink-2); }
 .modes span { display: flex; align-items: center; gap: 6px; }
-.modes i { display: block; width: 22px; border-top: 2.5px solid currentColor; }
+.modes i { display: block; width: 22px; border-top: 2px solid currentColor; }
 .modes .tram { border-top-width: 4px; }
 .textbtn { align-self: flex-start; padding: 6px 12px; }
 #loading {

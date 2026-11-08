@@ -6,12 +6,15 @@ const STR = {
     title: "Jak rosną odcinki",
     docTitle: "Jak rosną odcinki w Łodzi — GISBoost",
     nav: "Odcinki Łodzi",
-    lead: "Najedź na miasto, zobaczysz odcinki w 30 minut. Klik przypina heks i puszcza wzrost od zera. Zoom jest na kółku.",
+    lead: "Najedź na miasto, suwakiem ustaw próg. Klik przypina heks i puszcza wzrost na 4×. Potem klik w odcinek pokazuje linię.",
     winLabel: "Okno odjazdu",
     timeLabel: "Czas podróży",
     play: "Odtwarzaj", pause: "Pauza", unpin: "Odepnij",
-    hover: "Najedź na heks. Podgląd to 30 minut.",
+    hover: "Najedź na heks. Suwak ustawia próg podglądu.",
     pinned: "Przypięty heks {id}. Suwak nie liczy trasy od nowa.",
+    inspect: "{line} · {mode} · {t} min",
+    inspectNone: "{mode} · {t} min",
+    inspectClose: "Zamknij",
     stat: "{n} odcinków w {t} min",
     empty: "Nic nie doszło w {t} min.",
     note: "Mediana czasu do końca odcinka w wybranym oknie odjazdu. To nie jest jeden kurs.",
@@ -24,12 +27,15 @@ const STR = {
     title: "How the segments grow",
     docTitle: "How the segments grow in Łódź — GISBoost",
     nav: "Łódź segments",
-    lead: "Hover the city to see segments within 30 minutes. A click pins the hex and plays the growth from zero. Zoom is on the wheel.",
+    lead: "Hover the city and use the slider for the cutoff. A click pins the hex and plays at 4×. Then click a segment to see its line.",
     winLabel: "Departure window",
     timeLabel: "Travel time",
     play: "Play", pause: "Pause", unpin: "Unpin",
-    hover: "Hover a hex. The preview is 30 minutes.",
+    hover: "Hover a hex. The slider sets the preview cutoff.",
     pinned: "Pinned hex {id}. The slider does not recompute the route.",
+    inspect: "{line} · {mode} · {t} min",
+    inspectNone: "{mode} · {t} min",
+    inspectClose: "Close",
     stat: "{n} segments within {t} min",
     empty: "Nothing reached within {t} min.",
     note: "Median time to the end of the segment in the selected departure window. Not a single vehicle.",
@@ -41,11 +47,11 @@ const STR = {
 };
 
 const SPEEDS = [0.5, 1, 2, 4];
-const PREVIEW = 30;
+const PREVIEW = Odcinki.PREVIEW;
+const PIN_SPEED = Odcinki.PIN_SPEED;
 // Viridis, lifted off black so 0 min shows on the dark map. 0–30 takes most of the ramp.
 const RAMP = ["#414487", "#228d8d", "#6ccd5a", "#b5de2b", "#fde725"];
 const M = ["coalesce", ["feature-state", "m"], 255];
-const HIDDEN = ["==", M, -1];
 
 let lang = "pl";
 let manifest, segGeo, morning, afternoon, hexById;
@@ -53,6 +59,7 @@ let map, counts;
 let hoverId = null, pinId = null, windowId = "morning";
 let cutoff = PREVIEW, lastT = -1, speed = 1, playing = false, playT0 = 0, playFrom = 0;
 let hoverFrame = 0, wheelUntil = 0, cursor = null, marker, stampedHex = -1, afternoonTask = null;
+let inspectId = null, inspectPopup = null;
 
 function t(key, vars) {
   let s = STR[lang][key];
@@ -79,6 +86,15 @@ function applyLang() {
   document.documentElement.lang = lang;
   paintLegend();
   paintStat();
+  if (inspectId != null && inspectPopup) {
+    const feats = segGeo.features;
+    const feat = feats[inspectId];
+    if (feat) {
+      const html = inspectText(feat);
+      $("inspect").textContent = html;
+      fillInspectPopup(html);
+    }
+  }
 }
 function rowOf(hex) {
   const src = windowId === "morning" ? morning : afternoon;
@@ -97,7 +113,7 @@ function stamp(hex) {
     const minute = row[feats[i].properties.to];
     const m = minute > 60 ? 255 : minute;
     if (m !== 255) hist[m]++;
-    map.setFeatureState({source: "seg-on", id: feats[i].id}, {m: m});
+    map.setFeatureState({source: "seg-on", id: feats[i].id}, {m: m, on: feats[i].id === inspectId});
   }
   for (let i = 1; i < 61; i++) hist[i] += hist[i - 1];
   counts = hist;
@@ -106,14 +122,15 @@ function stamp(hex) {
 function applyCutoff(tMin) {
   const next = Math.max(0, Math.min(60, tMin | 0));
   cutoff = next;
+  // MapLibre rejects feature-state inside a filter, so the cutoff is opacity.
   if (activeHex() == null) {
-    if (lastT !== -1) map.setFilter("seg-on", HIDDEN);
+    if (lastT !== -1) map.setPaintProperty("seg-on", "line-opacity", 0);
     lastT = -1;
   } else if (next !== lastT) {
-    map.setFilter("seg-on", ["<=", M, next]);
+    map.setPaintProperty("seg-on", "line-opacity", ["case", ["<=", M, next], 0.95, 0]);
     lastT = next;
   }
-  $("slider").value = String(pinId == null ? PREVIEW : next);
+  $("slider").value = String(next);
   $("timeVal").textContent = next + " min";
   paintStat();
 }
@@ -128,26 +145,12 @@ function paintStat() {
   const body = n === 0 ? t("empty", {t: cutoff}) : t("stat", {n: n, t: cutoff});
   $("stat").textContent = (pinId != null ? t("pinned", {id: pinId}) + " " : "") + body;
 }
-function showOutline(id) {
-  const src = map && map.getSource("hex-ol");
-  if (!src) return;
-  const h = id == null ? null : hexById[id];
-  if (!h) {
-    src.setData({type: "FeatureCollection", features: []});
-    return;
-  }
-  let ring = h.ring;
-  const a = ring[0], b = ring[ring.length - 1];
-  if (a[0] !== b[0] || a[1] !== b[1]) ring = ring.concat([a]);
-  src.setData({type: "Feature", properties: {}, geometry: {type: "LineString", coordinates: ring}});
-}
 function showHex(id, tMin) {
   if (id === hoverId && pinId == null && counts) {
     applyCutoff(tMin);
     return;
   }
   hoverId = id;
-  showOutline(id);
   stamp(id);
   lastT = -1;
   applyCutoff(tMin);
@@ -156,8 +159,49 @@ function clearHex() {
   if (pinId != null) return;
   hoverId = null;
   counts = null;
-  showOutline(null);
-  applyCutoff(PREVIEW);
+  applyCutoff(Odcinki.hoverCutoff(false, true, cutoff));
+}
+function inspectText(feat) {
+  const minute = map.getFeatureState({source: "seg-on", id: feat.id}).m;
+  const mode = feat.properties.mode === "tram" ? t("tram") : t("bus");
+  const line = (feat.properties.line || "").trim();
+  const vars = {line: line, mode: mode, t: minute};
+  return line ? t("inspect", vars) : t("inspectNone", vars);
+}
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+}
+function fillInspectPopup(text) {
+  inspectPopup.setHTML(
+    `<button type="button" class="inspect-x" aria-label="${esc(t("inspectClose"))}">×</button><span>${esc(text)}</span>`
+  );
+  const x = inspectPopup.getElement() && inspectPopup.getElement().querySelector(".inspect-x");
+  if (x) x.addEventListener("click", (ev) => { ev.preventDefault(); ev.stopPropagation(); closeInspect(); });
+}
+function closeInspect() {
+  const id = inspectId;
+  inspectId = null;
+  if (id != null) map.setFeatureState({source: "seg-on", id: id}, {on: false});
+  const pop = inspectPopup;
+  inspectPopup = null;
+  if (pop) pop.remove();
+  $("inspect").hidden = true;
+  $("inspect").textContent = "";
+}
+function openInspect(feat, lngLat) {
+  if (inspectId != null && inspectId !== feat.id) {
+    map.setFeatureState({source: "seg-on", id: inspectId}, {on: false});
+  }
+  inspectId = feat.id;
+  map.setFeatureState({source: "seg-on", id: feat.id}, {on: true});
+  const html = inspectText(feat);
+  $("inspect").textContent = html;
+  $("inspect").hidden = false;
+  if (!inspectPopup) {
+    inspectPopup = new maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 8, className: "inspect-pop"});
+  }
+  inspectPopup.setLngLat(lngLat).addTo(map);
+  fillInspectPopup(html);
 }
 function pointInRing(pt, ring) {
   let inside = false;
@@ -182,11 +226,11 @@ function movePin(id) {
   marker.setLngLat(h.center).addTo(map);
 }
 function pin(id, tMin) {
+  closeInspect();
   pinId = id;
   hoverId = id;
-  $("slider").disabled = false;
   $("unpinBtn").hidden = false;
-  showOutline(id);
+  setSpeed(PIN_SPEED);
   stamp(id);
   movePin(id);
   lastT = -1;
@@ -196,11 +240,15 @@ function pin(id, tMin) {
 }
 function unpin() {
   stopPlay();
+  closeInspect();
   pinId = null;
-  $("slider").disabled = true;
   $("unpinBtn").hidden = true;
   movePin(null);
   clearHex();
+}
+function setSpeed(s) {
+  speed = s;
+  for (const b of $("speeds").querySelectorAll("button")) b.setAttribute("aria-pressed", String(+b.dataset.s === s));
 }
 function startPlay() {
   playing = true;
@@ -230,7 +278,7 @@ function previewAt(at) {
   if (pinId != null || performance.now() < wheelUntil) return;
   const id = hexAt(at[0], at[1]);
   if (id == null) clearHex();
-  else showHex(id, PREVIEW);
+  else showHex(id, cutoff);
 }
 async function decodeMatrix(buf) {
   const expect = manifest.n_hex * manifest.n_stops;
@@ -328,6 +376,14 @@ async function init() {
   });
   map.addControl(new maplibregl.NavigationControl({showCompass: false, visualizePitch: false}), "bottom-right");
   await new Promise((res) => map.once("load", res));
+  const centrum = hexById[2389];
+  if (centrum) {
+    map.jumpTo({
+      center: centrum.center,
+      zoom: map.getZoom() + 1,
+      padding: {top: 24, bottom: 24, left: 340, right: 24},
+    });
+  }
   const pinEl = document.createElement("div");
   pinEl.className = "pin";
   marker = new maplibregl.Marker({element: pinEl, anchor: "center"});
@@ -336,15 +392,15 @@ async function init() {
   if (windowId === "afternoon") await ensureAfternoon();
   const qHex = q.get("hex") == null || !hexById[+q.get("hex")] ? null : +q.get("hex");
   const qT = q.get("t") == null ? 0 : Math.max(0, Math.min(60, +q.get("t") | 0));
-  const empty = {type: "FeatureCollection", features: []};
   map.addSource("seg-on", {type: "geojson", data: segGeo});
-  map.addSource("hex-ol", {type: "geojson", data: empty});
   map.addLayer({
     id: "seg-on", type: "line", source: "seg-on",
-    filter: HIDDEN,
     paint: {
-      "line-width": ["case", ["==", ["get", "mode"], "tram"], 4, 2.8],
-      "line-opacity": 0.95,
+      "line-width": ["case",
+        ["boolean", ["feature-state", "on"], false],
+        ["case", ["==", ["get", "mode"], "tram"], 7, 4],
+        ["case", ["==", ["get", "mode"], "tram"], 4.3, 2]],
+      "line-opacity": 0,
       "line-color": ["interpolate", ["linear"], M, 0, RAMP[0], 15, RAMP[1], 30, RAMP[2], 45, RAMP[3], 60, RAMP[4]],
     },
   });
@@ -356,7 +412,6 @@ async function init() {
     lastT = -1;
     applyCutoff(cutoff);
   });
-  map.addLayer({id: "hex-ol", type: "line", source: "hex-ol", paint: {"line-color": "#ff3b30", "line-width": 2}});
   basemap();
   const labels = manifest.windows;
   $("windows").innerHTML = ["morning", "afternoon"].map((id) =>
@@ -383,14 +438,13 @@ async function init() {
     stampedHex = -1;
     stamp(hex);
     lastT = -1;
-    applyCutoff(pinId == null ? PREVIEW : keep);
+    applyCutoff(keep);
   });
   $("speeds").innerHTML = SPEEDS.map((s) => `<button type="button" data-s="${s}" aria-pressed="${s === 1}">${s}×</button>`).join("");
   $("speeds").addEventListener("click", (ev) => {
     const btn = ev.target.closest("button");
     if (!btn) return;
-    speed = +btn.dataset.s;
-    for (const b of $("speeds").querySelectorAll("button")) b.setAttribute("aria-pressed", b === btn);
+    setSpeed(+btn.dataset.s);
     if (playing) { playFrom = cutoff; playT0 = performance.now(); }
   });
   function armHover() {
@@ -410,13 +464,27 @@ async function init() {
   map.on("zoomend", () => { if (pinId == null && cursor) armHover(); });
   map.on("mouseout", () => { if (pinId == null) clearHex(); });
   map.on("click", (e) => {
+    if (pinId != null) {
+      const hits = map.queryRenderedFeatures(e.point, {layers: ["seg-on"]});
+      let feat = null;
+      for (const f of hits) {
+        const m = map.getFeatureState({source: "seg-on", id: f.id}).m;
+        if (m != null && m !== 255 && m <= cutoff) { feat = f; break; }
+      }
+      if (feat) {
+        const next = Odcinki.nextInspectId(inspectId, feat.id);
+        if (next == null) closeInspect();
+        else openInspect(feat, e.lngLat);
+        return;
+      }
+      return;
+    }
     const id = hexAt(e.lngLat.lng, e.lngLat.lat);
     if (id == null) return;
     stopPlay();
     pin(id);
   });
   $("slider").addEventListener("input", () => {
-    if (pinId == null) return;
     stopPlay();
     applyCutoff(+$("slider").value);
   });
@@ -447,7 +515,6 @@ async function init() {
     try { localStorage.setItem("mapyAnalizyLang", lang); } catch (err) { /* ignore */ }
     applyLang();
   });
-  $("slider").disabled = true;
   applyLang();
   if (q.get("w") === "afternoon" || q.get("w") === "morning") {
     for (const b of $("windows").querySelectorAll("button")) b.setAttribute("aria-pressed", b.dataset.w === windowId);
