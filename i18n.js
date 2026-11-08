@@ -57,13 +57,6 @@ const STRINGS = {
     card9Desc:
       "Animacja od 6:00 do 22:00: ile miejsc (szkoły, przychodnie, sklepy, kultura) osiągniesz w 30 minut komunikacją miejską, " +
       "w sierpniu, wrześniu i październiku 2026, na zrealizowanych rozkładach.",
-    card10Title: "Remonty dróg w Łodzi",
-    card10Desc:
-      "Remonty jezdni i torowisk dzień po dniu, 2021–2026: mapa, oś czasu i liczba umów w toku, w okresie wydłużonego biletu MPK i po nim. " +
-      "Z przetargów BZP i planów zamówień miasta.",
-    reportRemontyTitle: "Remonty dróg a wydłużony bilet MPK",
-    reportRemontyDesc:
-      "Skąd dane o remontach w Łodzi (BZP, BIP, OSM), jak je przetworzyliśmy, ograniczenia i wniosek: po zniesieniu wydłużonego biletu remontów nie ubyło.",
     tagTool: "narzędzie",
     tagWoj: "Województwo łódzkie",
     eyebrowReport: "Z tych danych",
@@ -141,13 +134,6 @@ const STRINGS = {
     card9Desc:
       "An animation from 6:00 to 22:00: how many places (schools, clinics, shops, culture) you reach in 30 minutes by public transport, " +
       "in August, September and October 2026, on realized timetables.",
-    card10Title: "Road works in Łódź",
-    card10Desc:
-      "Carriageway and tram-track works day by day, 2021–2026: map, timeline and contracts in progress, during the extended MPK ticket and after it. " +
-      "From BZP tenders and the city's procurement plans (page in Polish).",
-    reportRemontyTitle: "Road works and the extended MPK ticket",
-    reportRemontyDesc:
-      "Where the Łódź road-works data comes from (BZP, BIP, OSM), how we processed it, limitations, and the finding: works did not drop after the extended ticket ended (in Polish).",
     tagTool: "tool",
     tagWoj: "Łódzkie voivodeship",
     eyebrowReport: "From this data",
