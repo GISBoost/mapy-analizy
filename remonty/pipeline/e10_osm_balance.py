@@ -4,7 +4,7 @@
 Input : work/osm_construction.geojson (E9), work/osm/lodz_boundary_nominatim.json (city boundary,
         OSM relation 2413295, fetched once from Nominatim), city items + sections (passed in by E8).
 Rules (script, no model):
-  1. Episodes < 7 days, ending before 2021 or not LineString are dropped (as before).
+  1. Episodes < 7 days, ending before 2019 or not LineString are dropped (as before).
   2. Geometry is clipped to the Lodz administrative boundary; parts outside are dropped.
   3. k="u"  no name (n empty): stays on the map, counted nowhere.
      k="p"  named, and a city item (BZP / plan; point or section) lies within BUFFER_M of the segment
@@ -134,11 +134,11 @@ def balance(groups):
     while d <= dt.date.fromisoformat(CUTOFF):
         run += delta[d]; daily[d] = run; d += dt.timedelta(days=1)
     roczne = []
-    for y in range(2021, 2027):
+    for y in range(2019, 2027):
         days = [n for d, n in daily.items() if d.year == y]
         roczne.append(dict(rok=str(y), roboty=sum(1 for g in groups if int(g[2][:4]) <= y <= int(g[3][:4])),
                            dni_ge1=sum(1 for n in days if n >= 1), max_jednoczesnie=max(days, default=0)))
-    return roczne, [[d.isoformat(), n] for d, n in sorted(daily.items()) if n and d.year >= 2021]
+    return roczne, [[d.isoformat(), n] for d, n in sorted(daily.items()) if n and d.year >= 2019]
 
 
 def process(osm_feats, items, sect_feats):

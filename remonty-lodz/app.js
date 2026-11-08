@@ -20,7 +20,7 @@
   const isPhone = () => matchMedia("(max-width: 760px)").matches;
   const isDark = () => document.documentElement.getAttribute("data-theme") !== "light";
 
-  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: false, color: "status", metric: "roboty", playing: null, speed: 0, card: null };
+  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, color: "status", metric: "roboty", playing: null, speed: 0, card: null };
   let D, map, roczne, weekly = [], osmY = {}, osmDay = new Map();
   const osmWorks = (y) => (osmY[y] || {}).roboty || 0;
 
@@ -120,7 +120,7 @@
     $("bars").classList.toggle("sel", !!sel);
     if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span><span class="osm"></span></span><span class="y">${y}</span></button>`).join("");
     // "Roboty": stacked by status (legend colours) + "only OSM" on top. Day metrics come from BZP contracts only: one colour.
-    const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y)), mxO = Math.max(...osmV, 1);
+    const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y)), mxO = Math.max(mx, ...osmV);
     const parts = (y, i) => dayMetric ? [[ST.udzielone, vals[i]]]
       : Object.keys(ST).map((s) => [ST[s], D.items.filter((x) => x.rok === y && x.status === s).length]);
     [...$("bars").children].forEach((b, i) => {
@@ -130,8 +130,8 @@
       b.setAttribute("aria-label", `${y}: ${nodata ? "brak danych" : vals[i]}${osmV[i] ? `, plus ${osmV[i]} tylko OSM` : ""}`);
       b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
       const f = b.querySelector(".fill");
-      f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mx) * 100) + "%");
-      b.style.setProperty("--o", (osmV[i] / mx) * 100 + "%");
+      f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mxO) * 100) + "%");
+      b.style.setProperty("--o", (osmV[i] / mxO) * 100 + "%");
       f.innerHTML = nodata ? "" : parts(y, i).filter(([, n]) => n > 0).map(([c, n]) => `<i style="flex:${n};background:${c}"></i>`).join("");
     });
     $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span>`
@@ -148,7 +148,7 @@
     const val = its.filter((i) => i.zrodlo !== "plan").reduce((s, i) => s + (i.wartosc_zl || 0), 0);
     const tile = (v, tt, w) => `<div><div class="v ${w ? "w" : ""}">${v}</div><div class="t">${tt}</div></div>`;
     const oy = y ? osmY[y] : null, oAll = D.osm_bilans.stats.only_osm_works;
-    $("osmLine").innerHTML = `<b>Tylko OSM</b> (nazwane odcinki bez odpowiednika w danych urzędu, poza powyższymi liczbami): ${oy ? `${oy.roboty} robót, ${oy.dni_ge1} dni z ≥1 w trakcie` : `${oAll} robót w latach 2021–2026`}.`;
+    $("osmLine").innerHTML = `<b>Tylko OSM</b> (nazwane odcinki bez odpowiednika w danych urzędu, poza powyższymi liczbami): ${oy ? `${oy.roboty} robót, ${oy.dni_ge1} dni z ≥1 w trakcie` : `${oAll} robót w latach 2019–2026`}.`;
     $("kpis").innerHTML = tile(its.length, "robót (wybrane źródła)") + tile(its.filter((i) => i.lat).length, "na mapie")
       + (r ? tile(r.dni_ge1, "dni z ≥1 w trakcie") + tile(r.dni_ge5, "dni z ≥5 w trakcie", 1) : tile(its.filter((i) => i.od).length, "z datami umowy") + tile(val ? fmtZl(val) : "–", "wartość (BZP)", 1));
   }
@@ -303,7 +303,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json")).json();
+    D = await (await fetch("data/remonty.json?v=13")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
@@ -313,7 +313,7 @@
 
     paintView = seg($("viewSeg"), [["dzien", "W trakcie danego dnia"], ["rok", "Rok"], ["wszystko", "Wszystkie"]], () => state.view, (v) => { state.view = v; if (v !== "rok") state.year = null; });
     seg($("colorSeg"), [["status", "Status"], ["rok", "Rok"]], () => state.color, (v) => { state.color = v; });
-    $("srcChips").innerHTML = Object.entries(SRC).map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="true">${l}</button>`).join("") + `<button type="button" data-osm="1" aria-pressed="false" title="Odcinki oznaczone w OpenStreetMap jako droga w budowie, przycięte do granicy Łodzi">OSM: w budowie</button>`;
+    $("srcChips").innerHTML = Object.entries(SRC).map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="true">${l}</button>`).join("") + `<button type="button" data-osm="1" aria-pressed="true" title="Odcinki oznaczone w OpenStreetMap jako droga w budowie, przycięte do granicy Łodzi">OSM: w budowie</button>`;
     $("srcChips").addEventListener("click", (e) => {
       const o = e.target.closest("button[data-osm]");
       if (o) { state.osm = !state.osm; o.setAttribute("aria-pressed", String(state.osm)); return update(); }
