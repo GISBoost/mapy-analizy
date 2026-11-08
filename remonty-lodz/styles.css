@@ -94,7 +94,8 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 .bar .v { min-height: 2.1em; font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; line-height: 1.05; }
 .bar .v small { display: block; font-size: 0.62rem; color: #bf5af2; font-weight: 700; }
 .bar .y { font-size: 0.68rem; color: var(--ink-2); }
-.bars.sel .bar:not([aria-pressed="true"]) .fill, .bar.future .fill { opacity: .35; }
+.bars.sel .bar:not([aria-pressed="true"]) :is(.fill, .osm), .bar.future :is(.fill, .osm) { opacity: .35; }
+.legend-inline i.nd { border-radius: 2px; background: repeating-linear-gradient(45deg, var(--fill-active) 0 2px, transparent 2px 4px); }
 .bar.cur .y { color: var(--ink); font-weight: 700; } .bar.cur .fill { box-shadow: 0 0 0 1.5px var(--ink); }
 .bar:focus-visible { outline: 2px solid var(--accent); border-radius: 6px; }
 

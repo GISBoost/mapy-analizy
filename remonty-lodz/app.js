@@ -130,13 +130,13 @@
       b.classList.toggle("nodata", nodata); b.classList.toggle("cur", y === cy); b.classList.toggle("future", !!cy && y > cy);
       b.setAttribute("aria-pressed", String(sel === y));
       b.setAttribute("aria-label", `${y}: ${nodata ? "brak danych" : vals[i]}${osmV[i] ? `, plus ${osmV[i]} tylko OSM` : ""}`);
-      b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
+      b.title = nodata ? "brak danych" : ""; b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
       const f = b.querySelector(".fill");
       f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mxO) * 100) + "%");
       b.style.setProperty("--o", (osmV[i] / mxO) * 100 + "%");
       f.innerHTML = nodata ? "" : parts(y, i).filter(([, n]) => n > 0).map(([c, n]) => `<i style="flex:${n};background:${c}"></i>`).join("");
     });
-    $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span>`
+    $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span><span><i class="nd"></i>brak danych (przed 2021 nie ma umów w BZP)</span>`
       : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (fioletowy słupek obok)</span>`;
     $("barsNote").textContent = dayMetric
       ? "Dni w roku, w których trwało co najmniej tyle umów z BZP. Okres umowy to górna granica zajęcia drogi. 2026: do 7 listopada."
@@ -305,7 +305,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=15")).json();
+    D = await (await fetch("data/remonty.json?v=16")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
