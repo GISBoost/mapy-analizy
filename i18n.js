@@ -53,6 +53,13 @@ const STRINGS = {
     card8Desc:
       "Nagranie jednej doby ruchu samochodów z symulacji MATSim: wybierz scenariusz i oglądaj auta na mapie, także z budynkami 3D " +
       "(obrót i pochylenie kamery). Działa w przeglądarce na komputerze.",
+    card10Title: "Remonty dróg w Łodzi",
+    card10Desc:
+      "Ile remontów jezdni i torowisk trwało w Łodzi każdego dnia od 2021 do listopada 2026, w okresie wydłużonego biletu MPK i po nim. " +
+      "Mapa z osią czasu, przetargi BZP, plany zamówień UMŁ i OSM.",
+    reportRemontyTitle: "Remonty dróg a wydłużony bilet MPK",
+    reportRemontyDesc:
+      "Skąd dane o remontach (BZP, plany zamówień UMŁ, OSM), jak je liczyliśmy, czego nie widać i czy po końcu wydłużonego biletu remontów ubyło.",
     card9Title: "Łódź godzina po godzinie",
     card9Desc:
       "Animacja od 6:00 do 22:00: ile miejsc (szkoły, przychodnie, sklepy, kultura) osiągniesz w 30 minut komunikacją miejską, " +
@@ -130,6 +137,13 @@ const STRINGS = {
     card8Desc:
       "A recording of one day of car traffic from a MATSim simulation: pick a scenario and watch the cars on the map, with 3D buildings " +
       "(rotate and tilt the camera). Works in a desktop browser.",
+    card10Title: "Road works in Lodz",
+    card10Desc:
+      "How many road and tram-track works were under way in Lodz each day from 2021 to November 2026, during the extended MPK ticket and after it. " +
+      "Map with a timeline, BZP tenders, city procurement plans and OSM.",
+    reportRemontyTitle: "Road works and the extended MPK ticket",
+    reportRemontyDesc:
+      "Where the road-works data comes from (BZP, city procurement plans, OSM), how we counted it, what it misses, and whether works declined after the extended ticket ended.",
     card9Title: "Lodz hour by hour",
     card9Desc:
       "An animation from 6:00 to 22:00: how many places (schools, clinics, shops, culture) you reach in 30 minutes by public transport, " +
