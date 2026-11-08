@@ -54,7 +54,7 @@ def main(dekl_path):
     for f in json.load(open(WORK / "osm_construction.geojson", encoding="utf-8"))["features"]:
         p = f["properties"]
         od, do = p["od"][:10], (p["do"] or "2026-11-07")[:10]
-        if do < "2021-01-01" or (dt.date.fromisoformat(do) - dt.date.fromisoformat(od)).days < 7 or f["geometry"]["type"] != "LineString":
+        if do < "2019-01-01" or (dt.date.fromisoformat(do) - dt.date.fromisoformat(od)).days < 7 or f["geometry"]["type"] != "LineString":
             continue
         cand.append(f)
     # E10: clip to the city boundary, classify (unnamed / confirmed by city data / only OSM), balance of "only OSM"
