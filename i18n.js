@@ -64,7 +64,7 @@ const STRINGS = {
     card9Desc:
       "Animacja od 6:00 do 22:00: ile miejsc (szkoły, przychodnie, sklepy, kultura) osiągniesz w 30 minut komunikacją miejską, " +
       "w sierpniu, wrześniu i październiku 2026, na zrealizowanych rozkładach.",
-    card11Title: "Jak rosną linie w Łodzi",
+    card11Title: "Jak rosną odcinki w Łodzi",
     card11Desc:
       "Najedź na heks 250 m, a zaświecą się prawdziwe odcinki tramwajów i autobusów osiągalne w 30 minut. " +
       "Przypnij punkt i suwakiem 0–60 min wydłuż zasięg. Wtorek 6.10.2026, rano 7–9 i popołudnie 14–18, mediana R5.",
@@ -152,7 +152,7 @@ const STRINGS = {
     card9Desc:
       "An animation from 6:00 to 22:00: how many places (schools, clinics, shops, culture) you reach in 30 minutes by public transport, " +
       "in August, September and October 2026, on realized timetables.",
-    card11Title: "How Łódź lines grow",
+    card11Title: "How the segments grow in Łódź",
     card11Desc:
       "Hover a 250 m hex and the real tram and bus segments reachable in 30 minutes light up. " +
       "Pin a point and stretch the reach from 0 to 60 minutes. Tuesday 6 Oct 2026, morning 7–9 and afternoon 14–18, R5 median.",

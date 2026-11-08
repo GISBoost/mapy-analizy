@@ -3,28 +3,38 @@
 const $ = (id) => document.getElementById(id);
 const STR = {
   pl: {
-    title: "Jak rosną linie",
-    lead: "Najedź na miasto. Klik przypina heks i oddaje suwak czasu podróży. Zoom jest na kółku.",
+    title: "Jak rosną odcinki",
+    docTitle: "Jak rosną odcinki w Łodzi — GISBoost",
+    nav: "Odcinki Łodzi",
+    lead: "Najedź na miasto, zobaczysz odcinki w 30 minut. Klik przypina heks i puszcza wzrost od zera. Zoom jest na kółku.",
     winLabel: "Okno odjazdu",
     timeLabel: "Czas podróży",
     play: "Odtwarzaj", pause: "Pauza", unpin: "Odepnij",
     hover: "Najedź na heks. Podgląd to 30 minut.",
     pinned: "Przypięty heks {id}. Suwak nie liczy trasy od nowa.",
     stat: "{n} odcinków w {t} min",
-    note: "Wtorek 6.10.2026, zrealizowany rozkład P50. Mediana czasu dojazdu do końca odcinka dla odjazdów w wybranym oknie. To nie jest jeden kurs. Ostatni hop linii wpadającej na osiągnięty przystanek zapala się razem z nim.",
+    empty: "Nic nie doszło w {t} min.",
+    note: "Mediana czasu do końca odcinka w wybranym oknie odjazdu. To nie jest jeden kurs.",
+    foot: "Wtorek 6.10.2026, GTFS zrealizowany P50, Conveyal R5 7.6. Ostatni hop linii wpadającej na osiągnięty przystanek zapala się razem z nim.",
+    tram: "tramwaj", bus: "autobus",
     loading: "Ładowanie sieci…", fail: "Nie udało się wczytać danych.",
     theme: "Motyw",
   },
   en: {
-    title: "How the lines grow",
-    lead: "Hover the city. A click pins the hex and enables the travel-time slider. Zoom is on the wheel.",
+    title: "How the segments grow",
+    docTitle: "How the segments grow in Łódź — GISBoost",
+    nav: "Łódź segments",
+    lead: "Hover the city to see segments within 30 minutes. A click pins the hex and plays the growth from zero. Zoom is on the wheel.",
     winLabel: "Departure window",
     timeLabel: "Travel time",
     play: "Play", pause: "Pause", unpin: "Unpin",
     hover: "Hover a hex. The preview is 30 minutes.",
     pinned: "Pinned hex {id}. The slider does not recompute the route.",
     stat: "{n} segments within {t} min",
-    note: "Tuesday 6 Oct 2026, realized P50 timetable. Median travel time to the end of each segment for departures in the selected window. Not a single vehicle. The last hop of every line into a reached stop lights up with that stop.",
+    empty: "Nothing reached within {t} min.",
+    note: "Median time to the end of the segment in the selected departure window. Not a single vehicle.",
+    foot: "Tuesday 6 Oct 2026, realized GTFS P50, Conveyal R5 7.6. The last hop of every line into a reached stop lights up with that stop.",
+    tram: "tram", bus: "bus",
     loading: "Loading the network…", fail: "Could not load the data.",
     theme: "Theme",
   },
@@ -33,31 +43,40 @@ const STR = {
 const SPEEDS = [0.5, 1, 2, 4];
 const PREVIEW = 30;
 const RAMP = ["#67e8f9", "#22d3ee", "#3b82f6", "#818cf8", "#e9d5ff"];
-const HIDDEN = ["==", ["get", "m"], -1];
+const M = ["coalesce", ["feature-state", "m"], 255];
+const HIDDEN = ["==", M, -1];
 
 let lang = "pl";
 let manifest, segGeo, morning, afternoon, hexById;
 let map, counts;
 let hoverId = null, pinId = null, windowId = "morning";
 let cutoff = PREVIEW, lastT = -1, speed = 1, playing = false, playT0 = 0, playFrom = 0;
-let hoverTimer = 0, wheelUntil = 0, cursor = null, marker, stampedHex = -1, afternoonTask = null;
+let hoverFrame = 0, wheelUntil = 0, cursor = null, marker, stampedHex = -1, afternoonTask = null;
 
 function t(key, vars) {
   let s = STR[lang][key];
   if (vars) for (const k of Object.keys(vars)) s = s.replace("{" + k + "}", vars[k]);
   return s;
 }
+function paintLegend() {
+  const swatch = [0, 15, 30, 45, 60].map((m, i) => `<span><i style="background:${RAMP[i]}"></i>${m}</span>`).join("");
+  $("legend").innerHTML = `<div class="ramp">${swatch}</div><div class="modes"><span><i class="tram"></i>${t("tram")}</span><span><i class="bus"></i>${t("bus")}</span></div>`;
+}
 function applyLang() {
+  document.title = t("docTitle");
   $("title").textContent = t("title");
+  $("navHere").textContent = t("nav");
   $("lead").textContent = t("lead");
   $("winLabel").textContent = t("winLabel");
   $("timeLabel").textContent = t("timeLabel");
   $("note").textContent = t("note");
+  $("foot").textContent = t("foot");
   $("unpinBtn").textContent = t("unpin");
   $("playBtn").setAttribute("aria-label", playing ? t("pause") : t("play"));
   $("themeBtn").textContent = t("theme");
   $("langBtn").textContent = lang === "pl" ? "EN" : "PL";
   document.documentElement.lang = lang;
+  paintLegend();
   paintStat();
 }
 function rowOf(hex) {
@@ -66,27 +85,22 @@ function rowOf(hex) {
 }
 function activeHex() { return pinId != null ? pinId : hoverId; }
 
-function litOf(hex) {
+function stamp(hex) {
+  if (!map.isSourceLoaded("seg-on")) return;
+  if (stampedHex === hex && counts) return;
   const row = rowOf(hex);
   const hist = new Uint16Array(61);
-  const out = [];
   const feats = segGeo.features;
+  // ponytail: rewrites all ~3k segment states per hex. Write only changed minutes if one hex exceeds a frame.
   for (let i = 0; i < feats.length; i++) {
-    const f = feats[i];
-    const minute = row[f.properties.to];
-    if (minute > 60) continue;
-    hist[minute]++;
-    out.push({type: "Feature", properties: {m: minute, mode: f.properties.mode}, geometry: f.geometry});
+    const minute = row[feats[i].properties.to];
+    const m = minute > 60 ? 255 : minute;
+    if (m !== 255) hist[m]++;
+    map.setFeatureState({source: "seg-on", id: feats[i].id}, {m: m});
   }
   for (let i = 1; i < 61; i++) hist[i] += hist[i - 1];
   counts = hist;
   stampedHex = hex;
-  return {type: "FeatureCollection", features: out};
-}
-function stamp(hex) {
-  if (stampedHex === hex && counts) return;
-  // ponytail: one setData per hex; the slider only changes the filter. Simplify lines if a hex change still hitches.
-  map.getSource("seg-on").setData(litOf(hex));
 }
 function applyCutoff(tMin) {
   const next = Math.max(0, Math.min(60, tMin | 0));
@@ -95,7 +109,7 @@ function applyCutoff(tMin) {
     if (lastT !== -1) map.setFilter("seg-on", HIDDEN);
     lastT = -1;
   } else if (next !== lastT) {
-    map.setFilter("seg-on", ["<=", ["get", "m"], next]);
+    map.setFilter("seg-on", ["<=", M, next]);
     lastT = next;
   }
   $("slider").value = String(pinId == null ? PREVIEW : next);
@@ -109,7 +123,22 @@ function paintStat() {
     $("stat").textContent = t("hover");
     return;
   }
-  $("stat").textContent = (pinId != null ? t("pinned", {id: pinId}) + " " : "") + t("stat", {n: counts[cutoff], t: cutoff});
+  const n = counts[cutoff];
+  const body = n === 0 ? t("empty", {t: cutoff}) : t("stat", {n: n, t: cutoff});
+  $("stat").textContent = (pinId != null ? t("pinned", {id: pinId}) + " " : "") + body;
+}
+function showOutline(id) {
+  const src = map && map.getSource("hex-ol");
+  if (!src) return;
+  const h = id == null ? null : hexById[id];
+  if (!h) {
+    src.setData({type: "FeatureCollection", features: []});
+    return;
+  }
+  let ring = h.ring;
+  const a = ring[0], b = ring[ring.length - 1];
+  if (a[0] !== b[0] || a[1] !== b[1]) ring = ring.concat([a]);
+  src.setData({type: "Feature", properties: {}, geometry: {type: "LineString", coordinates: ring}});
 }
 function showHex(id, tMin) {
   if (id === hoverId && pinId == null && counts) {
@@ -117,6 +146,7 @@ function showHex(id, tMin) {
     return;
   }
   hoverId = id;
+  showOutline(id);
   stamp(id);
   lastT = -1;
   applyCutoff(tMin);
@@ -125,6 +155,7 @@ function clearHex() {
   if (pinId != null) return;
   hoverId = null;
   counts = null;
+  showOutline(null);
   applyCutoff(PREVIEW);
 }
 function pointInRing(pt, ring) {
@@ -154,6 +185,7 @@ function pin(id, tMin) {
   hoverId = id;
   $("slider").disabled = false;
   $("unpinBtn").hidden = false;
+  showOutline(id);
   stamp(id);
   movePin(id);
   lastT = -1;
@@ -271,6 +303,7 @@ async function init() {
       fetch("data/morning.bin.gz").then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }),
     ]);
     manifest = mj; segGeo = sj; hexBuf = hj; morningBuf = mb;
+    for (let i = 0; i < segGeo.features.length; i++) segGeo.features[i].id = i;
     morning = await decodeMatrix(morningBuf);
   } catch (err) {
     $("loading").textContent = t("fail");
@@ -303,20 +336,27 @@ async function init() {
   const qHex = q.get("hex") == null || !hexById[+q.get("hex")] ? null : +q.get("hex");
   const qT = q.get("t") == null ? 0 : Math.max(0, Math.min(60, +q.get("t") | 0));
   const empty = {type: "FeatureCollection", features: []};
-  map.addSource("seg-base", {type: "geojson", data: segGeo});
-  map.addSource("seg-on", {type: "geojson", data: qHex == null ? empty : litOf(qHex)});
-  map.addLayer({id: "seg-base", type: "line", source: "seg-base", paint: {"line-color": "#94a3b8", "line-width": 1.2, "line-opacity": 0.55}});
+  map.addSource("seg-on", {type: "geojson", data: segGeo});
+  map.addSource("hex-ol", {type: "geojson", data: empty});
   map.addLayer({
     id: "seg-on", type: "line", source: "seg-on",
-    filter: qHex == null ? HIDDEN : ["<=", ["get", "m"], qT],
+    filter: HIDDEN,
     paint: {
       "line-width": ["case", ["==", ["get", "mode"], "tram"], 4, 2.8],
       "line-opacity": 0.95,
-      "line-color": ["interpolate", ["linear"], ["get", "m"], 0, RAMP[0], 15, RAMP[1], 30, RAMP[2], 45, RAMP[3], 60, RAMP[4]],
+      "line-color": ["interpolate", ["linear"], M, 0, RAMP[0], 15, RAMP[1], 30, RAMP[2], 45, RAMP[3], 60, RAMP[4]],
     },
   });
+  map.on("sourcedata", (e) => {
+    if (e.sourceId !== "seg-on" || !e.isSourceLoaded) return;
+    const hex = activeHex();
+    if (hex == null || counts) return;
+    stamp(hex);
+    lastT = -1;
+    applyCutoff(cutoff);
+  });
+  map.addLayer({id: "hex-ol", type: "line", source: "hex-ol", paint: {"line-color": "#ff3b30", "line-width": 2}});
   basemap();
-  $("legend").innerHTML = [0, 15, 30, 45, 60].map((m, i) => `<span><i style="background:${RAMP[i]}"></i>${m}</span>`).join("");
   const labels = manifest.windows;
   $("windows").innerHTML = ["morning", "afternoon"].map((id) =>
     `<button type="button" data-w="${id}" aria-pressed="${id === windowId}">${labels[id].label}</button>`).join("");
@@ -352,28 +392,21 @@ async function init() {
     for (const b of $("speeds").querySelectorAll("button")) b.setAttribute("aria-pressed", b === btn);
     if (playing) { playFrom = cutoff; playT0 = performance.now(); }
   });
+  function armHover() {
+    if (hoverFrame) return;
+    hoverFrame = requestAnimationFrame(() => {
+      hoverFrame = 0;
+      if (!cursor) return;
+      previewAt(cursor);
+    });
+  }
   map.on("mousemove", (e) => {
     cursor = [e.lngLat.lng, e.lngLat.lat];
     if (pinId != null || performance.now() < wheelUntil) return;
-    clearTimeout(hoverTimer);
-    const at = cursor;
-    hoverTimer = setTimeout(() => previewAt(at), 80);
+    armHover();
   });
-  map.on("wheel", () => {
-    clearTimeout(hoverTimer);
-    wheelUntil = performance.now() + 180;
-  });
-  map.on("zoomend", () => {
-    if (pinId != null || !cursor) return;
-    clearTimeout(hoverTimer);
-    const at = cursor;
-    hoverTimer = setTimeout(() => {
-      if (pinId != null) return;
-      const id = hexAt(at[0], at[1]);
-      if (id == null) clearHex();
-      else showHex(id, PREVIEW);
-    }, 60);
-  });
+  map.on("wheel", () => { wheelUntil = performance.now() + 180; });
+  map.on("zoomend", () => { if (pinId == null && cursor) armHover(); });
   map.on("mouseout", () => { if (pinId == null) clearHex(); });
   map.on("click", (e) => {
     const id = hexAt(e.lngLat.lng, e.lngLat.lat);

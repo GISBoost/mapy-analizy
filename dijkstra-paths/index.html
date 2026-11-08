@@ -2,14 +2,14 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<title>Jak rosną linie w Łodzi — GISBoost</title>
+<title>Jak rosną odcinki w Łodzi — GISBoost</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Prawdziwe odcinki tramwajów i autobusów w Łodzi kolorowane medianą czasu dojazdu. Wtorek 6.10.2026, rano 7–9 i popołudnie 14–18.">
 <link rel="icon" href="../favicon.ico">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GISBoost">
-<meta property="og:title" content="Jak rosną linie w Łodzi — GISBoost">
-<meta property="og:description" content="Najedź na heks, przypnij punkt i suwakiem 0–60 min wydłuż zasięg po prawdziwych liniach.">
+<meta property="og:title" content="Jak rosną odcinki w Łodzi — GISBoost">
+<meta property="og:description" content="Najedź na heks, zobacz odcinki w 30 minut. Klik przypina heks i puszcza wzrost od zera do 60 minut.">
 <meta property="og:url" content="https://gisboost.github.io/mapy-analizy/dijkstra-paths/">
 <meta property="og:image" content="https://gisboost.github.io/assets/icon_gisboost.png">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk=" crossorigin="">
@@ -22,7 +22,7 @@
   <span class="brand"><a class="mark" href="https://gisboost.github.io/">GISBoost</a> <a class="sub" href="https://gisboost.github.io/mapy-analizy/">/ analizy mapowe</a></span>
   <nav class="topnav">
     <a class="topnav-link" href="../">Analizy</a>
-    <a class="topnav-link" href="./" aria-current="page">Linie Łodzi</a>
+    <a class="topnav-link" href="./" aria-current="page" id="navHere">Odcinki Łodzi</a>
     <button class="topnav-link lang" id="themeBtn" type="button">Motyw</button>
     <button class="topnav-link lang" id="langBtn" type="button">EN</button>
   </nav>
@@ -31,9 +31,9 @@
   <div id="map"></div>
   <aside id="panel" class="glass">
     <div class="hd">
-      <h1 id="title">Jak rosną linie</h1>
+      <h1 id="title">Jak rosną odcinki</h1>
     </div>
-    <p class="lead" id="lead">Najedź na miasto. Klik przypina heks i oddaje suwak czasu podróży.</p>
+    <p class="lead" id="lead">Najedź na miasto, zobaczysz odcinki w 30 minut. Klik przypina heks i puszcza wzrost od zera. Zoom jest na kółku.</p>
     <div>
       <p class="eyebrow" id="winLabel">Okno odjazdu</p>
       <div class="seg" id="windows" role="group"></div>
@@ -56,7 +56,7 @@
 </div>
 <footer class="note">
   <a href="../">← wszystkie analizy</a>
-  · dane: GTFS zrealizowany P50, 6.10.2026, Conveyal R5 7.6
+  · <span id="foot">Wtorek 6.10.2026, GTFS zrealizowany P50, Conveyal R5 7.6. Ostatni hop linii wpadającej na osiągnięty przystanek zapala się razem z nim.</span>
   · podkład © OpenStreetMap contributors
 </footer>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>

@@ -60,9 +60,14 @@ h1 { margin: 0; font-family: Archivo, "Segoe UI", sans-serif; font-size: 1.25rem
 }
 .speeds { display: flex; gap: 6px; margin-top: 8px; }
 .speeds button { padding: 4px 8px; font-size: 0.78rem; }
-.legend { display: flex; gap: 4px; align-items: flex-end; }
-.legend span { flex: 1; text-align: center; font-size: 0.68rem; color: var(--ink-2); }
-.legend i { display: block; height: 8px; border-radius: 4px; margin-bottom: 3px; }
+.legend { display: flex; flex-direction: column; gap: 8px; }
+.ramp, .modes { display: flex; gap: 8px; align-items: center; }
+.ramp span { flex: 1; text-align: center; font-size: 0.68rem; color: var(--ink-2); }
+.ramp i { display: block; height: 8px; border-radius: 4px; margin-bottom: 3px; }
+.modes { font-size: 0.72rem; color: var(--ink-2); }
+.modes span { display: flex; align-items: center; gap: 6px; }
+.modes i { display: block; width: 22px; border-top: 2.5px solid currentColor; }
+.modes .tram { border-top-width: 4px; }
 .textbtn { align-self: flex-start; padding: 6px 12px; }
 #loading {
   position: absolute; z-index: 6; left: 50%; bottom: 16px; transform: translateX(-50%);
