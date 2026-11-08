@@ -1,0 +1,19 @@
+# ZDiT: wzorzec URL, hipoteza 4106, BZP i TED — sprawdzone na żywo 2026-11-07
+
+## Zmiany w `bip_scraper.py`
+Usunięto `zdit.lodz.pl` (DNS: `Could not resolve host`) i martwe hosty; dodano seed ZDiT i host `zdit.uml.lodz.pl` (301). Naprawiono: kodowanie (parsowanie `r.content`), duplikaty http/https. Nie uruchamiano masowo.
+
+## Dowody
+- BIP ZDiT: `https://uml.lodz.pl/komunikacja-i-transport/zarzad-drog-i-transportu-bip/` → HTTP 200, 250 KB, bez CAPTCHA. Podstrony: `…/zamowienia-publiczne/`, `…/zajecie-pasa-zezwolenia-uzgodnienia/`, `…/ogloszenia/`, `…/zamowienia-publiczne/{zamowienia-publiczne,plan-postepowan-o-udzielenie-zamowien-publicznych,zapytania-ofertowe}/` (200). `robots.txt` na uml.lodz.pl i bip.uml.lodz.pl: 404 (brak ograniczeń).
+- Wzorzec `…/uploads/tx_edgeregisters/<id>/<id_rejestru>/<plik>`: **potwierdzony dla rejestru 6667** (70 plików w indeksie; `HEAD https://uml.lodz.pl/uploads/tx_edgeregisters/839401/6667/Ogłoszenie ezamówienia.pdf` → 200 `application/pdf`, ta sama treść pod `bip.uml.lodz.pl`). 6667 to rejestr ogłoszeń o udzieleniu zamówień **Urzędu Miasta** (strona-matka: „zamówienia publiczne powyżej 130 000 zł… Wydział Zamówień Publicznych”).
+- **Hipoteza „4106 = rejestr ZDiT”: NIEPOTWIERDZONA.** `4106` nie występuje w `index.csv` (0 trafień), w żadnej z pobranych stron ZDiT ani w wyszukiwarce; `…/uploads/tx_edgeregisters/839401/4106/` → 301. Jedyny rejestr w indeksie to 6667. Skąd 4106 — nieustalone.
+- ZDiT publikuje przetargi we własnej wyszukiwarce BIP (rozszerzenie TYPO3 `tx_edgepublicorder`): `…/zamowienia-publiczne/zamowienia-publiczne/`, filtr „Instytucja ogłaszająca” = `Zarząd Dróg i Transportu` (id 20), pola `publicationDateStart/End`. Lista pokazała 2 strony po 10 (najnowsza pozycja 30.06.2021, ZDiT-DZ.2620.11.2021 „Remont estakady drogowej…”); to nie jest pełny zbiór 2018–2026. Paginacja ma `cHash`, więc crawler musi iść po linkach (nie konstruować URL). Pozycje: `…/?tx_edgepublicorder_order[action]=show&…[order]=<id>`; pliki ZDiT leżą pod `/files/public/dla_mieszkanca/transport/ZDiT/…` (nie `tx_edgeregisters`).
+- Na stronie zajęcia pasa są tylko wzory wniosków i zasady (`…/pliki_do_pobrania/`), nie rejestr zajęć.
+- CAPTCHA: widziana tylko raz, w narzędziu WebFetch na pliku `BRM_2024/56.doc`; ten sam plik pobrał się normalnym `curl` bez CAPTCHA. Niczego nie omijano.
+
+## BZP (e-Zamówienia, od 2021) — działa publiczne API
+`GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?NoticeType=ContractNotice&PageSize=N&OrganizationName=…&PublicationDateFrom=…&PublicationDateTo=…` (oba terminy wymagane, HTTP 400 bez `PublicationDateTo`). Zwraca JSON z `bzpNumber`, `orderObject`, `cpvCode` (np. „45233140-2 Roboty drogowe”), `organizationName/City/NationalId`, `htmlBody`. Filtr `OrganizationName` to **dopasowanie podciągu** (test: zwróciło „Zarząd Dróg i Transportu w **Koszalinie**”), więc trzeba dodatkowo filtrować po `organizationCity=Łódź` lub NIP. Próba 2018 → `[]` (nowa BZP działa od 2021; dla 2018–2020 potrzebna stara BZP `bzp.uzp.gov.pl`, nie sprawdzano). Maks. rozmiar strony i NIP ZDiT Łódź: nieustalone.
+## TED
+`POST https://api.ted.europa.eu/v3/notices/search` działa anonimowo (zapytanie `buyer-country=POL` → 200, JSON z `publication-number` i linkami pdf/xml). Moje próby filtra po nazwie nabywcy (`buyer-name ~ …`, `organisation-name-buyer=…`) → 400: **poprawna nazwa pola w składni expert query — nieustalona**; do ustalenia w dokumentacji TED (Expert search). TED obejmuje tylko zamówienia powyżej progów UE (większe remonty). W indeksie są 4 unikalne pliki `2026-OJS213-…` (ogłoszenia TED) z UMŁ.
+## Rekomendacja
+Pełne pobranie wymaga zgody: (1) crawler po wyszukiwarce `tx_edgepublicorder` ZDiT (filtr dat dzielony na lata), (2) BZP API 2021–2026 z filtrem miasta, (3) stara BZP/TED dla 2018–2020. Szacunek liczby ogłoszeń — nieustalony (nie pobierano).
