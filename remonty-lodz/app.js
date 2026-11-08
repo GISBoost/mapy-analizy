@@ -303,7 +303,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=13")).json();
+    D = await (await fetch("data/remonty.json?v=14")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
@@ -371,16 +371,14 @@
     map.addLayer({ id: "pts", type: "circle", source: "pts", paint: {} });
     basemapTheme();
     // click opens the record; hover only changes the cursor (no tooltip, by design)
+    const hit = (p, r = 12) => [[p.x - r, p.y - r], [p.x + r, p.y + r]];  // click tolerance in px around points and lines
     map.on("click", (e) => {
-      const f = map.queryRenderedFeatures([[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]], { layers: ["pts", "secs", "osmb"] })
+      const f = map.queryRenderedFeatures(hit(e.point), { layers: ["pts", "secs", "osmb"] })
         .sort((a, b) => (b.layer.id !== "osmb") - (a.layer.id !== "osmb") || b.properties.a - a.properties.a)[0];
       if (f && f.layer.id === "osmb") openOsmCard(f.properties, e.lngLat);
       else if (f) openCard(f.properties.id, f.geometry.type === "Point" ? f.geometry.coordinates : e.lngLat); else closeCard();
     });
-    for (const l of ["pts", "secs", "osmb"]) {
-      map.on("mouseenter", l, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", l, () => { map.getCanvas().style.cursor = ""; });
-    }
+    map.on("mousemove", (e) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(hit(e.point), { layers: ["pts", "secs", "osmb"] }).length ? "pointer" : ""; });
     map.on("move", placeCard);
     $("zIn").addEventListener("click", () => map.zoomIn()); $("zOut").addEventListener("click", () => map.zoomOut());
     update();
