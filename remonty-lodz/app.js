@@ -71,9 +71,11 @@
     $("chart").innerHTML = `<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
         <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="var(--gap)" stroke-width="3"/></pattern></defs>
         <rect x="0" y="0" width="${X(BILET_END)}" height="100" fill="var(--bilet)" stroke="none"/>
+        <rect x="${X("2026-01-01")}" y="0" width="${1000 - X("2026-01-01")}" height="100" fill="rgba(255,69,58,.2)" stroke="none"/>
         ${lines}${layers}${osmLine}</svg>
       <span class="tag" style="left:4px">wydłużony bilet MPK (do 31.12.2024)</span>
       <span class="tag gap" style="left:${X("2025-01-01") / 10 + 0.5}%">po bilecie</span>
+      <span class="tag low" style="left:${X("2026-01-01") / 10 + 0.5}%">mało danych</span>
       ${years}<div class="cursor" id="cursor"></div>`;
     $("chart").setAttribute("aria-valuemax", String(SPAN));
     moveCursor();
@@ -128,13 +130,13 @@
       b.classList.toggle("nodata", nodata); b.classList.toggle("cur", y === cy); b.classList.toggle("future", !!cy && y > cy);
       b.setAttribute("aria-pressed", String(sel === y));
       b.setAttribute("aria-label", `${y}: ${nodata ? "brak danych" : vals[i]}${osmV[i] ? `, plus ${osmV[i]} tylko OSM` : ""}`);
-      b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
+      b.title = nodata ? "brak danych" : ""; b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
       const f = b.querySelector(".fill");
       f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mxO) * 100) + "%");
       b.style.setProperty("--o", (osmV[i] / mxO) * 100 + "%");
       f.innerHTML = nodata ? "" : parts(y, i).filter(([, n]) => n > 0).map(([c, n]) => `<i style="flex:${n};background:${c}"></i>`).join("");
     });
-    $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span>`
+    $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span><span><i class="nd"></i>brak danych (przed 2021 nie ma umów w BZP)</span>`
       : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (fioletowy słupek obok)</span>`;
     $("barsNote").textContent = dayMetric
       ? "Dni w roku, w których trwało co najmniej tyle umów z BZP. Okres umowy to górna granica zajęcia drogi. 2026: do 7 listopada."
@@ -280,7 +282,7 @@
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
     $("legend").innerHTML = h;
-    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (linia, własna skala)</span><span>pole = maks. umów w tygodniu</span>`;
+    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`;
   }
   let paintView = () => {};
 
@@ -303,7 +305,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=13")).json();
+    D = await (await fetch("data/remonty.json?v=16")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
@@ -371,16 +373,14 @@
     map.addLayer({ id: "pts", type: "circle", source: "pts", paint: {} });
     basemapTheme();
     // click opens the record; hover only changes the cursor (no tooltip, by design)
+    const hit = (p, r = 12) => [[p.x - r, p.y - r], [p.x + r, p.y + r]];  // click tolerance in px around points and lines
     map.on("click", (e) => {
-      const f = map.queryRenderedFeatures([[e.point.x - 6, e.point.y - 6], [e.point.x + 6, e.point.y + 6]], { layers: ["pts", "secs", "osmb"] })
+      const f = map.queryRenderedFeatures(hit(e.point), { layers: ["pts", "secs", "osmb"] })
         .sort((a, b) => (b.layer.id !== "osmb") - (a.layer.id !== "osmb") || b.properties.a - a.properties.a)[0];
       if (f && f.layer.id === "osmb") openOsmCard(f.properties, e.lngLat);
       else if (f) openCard(f.properties.id, f.geometry.type === "Point" ? f.geometry.coordinates : e.lngLat); else closeCard();
     });
-    for (const l of ["pts", "secs", "osmb"]) {
-      map.on("mouseenter", l, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", l, () => { map.getCanvas().style.cursor = ""; });
-    }
+    map.on("mousemove", (e) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(hit(e.point), { layers: ["pts", "secs", "osmb"] }).length ? "pointer" : ""; });
     map.on("move", placeCard);
     $("zIn").addEventListener("click", () => map.zoomIn()); $("zOut").addEventListener("click", () => map.zoomOut());
     update();

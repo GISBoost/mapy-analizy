@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk=" crossorigin="">
 <script>try{const v=localStorage.getItem('mapyAnalizyTheme'); document.documentElement.setAttribute('data-theme', v==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
-<link rel="stylesheet" href="styles.css?v=13">
+<link rel="stylesheet" href="styles.css?v=16">
 <script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
@@ -56,6 +56,8 @@
     <div class="hd"><h1>Remonty dróg w Łodzi</h1><button class="ib sm" id="reportHide" type="button" aria-label="Zwiń raport"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>
     <p class="lead">Remonty jezdni i torowisk z przetargów (BZP) i planów zamówień miasta (BIP). Czy po końcu <b>wydłużonego biletu MPK</b> (31.12.2024) remontów było mniej?</p>
 
+    <p class="replink"><a href="../badanie-remonty-lodz/">Raport: skąd dane, metoda, ograniczenia →</a></p>
+
     <section class="sec" id="compare"></section>
 
     <section class="sec">
@@ -89,11 +91,15 @@
 
   <footer id="bar" class="glass">
     <div class="col time">
-      <button id="play" class="play" type="button" aria-label="Odtwórz"><svg viewBox="0 0 24 24"><path id="playIcon" d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></button>
-      <button id="speed" class="speed" type="button" aria-label="Prędkość odtwarzania">1 tydz.</button>
+      <div class="lcol">
+        <div class="ctl">
+          <button id="play" class="play" type="button" aria-label="Odtwórz"><svg viewBox="0 0 24 24"><path id="playIcon" d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></button>
+          <button id="speed" class="speed" type="button" aria-label="Prędkość odtwarzania">1 tydz.</button>
+        </div>
+        <div class="legend-inline" id="chartLeg" aria-label="Legenda wykresu"></div>
+      </div>
       <div class="chartwrap">
         <div id="chart" role="slider" tabindex="0" aria-label="Dzień na osi czasu" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></div>
-        <div class="legend-inline" id="chartLeg" aria-label="Legenda wykresu"></div>
       </div>
     </div>
     <div class="col src">
@@ -101,11 +107,12 @@
       <div class="seg" id="colorSeg" role="group" aria-label="Kolor punktów"></div>
       <div class="chips" id="srcChips" role="group" aria-label="Źródła"></div>
     </div>
+    <p class="attr">Mapa i odcinki „w budowie”: © współtwórcy OpenStreetMap (ODbL)</p>
   </footer>
   <div id="legend" class="glass legend" aria-label="Legenda"></div>
 </div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
-<script src="app.js?v=13"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>
