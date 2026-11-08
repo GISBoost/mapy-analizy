@@ -62,12 +62,16 @@
       for (const w of [...weekly].reverse()) p += `L${X(w[0]).toFixed(1)} ${Y(below(w)).toFixed(1)}`;
       return `<path d="${p}Z" fill="${ST[st]}" fill-opacity=".85" stroke="none"/>`;
     }).join("");
+    const om = Math.max(...osmDay.values(), 1);
+    let op = "";
+    for (let ms = t(T0), k = 0; ms <= t(T1); ms += 7 * DAY, k++) { const d = iso(ms); op += `${k ? "L" : "M"}${X(d).toFixed(1)} ${(100 - ((osmDay.get(d) || 0) / om) * 94).toFixed(1)}`; }
+    const osmLine = `<path d="${op}" fill="none" stroke="${OSM_COLOR}" stroke-width="1.6" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>`;
     const lines = [1, 3, 5].map((n) => `<path d="M0 ${Y(n)}H1000" stroke="var(--grid)" stroke-width="1" vector-effect="non-scaling-stroke" ${n === 5 ? 'stroke-dasharray="4 3"' : ""}/>`).join("");
     const years = ["2021", "2022", "2023", "2024", "2025", "2026"].map((y) => `<span class="ax" style="left:${X(y + "-07-01") / 10}%">${y}</span>`).join("");
     $("chart").innerHTML = `<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
         <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="var(--gap)" stroke-width="3"/></pattern></defs>
         <rect x="0" y="0" width="${X(BILET_END)}" height="100" fill="var(--bilet)" stroke="none"/>
-        ${lines}${layers}</svg>
+        ${lines}${layers}${osmLine}</svg>
       <span class="tag" style="left:4px">wydłużony bilet MPK (do 31.12.2024)</span>
       <span class="tag gap" style="left:${X("2025-01-01") / 10 + 0.5}%">po bilecie</span>
       ${years}<div class="cursor" id="cursor"></div>`;
@@ -114,7 +118,7 @@
       if (i >= 0) vals[i] = D.dzienne.filter(([d, n]) => d.startsWith(cy) && d <= state.day && n >= th).length;
     }
     $("bars").classList.toggle("sel", !!sel);
-    if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span></span><span class="osm"></span><span class="y">${y}</span></button>`).join("");
+    if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span><span class="osm"></span></span><span class="y">${y}</span></button>`).join("");
     // "Roboty": stacked by status (legend colours) + "only OSM" on top. Day metrics come from BZP contracts only: one colour.
     const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y)), mxO = Math.max(...osmV, 1);
     const parts = (y, i) => dayMetric ? [[ST.udzielone, vals[i]]]
@@ -127,11 +131,11 @@
       b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
       const f = b.querySelector(".fill");
       f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mx) * 100) + "%");
-      b.style.setProperty("--o", (osmV[i] / mxO) * 100 + "%");
+      b.style.setProperty("--o", (osmV[i] / mx) * 100 + "%");
       f.innerHTML = nodata ? "" : parts(y, i).filter(([, n]) => n > 0).map(([c, n]) => `<i style="flex:${n};background:${c}"></i>`).join("");
     });
     $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span>`
-      : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (pasek pod słupkiem, osobna skala)</span>`;
+      : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (fioletowy słupek obok)</span>`;
     $("barsNote").textContent = dayMetric
       ? "Dni w roku, w których trwało co najmniej tyle umów z BZP. Okres umowy to górna granica zajęcia drogi. 2026: do 7 listopada."
       : "Roboty na jezdniach i torowiskach (plany + przetargi ZDiT, ZIM, UMŁ), bez umów utrzymaniowych. Lata przed 2021 mają tylko plany zamówień, 2026 jest niepełny.";
@@ -276,7 +280,7 @@
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
     $("legend").innerHTML = h;
-    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + "<span>wysokość = maks. umów w tygodniu</span>";
+    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (linia, własna skala)</span><span>pole = maks. umów w tygodniu</span>`;
   }
   let paintView = () => {};
 
