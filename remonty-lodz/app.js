@@ -71,9 +71,11 @@
     $("chart").innerHTML = `<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
         <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="var(--gap)" stroke-width="3"/></pattern></defs>
         <rect x="0" y="0" width="${X(BILET_END)}" height="100" fill="var(--bilet)" stroke="none"/>
+        <rect x="${X("2026-01-01")}" y="0" width="${1000 - X("2026-01-01")}" height="100" fill="rgba(255,69,58,.2)" stroke="none"/>
         ${lines}${layers}${osmLine}</svg>
       <span class="tag" style="left:4px">wydłużony bilet MPK (do 31.12.2024)</span>
       <span class="tag gap" style="left:${X("2025-01-01") / 10 + 0.5}%">po bilecie</span>
+      <span class="tag low" style="left:${X("2026-01-01") / 10 + 0.5}%">mało danych</span>
       ${years}<div class="cursor" id="cursor"></div>`;
     $("chart").setAttribute("aria-valuemax", String(SPAN));
     moveCursor();
@@ -280,7 +282,7 @@
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
     $("legend").innerHTML = h;
-    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (linia, własna skala)</span><span>pole = maks. umów w tygodniu</span>`;
+    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`;
   }
   let paintView = () => {};
 
@@ -303,7 +305,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=14")).json();
+    D = await (await fetch("data/remonty.json?v=15")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));

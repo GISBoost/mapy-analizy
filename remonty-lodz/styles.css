@@ -137,11 +137,11 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 .chartwrap { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; gap: 3px; }
 .chartwrap .legend-inline { flex: none; max-height: 2.6em; overflow: hidden; }
 #chart { position: relative; flex: 1; min-height: 0; cursor: ew-resize; touch-action: none; }
-#chart svg { position: absolute; inset: 0 0 14px 0; width: 100%; height: calc(100% - 14px); }
+#chart svg { position: absolute; inset: 14px 0 14px 0; width: 100%; height: calc(100% - 28px); }  /* top strip holds the period labels so they never cover the chart */
 #chart .ax { position: absolute; bottom: 0; font-size: 0.64rem; color: var(--ink-2); transform: translateX(-50%); }
 #chart .tag { font-family: inherit; position: absolute; top: 0; font-size: 0.62rem; color: #64d2ff; pointer-events: none; white-space: nowrap; }
-#chart .tag.gap { color: var(--ink-2); }
-#chart .cursor { position: absolute; top: 0; bottom: 14px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; pointer-events: none; }
+#chart .tag.gap { color: var(--ink-2); } #chart .tag.low { color: #ff6961; left: auto !important; right: 2px; }
+#chart .cursor { position: absolute; top: 12px; bottom: 14px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; pointer-events: none; }
 #chart .cursor::after { content: ""; position: absolute; left: -5px; top: -2px; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
 .legend { position: absolute; z-index: 450; left: 64px; bottom: calc(var(--bar-h) + 22px); border-radius: 14px; padding: 6px 10px; max-width: 360px;
   display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 0.7rem; color: var(--ink-2); align-items: center; }
