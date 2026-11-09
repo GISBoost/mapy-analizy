@@ -210,16 +210,20 @@ body.rep-busy #repTools { display: none; }
   body:not(.bar-open) #bar .src, body:not(.bar-open) #bar #chartLeg, body:not(.bar-open) #bar .attr { display: none; }
   body:not(.bar-open) .legend { display: none; }
   .legend { left: 8px; right: 8px; max-width: none; bottom: calc(var(--bar-h) + 8px); max-height: 32dvh; overflow-y: auto; }
-  body.bar-open #repTools { display: none; }
+  body.bar-open #repTools, body:not(.report-closed) #repTools { display: none; }
   #bar .src #colorSeg { flex: 1 1 100%; } #bar .src #colorSeg button { flex: 1; }
   .play { width: 40px; height: 40px; } .speed { min-width: 48px; }
   #report { left: auto; right: 0; top: 0; bottom: 0; width: min(92vw, 400px); border-radius: 22px 0 0 22px; padding-bottom: calc(var(--bar-h) + 14px); }
   #reportBtn { top: 10px; right: 10px; }
   .bars { flex-direction: column; align-items: stretch; height: auto; gap: 5px; }
-  .bar { flex-direction: row; height: 22px; gap: 8px; }
-  .bar .y { order: -1; width: 34px; } .bar .track { height: 14px; align-items: stretch; }
-  .bar .fill { height: 100%; width: var(--p); border-radius: 2px 5px 5px 2px; flex-direction: row; } .bar .v { width: 34px; text-align: right; }
-  .bar .osm { display: none; }
+  .bar { flex-direction: row; height: auto; min-height: 24px; gap: 8px; align-items: center; }
+  .bar .y { order: -1; width: 34px; flex: none; }
+  .bar .v { order: 2; width: 92px; flex: none; min-height: 0; text-align: left; line-height: 1.15; }
+  /* three thin horizontal bars stacked: works, OSM only, restrictions */
+  .bar .track { height: 20px; margin: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+  .bar .fill { height: 8px; min-height: 0; width: var(--p); border-radius: 2px 4px 4px 2px; flex-direction: row; }
+  .bars .bar .osm, .bars .bar .utr { display: block; height: 4px; min-height: 0; border-radius: 2px; }
+  .bars .bar .osm { width: var(--o, 0%); } .bars .bar .utr { width: var(--u, 0%); }
   .bar .v small { display: inline; margin-left: 3px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .cmp { grid-template-columns: 1fr; }
@@ -239,4 +243,3 @@ body.rep-busy #repTools { display: none; }
 .bar .utr { width: 25%; flex: none; height: var(--u, 0%); min-height: 0; background: #ff375f; border-radius: 4px 4px 2px 2px; transition: height .4s ease; }
 .bar .v small.u { color: #ff375f; }
 .bars.sel .bar:not([aria-pressed="true"]) .utr, .bar.future .utr { opacity: .35; }
-@media (max-width: 760px) { .bar .utr { display: none; } }
