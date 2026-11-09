@@ -130,6 +130,7 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 #bar .src #viewSeg { flex: 1 1 100%; }
 #bar .src #srcChips { flex: 1 1 0; min-width: 0; }
 #bar .chips button { white-space: nowrap; }
+#barMore { display: none; }
 .legend-inline { display: flex; flex-wrap: wrap; gap: 1px 9px; font-size: 0.64rem; line-height: 1.25; color: var(--ink-2); align-items: center; }
 .legend-inline i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; }
 .legend-inline i.ln { width: 12px; height: 3px; border-radius: 2px; vertical-align: 2px; }
@@ -145,7 +146,7 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 #chart .tag.gap { color: var(--ink-2); } #chart .tag.low { color: #ff6961; left: auto !important; right: 2px; }
 #chart .cursor { position: absolute; top: 12px; bottom: 14px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; pointer-events: none; }
 #chart .cursor::after { content: ""; position: absolute; left: -5px; top: -2px; width: 12px; height: 12px; border-radius: 50%; background: var(--ink); }
-.legend { position: absolute; z-index: 450; left: 64px; bottom: calc(var(--bar-h) + 22px); border-radius: 14px; padding: 6px 10px; max-width: 360px;
+.legend { position: absolute; z-index: 450; left: 12px; bottom: calc(var(--bar-h) + 22px); border-radius: 14px; padding: 6px 10px; max-width: 360px;
   display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 0.7rem; color: var(--ink-2); align-items: center; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 .legend i.ln { width: 14px; height: 3px; border-radius: 2px; }
@@ -203,7 +204,13 @@ body.rep-busy #repTools { display: none; }
   #bar .src .seg { align-self: auto; } #bar .src #viewSeg { flex: 1 1 100%; } #bar .src #srcChips { flex: 1 1 100%; }
   .seg button { padding: 5px 6px; font-size: 0.72rem; }
   #chart .tag.gap { display: none; }
-  .legend { display: none; }  /* the same legend sits under the chart in the bar */
+  /* collapsed by default: time row only; "Warstwy i legenda" opens switches + map legend */
+  #barMore { display: inline-flex; margin-left: auto; padding: 0 12px; }
+  #bar .time #chart, #bar .time .chartwrap { flex: 1 1 100%; order: 6; }
+  body:not(.bar-open) #bar .src, body:not(.bar-open) #bar #chartLeg, body:not(.bar-open) #bar .attr { display: none; }
+  body:not(.bar-open) .legend { display: none; }
+  .legend { left: 8px; right: 8px; max-width: none; bottom: calc(var(--bar-h) + 8px); max-height: 32dvh; overflow-y: auto; }
+  body.bar-open #repTools { display: none; }
   #bar .src #colorSeg { flex: 1 1 100%; } #bar .src #colorSeg button { flex: 1; }
   .play { width: 40px; height: 40px; } .speed { min-width: 48px; }
   #report { left: auto; right: 0; top: 0; bottom: 0; width: min(92vw, 400px); border-radius: 22px 0 0 22px; padding-bottom: calc(var(--bar-h) + 14px); }

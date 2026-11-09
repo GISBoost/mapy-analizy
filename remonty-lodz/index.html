@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" integrity="sha256-V2sIX92Uh6ZaGSFTKMHghsB85b9toJtmazgG09AI2uk=" crossorigin="">
 <script>try{const v=localStorage.getItem('mapyAnalizyTheme'); document.documentElement.setAttribute('data-theme', v==='light'?'light':'dark')}catch(e){document.documentElement.setAttribute('data-theme','dark')}</script>
 <link rel="stylesheet" href="https://gisboost.github.io/assets/gisboost-1.css">
-<link rel="stylesheet" href="styles.css?v=25">
+<link rel="stylesheet" href="styles.css?v=27">
 <script data-goatcounter="https://gisboostgithub.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <link rel="canonical" href="https://gisboost.github.io/mapy-analizy/remonty-lodz/">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Dataset", "name": "Remonty dróg w Łodzi 2021–2026", "description": "Remonty jezdni i torowisk w Łodzi dzień po dniu w okresie wydłużonego biletu MPK (do 31.12.2024) i po nim, do listopada 2026. Źródła: Biuletyn Zamówień Publicznych, plany zamówień UMŁ, OpenStreetMap.", "url": "https://gisboost.github.io/mapy-analizy/remonty-lodz/", "inLanguage": "pl", "creator": {"@type": "Person", "name": "Michał Kaczorowski", "url": "https://gisboost.github.io/"}, "temporalCoverage": "2021-01-01/2026-11-07", "spatialCoverage": {"@type": "Place", "name": "Łódź, Polska"}, "isBasedOn": "Biuletyn Zamówień Publicznych, plany zamówień UMŁ, OpenStreetMap", "license": "https://opendatacommons.org/licenses/odbl/", "keywords": ["remonty dróg", "Łódź", "MPK Łódź", "wydłużony bilet", "BZP", "OpenStreetMap"]}</script>
@@ -132,6 +132,7 @@
         <div class="ctl">
           <button id="play" class="play" type="button" aria-label="Odtwórz"><svg viewBox="0 0 24 24"><path id="playIcon" d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg></button>
           <button id="speed" class="speed" type="button" aria-label="Prędkość odtwarzania">1 tydz.</button>
+          <button id="barMore" class="speed" type="button" aria-expanded="false" aria-controls="legend">Warstwy i legenda</button>
         </div>
         <div class="legend-inline" id="chartLeg" aria-label="Legenda wykresu"></div>
       </div>
@@ -151,6 +152,6 @@
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" integrity="sha256-vpYzxNhw4m+zfxz+XFp3GBZnEUAD6hYgeseFDY2ordE=" crossorigin=""></script>
 <script src="reports-config.js?v=22"></script>
-<script src="app.js?v=25"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

@@ -518,6 +518,7 @@
     D = await (await fetch("data/remonty.json?v=19")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
+    $("barMore").addEventListener("click", (e) => { const o = document.body.classList.toggle("bar-open"); e.currentTarget.setAttribute("aria-expanded", String(o)); e.currentTarget.textContent = o ? "Zwiń" : "Warstwy i legenda"; });
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
     buildWeekly();
     if (isPhone()) document.body.classList.add("report-closed");
