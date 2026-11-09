@@ -40,22 +40,16 @@ dopiero po przełączeniu zakładki: origins (id/lon/lat, siatka 500 m, precyzja
 obcięta do 6 miejsc po przecinku — ~10cm, więcej niż potrzeba przy siatce
 500 m), godziny, progi cutoff, dostępne warianty (wszystkie 6 miast mają
 `["rt","static"]`), bounds. `data/<city>/boundary.geojson` — dissolved outline
-siatki heksagonalnej tego miasta. `data/<city>/{rt,static}/{origin_id}.pbf` —
-jeden plik na punkt origin (format geobuf — binarny protobuf-encoding GeoJSON,
-~1/5 rozmiaru surowego GeoJSON, dekodowany w przeglądarce przez `vendor/pbf.js`
-+`vendor/geobuf.js`, self-hosted zamiast CDN — jeden origin mniej przed
-pierwszym renderem), zawiera poligony izochron dla wszystkich godzin × 3
-progów naraz (żeby hover/suwak nie robiły fetcha na każdą klatkę — jeden fetch
-na najechany/przypięty punkt, potem wszystko lokalnie w przeglądarce). Łódź
-(oba warianty): 124MB, zamiast 644MB jako zwykły GeoJSON. Wszystkie 6 miast
-razem: ~669MB, 16 172 plików `.pbf`.
+siatki heksagonalnej tego miasta. `data/<city>/{rt,static}/hours/<hour>.pbf` — jedna paczka na miasto, wariant
+i godzinę (geobuf, 3 progi × wszystkie origins). Hover czyta paczkę z pamięci;
+fetch jest przy starcie, zmianie godziny, wariantu albo miasta. Sąsiednie
+godziny dogrzewane w tle. Stare `data/<city>/{rt,static}/{origin_id}.pbf`
+zostają jako fallback, gdy paczki godzinowej nie ma. Budowa paczek:
+`node izochrony-transport/build_hour_packs.mjs` (opcjonalnie lista city id).
 
-Hover jest throttlowany (50ms) i po ustaleniu się na jednym punkcie dogrzewa w
-tle ~6 najbliższych sąsiadów — ale nawet z tym każdy niekeszowany heks to
-pełny network round-trip, który na GitHub Pages odczuwalny był jako
-spowolnienie ("muli") przy szybkim ruchu myszką, mimo że lokalnie
-(`http.server`) niewidoczne — zmierzone bezpośrednio (TTFB ~150ms/request na
-GitHub Pages), stąd Cloudflare Pages jako preferowany link (patrz wyżej).
+Hover bierze ostatni punkt kursora raz na klatkę (`requestAnimationFrame`).
+Zimny heks nie robi już round-tripu na origin. TTFB ~150 ms na GitHub Pages
+dotyka zmiany godziny, nie przeciągania kursora.
 
 Policzone przez [`easy-R5/tools/isochrones_lodz`](https://github.com/GISBoost/easy-R5/tree/main/tools/isochrones_lodz)
 (`r5r::isochrone()`). Odświeżenie/dodanie miasta = ponowne uruchomienie

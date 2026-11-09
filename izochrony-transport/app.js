@@ -16,18 +16,11 @@
 
   const VARIANT_KEYS = { rt: "variantRt", static: "variantStatic" };
 
-  // A hover only fires a fetch at most this often -- without it, a fast mouse
-  // sweep across many 500m hexes fires a fetch per hex per mousemove tick,
-  // which is invisible on localhost but a real, jank-causing round-trip on
-  // GitHub Pages (measured: production felt "muli" on hover, this plus the
-  // neighbor-prefetch below is the fix).
-  const MOVE_THROTTLE_MS = 50;
-  // After a hover settles on an origin, warm its nearest neighbors in the
-  // background so continuing to hover nearby hits cache instead of the
-  // network. Bounded and cheap (~6 fetches), unlike the whole-city prefetch
-  // tried earlier and reverted for costing ~10.8s of CPU for no longer-needed
-  // benefit -- see tools/isochrones_lodz/README.md decision log.
-  const NEIGHBOR_PREFETCH_N = 6;
+  // Warm the adjacent hour packs so moving the time slider hits cache.
+  // Origin-neighbor .pbf prefetch is gone: hover reads the current hour pack.
+  // Wheel zoom would otherwise pick a new origin every frame; pause preview
+  // the same 180 ms as dijkstra-paths.
+  const WHEEL_PAUSE_MS = 180;
 
   // Every origin in the grid has complete data (checked directly: all 1479
   // Lodz origin files carry exactly 17 hours x 3 cutoffs, zero gaps) -- so
@@ -119,14 +112,16 @@
   let displayOriginId = null; // the origin currently drawn (hover or pin)
   let pinnedOriginId = null;
   let pinMarker = null;
-  let lastMoveTs = 0;
+  let cursor = null;
+  let hoverFrame = 0;
+  let wheelUntil = 0;
   let outsideCoverage = false; // hovering farther than maxHoverDistDegSq from any origin
 
-  // city -> { manifest: Promise, boundary: Promise, origin: { variant: { id: Promise<FeatureCollection> } } }
+  // city -> { manifest, boundary, origin, hourPack: { variant: { hour: Promise<Map> } } }
   const cache = {};
 
   function cityCache(city) {
-    if (!cache[city]) cache[city] = { manifest: null, boundary: null, origin: {} };
+    if (!cache[city]) cache[city] = { manifest: null, boundary: null, origin: {}, hourPack: {} };
     return cache[city];
   }
 
@@ -146,14 +141,35 @@
     const c = cityCache(city);
     if (!c.origin[variant]) c.origin[variant] = {};
     if (!c.origin[variant][originId]) {
-      // geobuf binary, not raw GeoJSON -- ~1/5 the size on disk and still
-      // ~2x smaller than gzipped GeoJSON would be (see tools/isochrones_lodz
-      // README decision log). Decoded client-side via pbf.js + geobuf.js.
       c.origin[variant][originId] = fetch(`data/${city}/${variant}/${originId}.pbf`)
         .then((r) => r.arrayBuffer())
         .then((buf) => geobuf.decode(new Pbf(new Uint8Array(buf))));
     }
     return c.origin[variant][originId];
+  }
+
+  function fetchHourPack(city, variant, hour) {
+    const c = cityCache(city);
+    if (!c.hourPack[variant]) c.hourPack[variant] = {};
+    if (!c.hourPack[variant][hour]) {
+      c.hourPack[variant][hour] = fetch(HourPack.packUrl(city, variant, hour))
+        .then((r) => {
+          if (!r.ok) throw new Error("hour pack " + r.status);
+          return r.arrayBuffer();
+        })
+        .then((buf) => HourPack.indexHourPack(geobuf.decode(new Pbf(new Uint8Array(buf)))))
+        .catch(() => null);
+    }
+    return c.hourPack[variant][hour];
+  }
+
+  function prefetchAdjacentHours() {
+    if (!cityManifest) return;
+    const hours = cityManifest.hours;
+    for (const d of [-1, 1]) {
+      const h = hours[hourIndex + d];
+      if (h != null) fetchHourPack(currentCity, currentVariant, h);
+    }
   }
 
   function nearestOrigins(latlng, n) {
@@ -173,10 +189,13 @@
     return scored.slice(0, n);
   }
 
-  function prefetchNeighbors(origin) {
-    const neighbors = nearestOrigins({ lat: origin.lat, lng: origin.lon }, NEIGHBOR_PREFETCH_N + 1);
-    for (const { origin: n } of neighbors) {
-      if (n.id !== origin.id) fetchOrigin(currentCity, currentVariant, n.id);
+  function paintSlot(slot) {
+    for (const c of CUTOFFS) {
+      const layer = isoLayers[c.min];
+      layer.clearLayers();
+      if (!activeCutoffs.has(c.min)) continue;
+      const feat = slot && slot[c.min];
+      if (feat) layer.addData(feat);
     }
   }
 
@@ -186,14 +205,16 @@
     const requestedVariant = currentVariant;
     const requestedCity = currentCity;
     const hour = cityManifest.hours[hourIndex];
-    // No loading indicator here on purpose: layers are only cleared below,
-    // after the new data is ready, so a brief fetch for a not-yet-cached
-    // origin never blanks or flashes the map -- the previous isochrone stays
-    // on screen throughout.
-    const fc = await fetchOrigin(requestedCity, requestedVariant, requestedOriginId);
-    // superseded by a later hover/click/variant/city switch while this was in flight
+    const pack = await fetchHourPack(requestedCity, requestedVariant, hour);
     if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant || currentCity !== requestedCity) return;
-
+    if (pack) {
+      paintSlot(HourPack.lookupOrigin(pack, requestedOriginId));
+      updateStat();
+      prefetchAdjacentHours();
+      return;
+    }
+    const fc = await fetchOrigin(requestedCity, requestedVariant, requestedOriginId);
+    if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant || currentCity !== requestedCity) return;
     const features = fc.features.filter((f) => f.properties.hour === hour);
     for (const c of CUTOFFS) {
       const layer = isoLayers[c.min];
@@ -240,15 +261,22 @@
     updateStat();
   }
 
-  function onMapMouseMove(e) {
-    if (pinnedOriginId || !cityManifest) return;
-    const now = Date.now();
-    if (now - lastMoveTs < MOVE_THROTTLE_MS) return;
-    lastMoveTs = now;
-    const [{ origin: nearest, distSq }] = nearestOrigins(e.latlng, 1);
+  function armHover() {
+    if (!IsoHover.shouldArmHoverFrame(hoverFrame !== 0)) return;
+    hoverFrame = requestAnimationFrame(() => {
+      hoverFrame = 0;
+      if (!cursor) return;
+      processHover(cursor);
+    });
+  }
 
-    if (distSq > maxHoverDistDegSq) {
-      if (outsideCoverage) return; // already showing "no coverage", nothing changed
+  function processHover(latlng) {
+    if (pinnedOriginId || !cityManifest) return;
+    if (performance.now() < wheelUntil) return;
+    const [{ origin: nearest, distSq }] = nearestOrigins(latlng, 1);
+    const next = IsoHover.applyHover(false, displayOriginId, nearest.id, distSq, maxHoverDistDegSq);
+    if (next.action === "skip") return;
+    if (next.action === "outside") {
       outsideCoverage = true;
       displayOriginId = null;
       for (const c of CUTOFFS) isoLayers[c.min].clearLayers();
@@ -256,11 +284,14 @@
       return;
     }
     outsideCoverage = false;
-
-    if (nearest.id === displayOriginId) return;
-    displayOriginId = nearest.id;
+    displayOriginId = next.displayId;
     renderCurrent();
-    prefetchNeighbors(nearest);
+  }
+
+  function onMapMouseMove(e) {
+    cursor = e.latlng;
+    if (pinnedOriginId) return;
+    armHover();
   }
 
   function onMapClick(e) {
@@ -309,6 +340,8 @@
         currentVariant = v;
         variantbarEl.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
+        const hour = cityManifest.hours[hourIndex];
+        fetchHourPack(currentCity, currentVariant, hour);
         renderCurrent();
       });
       variantbarEl.appendChild(btn);
@@ -366,6 +399,8 @@
     for (const c of CUTOFFS) isoLayers[c.min].clearLayers();
 
     map.fitBounds(cityManifest.bounds, { padding: [20, 20] });
+    fetchHourPack(city, currentVariant, cityManifest.hours[hourIndex]);
+    prefetchAdjacentHours();
     updateStat();
   }
 
@@ -378,6 +413,8 @@
 
   map.on("mousemove", onMapMouseMove);
   map.on("click", onMapClick);
+  map.on("zoomstart", () => { wheelUntil = performance.now() + WHEEL_PAUSE_MS; });
+  map.on("zoomend", () => { if (!pinnedOriginId && cursor) armHover(); });
 
   buildCutoffCheckboxes();
 
