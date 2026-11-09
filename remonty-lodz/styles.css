@@ -160,7 +160,7 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 #card ul { margin: 0; padding-left: 16px; color: var(--ink-2); }
 
 /* Citizen reports: add button, hint, form, pin */
-:root { --rep: #ff375f; }
+:root { --rep: #ffd60a; }
 #repTools { position: absolute; z-index: 700; left: 50%; bottom: calc(var(--bar-h) + 24px); transform: translateX(-50%); display: flex; gap: 8px; align-items: center; }
 body:has(#rhint:not([hidden])) #repTools { visibility: hidden; }  /* toast takes the same spot */
 #repTools[hidden], #rhint[hidden], #rform[hidden] { display: none; }

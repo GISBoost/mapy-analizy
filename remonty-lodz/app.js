@@ -410,7 +410,7 @@
 
   // ---------- citizen reports (Supabase REST; the public sees only status=approved, enforced by RLS) ----------
   // Separate layer: not part of the counters, bars, KPIs or the report (unverified data), only filtered by the day slider.
-  const REP = window.REMONTY_REPORTS || {}, repOn = !!(REP.url && REP.key), REP_COLOR = "#ff375f", REP_PENDING = "#8e8e93", LODZ = [19.28, 51.65, 19.70, 51.90];
+  const REP = window.REMONTY_REPORTS || {}, repOn = !!(REP.url && REP.key), REP_COLOR = "#ffd60a", REP_PENDING = "#ffd60a", LODZ = [19.28, 51.65, 19.70, 51.90];
   const REP_THANKS = "Dziękujemy! Zgłoszenie zostało przyjęte i oczekuje na weryfikację. Po zatwierdzeniu pojawi się na mapie.";
   let reps = [], repMode = "idle", repMarker = null, toastT = 0;  // repMode: idle | pick | form
   // publishable key goes in `apikey` only (it is not a JWT, so no Authorization header)
@@ -534,7 +534,7 @@
       const ut = e.target.closest("button[data-utr]");  // master switch for all impact groups
       if (ut) { state.imp = state.imp.size ? new Set() : new Set(Object.keys(IMP)); ut.setAttribute("aria-pressed", String(!!state.imp.size)); buildWeekly(); drawChart(); return update(); }
       const rp = e.target.closest("button[data-rep]");
-      if (rp) { state.rep = !state.rep; rp.setAttribute("aria-pressed", String(state.rep)); return update(); }
+      if (rp) { state.rep = !state.rep; rp.setAttribute("aria-pressed", String(state.rep)); update(); if (state.rep) say(`Zgłoszenia mieszkańców: ${reps.filter(repLit).length} w wybranym okresie, ${reps.length} wszystkich.`); return; }
       const b = e.target.closest("button[data-k]"); if (!b) return;
       state.src.has(b.dataset.k) ? state.src.delete(b.dataset.k) : state.src.add(b.dataset.k);
       b.setAttribute("aria-pressed", String(state.src.has(b.dataset.k)));
@@ -598,7 +598,7 @@
     map.addSource("utrp", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "utrp", type: "circle", source: "utrp", paint: {} });
     map.addSource("reps", { type: "geojson", data: repData() });
-    map.addLayer({ id: "reps", type: "circle", source: "reps", paint: { "circle-color": ["case", ["==", ["get", "st"], "pending"], REP_PENDING, REP_COLOR], "circle-radius": ["case", ["==", ["get", "st"], "pending"], 6.5, 8], "circle-opacity": ["case", ["==", ["get", "st"], "pending"], 0.55, 1], "circle-stroke-width": 2, "circle-stroke-opacity": ["case", ["==", ["get", "st"], "pending"], 0.5, 1], "circle-stroke-color": "#fff" } });
+    map.addLayer({ id: "reps", type: "circle", source: "reps", paint: { "circle-color": ["case", ["==", ["get", "st"], "pending"], REP_PENDING, REP_COLOR], "circle-radius": ["case", ["==", ["get", "st"], "pending"], 6.5, 8], "circle-opacity": ["case", ["==", ["get", "st"], "pending"], 0.55, 1], "circle-stroke-width": 2, "circle-stroke-opacity": ["case", ["==", ["get", "st"], "pending"], 0.5, 1], "circle-stroke-color": "#1c1c1e" } });
     basemapTheme();
     // click opens the record; hover only changes the cursor (no tooltip, by design)
     const hit = (p, r = 12) => [[p.x - r, p.y - r], [p.x + r, p.y + r]];  // click tolerance in px around points and lines
