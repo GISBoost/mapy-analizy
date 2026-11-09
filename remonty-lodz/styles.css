@@ -161,7 +161,8 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 
 /* Citizen reports: add button, hint, form, pin */
 :root { --rep: #ff375f; }
-#repTools { display: flex; gap: 8px; align-items: center; }
+#repTools { position: absolute; z-index: 700; left: 50%; bottom: calc(var(--bar-h) + 24px); transform: translateX(-50%); display: flex; gap: 8px; align-items: center; }
+body:has(#rhint:not([hidden])) #repTools { visibility: hidden; }  /* toast takes the same spot */
 #repTools[hidden], #rhint[hidden], #rform[hidden] { display: none; }
 body.rep-busy #repTools { display: none; }
 #addBtn { all: unset; box-sizing: border-box; height: 40px; padding: 0 16px 0 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem; box-shadow: var(--shadow); cursor: pointer; }
@@ -216,7 +217,7 @@ body.rep-busy #repTools { display: none; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .cmp { grid-template-columns: 1fr; }
   #card { left: 8px !important; right: 8px; width: auto; top: auto !important; bottom: calc(var(--bar-h) + 50px); }
-  #rhint { bottom: calc(var(--bar-h) + 10px); }
+  #rhint, #repTools { bottom: calc(var(--bar-h) + 10px); }
   #rform { left: 8px; right: 8px; width: auto; top: auto; bottom: calc(var(--bar-h) + 8px); max-height: 60dvh; }
   #rform :is(input, textarea) { font-size: 16px; }
 }
