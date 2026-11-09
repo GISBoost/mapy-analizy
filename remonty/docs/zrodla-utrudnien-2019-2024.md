@@ -46,3 +46,11 @@ Pierwszy test przed pisaniem skryptu: pobrać 30 stron szczegółowych `zmiany.j
   - komunikat MPK opisuje zmianę trasy, a nie zajęcie jezdni, więc `traffic_impact` przeważnie wynosi `unknown` albo `full_closure`, gdy pada „zamknięcie”;
   - roboty bez wpływu na komunikację miejską są niewidoczne;
   - mniej więcej co trzecia kopia jest pusta.
+
+## Wynik pełnego przebiegu `e12_mpk.py` (9.11.2026)
+
+- Pobrano 1555 komunikatów z Wayback; 235 dotyczy robót, z nich powstało 215 utrudnień `source=mpk`.
+- Według roku: 2019: 32, 2020: 45, 2021: 50, 2022: 58, 2023: 18, 2024: 11, 2025: 1.
+- 9 utrudnień ma datę końca z komunikatu o dopuszczeniu do ruchu.
+- Po połączeniu z lodz.pl i seedem (`e11_lodzpl.py`): 409 utrudnień, 43 do ręcznego przeglądu.
+- Mało rekordów w 2023–2024 to skutek luk w archiwum, nie mniejszej liczby robót.
