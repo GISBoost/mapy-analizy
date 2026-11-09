@@ -20,3 +20,6 @@ remonty/ted/
 remonty/*.log
 remonty/index_*.csv
 moodboard-remonty/
+
+# Remonty Lodz: local marketing materials (social media graphics, captions, drafts)
+remonty-lodz/_marketing/
