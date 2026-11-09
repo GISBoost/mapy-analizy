@@ -330,14 +330,22 @@ def geocode(rows):
         out = {m for k in {toks[-1], toks[0]} for v in variants(k) for m in by_last.get(v, ())}
         return sorted(m for m in out if all(any(w.startswith(t[:4]) for w in m.split()) for t in toks))[:4]
 
-    pts_of = lambda ns: [p for n in ns for ln in streets[n] for p in ln]
+    global _CANDS, _ORIG
+    _CANDS = cands
+    _ORIG = {norm(w["tags"]["name"]): w["tags"]["name"] for w in json.load(open(WORK / "osm/lodz_streets.json", encoding="utf-8"))["elements"]}
+    pts_of = lambda ns:[p for n in ns for ln in streets[n] for p in ln]
     lines_of = lambda ns: [ln for n in ns for ln in streets[n]]
     pick = lambda ns, near: min(ns, key=lambda n: min(hav(p, q) for p in pts_of([n])[::5] for q in near[::5])) if ns and near else None
     cache = {}
     for r in rows:
+        parts = re.split(r"\s+i\s+(?:ul\.\s*)?", r["ulica"] or "")
+        if r.get("id", "").startswith("mpk:") and len(parts) > 1:  # 'Unii Lubelskiej i ul. Maratońskiej': a crossing written as one name
+            r["ulica"], r["heading"] = parts[0], " / ".join(parts)
         main_c = cands(r["ulica"])
         r["osm_name"], r["geom"], r["geom_typ"] = (main_c[0] if len(main_c) == 1 else None), None, None
         if not main_c:
+            if r.get("id", "").startswith("mpk:"):
+                nominative(r)
             continue
         a_c, b_c = cands(r.get("od")), cands(r.get("do"))
         cross_c = []
@@ -371,7 +379,28 @@ def geocode(rows):
         g, r["osm_name"] = cache[key]
         if g:
             r["geom_typ"], r["geom"] = g
+        if r.get("id", "").startswith("mpk:"):
+            nominative(r)
     return rows
+
+
+def nominative(r):
+    """MPK notices name streets in the genitive ('Rokicińskiej'): show the OSM form ('Rokicińska') when it resolves to one street.
+    Keeps short written forms ('Jaracza' for 'Stefana Jaracza'); drops unresolved fragments like 'Dw' (cut 'Dw. Kaliski')."""
+    def fix(s):
+        if not s:
+            return s
+        c = _CANDS(s)
+        if len(c) != 1:
+            return None if len(s) < 4 else s
+        osm = _ORIG[c[0]]
+        return s if s.split()[-1].lower() == osm.split()[-1].lower() else osm
+    head = r["heading"]
+    r["ulica"], r["od"], r["do"] = fix(r["ulica"]) or r["ulica"], fix(r["od"]), fix(r["do"])
+    if " / " in head:
+        r["heading"] = " / ".join(fix(p) or p for p in head.split(" / "))
+    else:
+        r["heading"] = r["ulica"] + (f" ({r['od']} - {r['do']})" if r["od"] and r["do"] else "")
 
 
 def start_missing(r, snaps):

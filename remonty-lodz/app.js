@@ -35,7 +35,7 @@
   const isPhone = () => matchMedia("(max-width: 760px)").matches;
   const isDark = () => document.documentElement.getAttribute("data-theme") !== "light";
 
-  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, imp: new Set(Object.keys(IMP)), color: "status", metric: "roboty", playing: null, speed: 0, card: null, rep: true };
+  const state = { day: T1, view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, imp: new Set(Object.keys(IMP)), color: "status", metric: "roboty", playing: null, speed: 0, card: null, rep: true };
   let D, map, roczne, weekly = [], utrWeekly = [], osmY = {}, osmDay = new Map();
   const osmWorks = (y) => (osmY[y] || {}).roboty || 0;
 
@@ -515,7 +515,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=19")).json();
+    D = await (await fetch("data/remonty.json?v=20")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     $("barMore").addEventListener("click", (e) => { const o = document.body.classList.toggle("bar-open"); e.currentTarget.setAttribute("aria-expanded", String(o)); e.currentTarget.textContent = o ? "Zwiń" : "Warstwy i legenda"; });
