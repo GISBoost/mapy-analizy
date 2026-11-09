@@ -261,7 +261,7 @@
   function paintMap() {
     if (!map || !map.getSource("pts")) return;
     const [pts, secs] = features();
-    map.getSource("pts").setData(pts); map.getSource("secs").setData(secs); map.getSource("osmb").setData(osmData());
+    map.getSource("pts").setData(pts); map.getSource("secs").setData(secs); map.getSource("osmb").setData(osmData()); map.getSource("reps").setData(repData());
     const c = colorExpr(), dim = isDark() ? "rgba(255,255,255,.38)" : "rgba(0,0,0,.3)";
     map.setPaintProperty("pts", "circle-color", ["case", ["==", ["get", "a"], 1], c, dim]);
     map.setPaintProperty("pts", "circle-radius", ["case", ["==", ["get", "a"], 1], 6, 2.5]);
@@ -384,6 +384,7 @@
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
     if (state.imp.size) h += `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i class="ring" style="background:${c}"></i>`).join("")}utrudnienia w ruchu (kolory jak w raporcie)</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
+    if (repOn) h += `<span><i style="background:${REP_COLOR}"></i>zgłoszenia mieszkańców (zatwierdzone)</span><span><i style="background:${REP_PENDING};opacity:.55"></i>zgłoszone, czekają na weryfikację</span>`;
     $("legend").innerHTML = h;
     $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`
       + `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i style="background:${c};opacity:.6;margin-right:1px"></i>`).join("")}utrudnienia (lodz.pl od XI 2024)</span>`;
@@ -405,6 +406,111 @@
     }
     $("playIcon").setAttribute("d", state.playing ? "M7 5h4v14H7zM13 5h4v14h-4z" : "M8 5v14l11-7z");
     $("play").setAttribute("aria-label", state.playing ? "Pauza" : "Odtwórz");
+  }
+
+  // ---------- citizen reports (Supabase REST; the public sees only status=approved, enforced by RLS) ----------
+  // Separate layer: not part of the counters, bars, KPIs or the report (unverified data), only filtered by the day slider.
+  const REP = window.REMONTY_REPORTS || {}, repOn = !!(REP.url && REP.key), REP_COLOR = "#ff375f", REP_PENDING = "#8e8e93", LODZ = [19.28, 51.65, 19.70, 51.90];
+  const REP_THANKS = "Dziękujemy! Zgłoszenie zostało przyjęte i oczekuje na weryfikację. Po zatwierdzeniu pojawi się na mapie.";
+  let reps = [], repMode = "idle", repMarker = null, toastT = 0;  // repMode: idle | pick | form
+  // publishable key goes in `apikey` only (it is not a JWT, so no Authorization header)
+  const repApi = (q, init = {}) => fetch(`${REP.url}/rest/v1/remonty_reports${q}`, { ...init, headers: { apikey: REP.key, "Content-Type": "application/json", ...init.headers } });
+  const inLodz = (p) => p.lng >= LODZ[0] && p.lng <= LODZ[2] && p.lat >= LODZ[1] && p.lat <= LODZ[3];
+  const repLit = (r) => {
+    const end = r.ends_on || "9999-12-31", y = state.year || state.day.slice(0, 4);
+    return state.view === "dzien" ? r.starts_on <= state.day && state.day <= end : state.view === "rok" ? r.starts_on <= y + "-12-31" && end >= y + "-01-01" : true;
+  };
+  const repData = () => ({ type: "FeatureCollection", features: reps.filter(repLit).map((r) => ({ type: "Feature", properties: { id: r.id, st: r.status }, geometry: { type: "Point", coordinates: [r.lng, r.lat] } })) });
+  function say(msg, ms = 4500) {  // hint / toast line; ms = 0 keeps it until the next call
+    clearTimeout(toastT);
+    $("rhintTx").textContent = msg; $("rhint").hidden = !msg;
+    $("rhintC").hidden = $("rhintX").hidden = repMode !== "pick";
+    if (msg && ms) toastT = setTimeout(() => { $("rhint").hidden = true; }, ms);
+  }
+  async function loadReports(manual) {
+    try {
+      const r = await repApi("?select=id,lat,lng,description,starts_on,ends_on,source_url,status&status=in.(approved,pending)&order=starts_on.desc&limit=1000");
+      if (!r.ok) throw new Error(r.status);
+      reps = await r.json();  // replace, never append: no duplicate markers
+      paintMap();
+      if (manual) say(`Zgłoszenia odświeżone: ${reps.length}.`);
+    } catch (e) { console.warn("reports:", e); if (manual) say("Nie udało się pobrać zgłoszeń. Spróbuj później."); }  // the rest of the map is unaffected
+  }
+  function openRepCard(id, lngLat) {  // user text only via textContent
+    const r = reps.find((x) => x.id === id); if (!r) return;
+    state.card = { id, lngLat };
+    const el = (tag, txt, cls) => { const n = document.createElement(tag); if (txt != null) n.textContent = txt; if (cls) n.className = cls; return n; };
+    const dot = el("span", null, "dot"), x = el("button", null, "ib sm");
+    const pend = r.status === "pending"; dot.style.background = pend ? REP_PENDING : REP_COLOR; x.type = "button"; x.setAttribute("aria-label", "Zamknij"); x.onclick = closeCard;
+    x.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    const hd = el("div", null, "hd"), dl = el("dl");
+    hd.append(dot, el("b", pend ? "Zgłoszenie czeka na weryfikację" : "Zgłoszenie mieszkańca"), x);
+    [["Początek", fmtDate(r.starts_on)], ["Koniec", r.ends_on ? fmtDate(r.ends_on) : "nieznany lub trwa"]].forEach(([k, v]) => dl.append(el("dt", k), el("dd", v)));
+    const kids = [hd, el("div", r.description, "opis rep"), dl, el("p", pend ? "Ktoś już zgłosił to miejsce. Moderator jeszcze go nie sprawdził, więc dane mogą być błędne. Nie wchodzi do liczb w raporcie." : "Zgłoszenie mieszkańca zatwierdzone przez moderatora. To nie są dane urzędu i nie wchodzą do liczb w raporcie.", "note")];
+    if (!pend && /^https?:\/\//i.test(r.source_url || ""))  // no links from unmoderated reports
+      { const a = el("a", "Źródło zgłoszenia ↗"); a.href = r.source_url; a.target = "_blank"; a.rel = "noopener nofollow"; kids.push(a); }
+    $("card").replaceChildren(...kids); $("card").hidden = false; placeCard();
+  }
+  function repStart() {
+    closeCard(); if (isPhone()) $("reportHide").click();
+    repMode = "pick"; document.body.classList.add("rep-busy"); map.getCanvas().style.cursor = "crosshair";
+    say("Kliknij na mapie miejsce remontu.", 0);
+  }
+  function repEnd() {
+    if (repMode === "idle") return;
+    repMode = "idle"; document.body.classList.remove("rep-busy"); map.getCanvas().style.cursor = "";
+    if (repMarker) { repMarker.remove(); repMarker = null; }
+    $("rform").hidden = true; $("rform").reset(); $("rmsg").textContent = ""; $("rform").querySelector(".rsend").disabled = false;
+    say("");
+  }
+  const repCoords = () => { const p = repMarker.getLngLat(); $("rloc").textContent = `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`; };
+  function repPlace(p) {  // first click opens the form, later clicks / dragging only move the pin
+    if (!inLodz(p)) return say(repMode === "pick" ? "To miejsce jest poza Łodzią. Wybierz punkt w granicach miasta." : "Poza Łodzią: pinezka musi stać w granicach miasta.", repMode === "pick" ? 0 : 4500);
+    if (!repMarker) {
+      const pin = document.createElement("div"); pin.className = "repin";
+      repMarker = new maplibregl.Marker({ element: pin, draggable: true }).setLngLat([p.lng, p.lat]).addTo(map);
+      repMarker.on("dragend", repCoords);
+    } else repMarker.setLngLat([p.lng, p.lat]);
+    repCoords();
+    if (repMode === "pick") { repMode = "form"; say(""); $("rform").hidden = false; $("rdesc").focus(); }
+  }
+  async function repSend(e) {
+    e.preventDefault();
+    const f = e.target, v = (n) => f.elements[n].value.trim(), msg = (m) => { $("rmsg").textContent = m; };
+    if (v("website")) { repEnd(); return say(REP_THANKS, 12000); }  // honeypot: only bots fill the hidden field; pretend success
+    let src = v("source_url");
+    if (src) {  // "lodz.pl/x" is accepted and gets https://; anything that is not an address is refused here with a clear message
+      if (!/^https?:\/\//i.test(src)) src = "https://" + src;
+      try { if (/\s/.test(src) || !new URL(src).hostname.includes(".")) throw 0; } catch (_) { return msg("Źródło musi być adresem strony, np. https://lodz.pl/remonty. Zostaw puste, jeśli nie masz linku."); }
+    }
+    const p = repMarker.getLngLat(), s = v("starts_on"), en = v("ends_on"), btn = f.querySelector(".rsend");
+    if (!inLodz(p)) return msg("Pinezka jest poza Łodzią.");
+    if (en && en < s) return msg("Koniec nie może być wcześniejszy niż początek.");
+    btn.disabled = true; msg("Wysyłanie…");  // disabled while in flight: no double submit
+    try {
+      const r = await repApi("", { method: "POST", headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), description: v("description"), starts_on: s, ends_on: en || null, source_url: src || null }) });
+      if (!r.ok) throw await r.json().catch(() => ({}));  // PostgREST error body: {code, message}
+      // show the new report at once as a grey "pending" pin (the next fetch replaces it with the real row)
+      const row = { id: "local-" + Date.now(), lat: +p.lat.toFixed(6), lng: +p.lng.toFixed(6), description: v("description"), starts_on: s, ends_on: en || null, source_url: null, status: "pending" };
+      reps.push(row); repEnd();
+      if (!repLit(row)) { state.view = "wszystko"; state.year = null; paintView(); }  // otherwise the day slider would hide it
+      update(); say(REP_THANKS, 12000);
+    } catch (err) {
+      console.warn("report:", err);
+      const m = String((err && err.message) || "");
+      msg(err && err.code === "P0001" ? (m === "rate_limit_user" ? "Wysłałeś kilka zgłoszeń w ciągu minuty. Spróbuj ponownie za chwilę." : "Dostaliśmy teraz bardzo dużo zgłoszeń. Spróbuj ponownie później.") : m.includes("no_links") ? "Opis nie może zawierać linków. Link wpisz w polu „Źródło”." : "Nie udało się wysłać zgłoszenia. Sprawdź dane i spróbuj ponownie.");
+      btn.disabled = false;
+    }
+  }
+  function repInit() {
+    $("repTools").hidden = false;
+    $("addBtn").addEventListener("click", repStart);
+    $("repRefresh").addEventListener("click", () => loadReports(true));
+    $("rhintX").addEventListener("click", repEnd); $("rformX").addEventListener("click", repEnd);
+    $("rhintC").addEventListener("click", () => repPlace(map.getCenter()));  // keyboard route: pan the map, then use the centre
+    $("rform").addEventListener("submit", repSend);
+    loadReports();
   }
 
   // ---------- init ----------
@@ -454,7 +560,7 @@
     const report = (open) => { document.body.classList.toggle("report-closed", !open); $("reportBtn").setAttribute("aria-expanded", String(open)); };
     $("reportBtn").addEventListener("click", () => report(true));
     $("reportHide").addEventListener("click", () => report(false));
-    addEventListener("keydown", (e) => { if (e.key === "Escape") { closeCard(); if (isPhone()) report(false); } });
+    addEventListener("keydown", (e) => { if (e.key === "Escape") { closeCard(); repEnd(); if (isPhone()) report(false); } });
     $("themeBtn").addEventListener("click", () => {
       const next = isDark() ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
@@ -485,10 +591,15 @@
     map.addLayer({ id: "utrl", type: "line", source: "utrl", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 15, 8] } });
     map.addSource("utrp", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "utrp", type: "circle", source: "utrp", paint: {} });
+    map.addSource("reps", { type: "geojson", data: repData() });
+    map.addLayer({ id: "reps", type: "circle", source: "reps", paint: { "circle-color": ["case", ["==", ["get", "st"], "pending"], REP_PENDING, REP_COLOR], "circle-radius": ["case", ["==", ["get", "st"], "pending"], 6.5, 8], "circle-opacity": ["case", ["==", ["get", "st"], "pending"], 0.55, 1], "circle-stroke-width": 2, "circle-stroke-opacity": ["case", ["==", ["get", "st"], "pending"], 0.5, 1], "circle-stroke-color": "#fff" } });
     basemapTheme();
     // click opens the record; hover only changes the cursor (no tooltip, by design)
     const hit = (p, r = 12) => [[p.x - r, p.y - r], [p.x + r, p.y + r]];  // click tolerance in px around points and lines
     map.on("click", (e) => {
+      if (repMode !== "idle") return repPlace(e.lngLat);
+      const rf = map.queryRenderedFeatures(hit(e.point), { layers: ["reps"] })[0];
+      if (rf) return openRepCard(rf.properties.id, rf.geometry.coordinates);
       const pri = (l) => l.startsWith("utr") ? 2 : l !== "osmb" ? 1 : 0;
       const f = map.queryRenderedFeatures(hit(e.point), { layers: ["utrp", "utrl", "pts", "secs", "osmb"] })
         .sort((a, b) => (b.properties.a || 0) - (a.properties.a || 0) || pri(b.layer.id) - pri(a.layer.id))[0];
@@ -496,9 +607,10 @@
       else if (f && f.layer.id === "osmb") openOsmCard(f.properties, e.lngLat);
       else if (f) openCard(f.properties.id, f.geometry.type === "Point" ? f.geometry.coordinates : e.lngLat); else closeCard();
     });
-    map.on("mousemove", (e) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(hit(e.point), { layers: ["utrp", "utrl", "pts", "secs", "osmb"] }).length ? "pointer" : ""; });
+    map.on("mousemove", (e) => { if (repMode === "idle") map.getCanvas().style.cursor = map.queryRenderedFeatures(hit(e.point), { layers: ["utrp", "utrl", "pts", "secs", "osmb", "reps"] }).length ? "pointer" : ""; });
     map.on("move", placeCard);
     $("zIn").addEventListener("click", () => map.zoomIn()); $("zOut").addEventListener("click", () => map.zoomOut());
+    if (repOn) repInit();
     update();
   }
   init().catch((e) => { console.error(e); $("cNum").textContent = "!"; $("cWhat").textContent = "Nie udało się wczytać danych"; });

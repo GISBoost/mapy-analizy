@@ -159,6 +159,28 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 #card dl { margin: 0; display: grid; grid-template-columns: 74px 1fr; gap: 3px 8px; } #card dt { font-weight: 600; } #card dd { margin: 0; color: var(--ink-2); }
 #card ul { margin: 0; padding-left: 16px; color: var(--ink-2); }
 
+/* Citizen reports: add button, hint, form, pin */
+:root { --rep: #ff375f; }
+#repTools { display: flex; gap: 8px; align-items: center; }
+#repTools[hidden], #rhint[hidden], #rform[hidden] { display: none; }
+body.rep-busy #repTools { display: none; }
+#addBtn { all: unset; box-sizing: border-box; height: 40px; padding: 0 16px 0 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; font-weight: 700; font-size: 0.85rem; box-shadow: var(--shadow); cursor: pointer; }
+#addBtn svg { width: 20px; height: 20px; }
+#rhint { position: absolute; z-index: 720; left: 50%; bottom: calc(var(--bar-h) + 24px); transform: translateX(-50%); max-width: min(92vw, 520px); border-radius: 16px; padding: 9px 14px; font-size: 0.84rem; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+#rform { position: absolute; z-index: 720; left: 12px; bottom: calc(var(--bar-h) + 24px); width: 320px; max-height: calc(100% - var(--bar-h) - 200px); overflow-y: auto; border-radius: 18px; padding: 12px 14px; font-size: 0.8rem; display: flex; flex-direction: column; gap: 8px; color-scheme: dark; }
+:root[data-theme="light"] #rform { color-scheme: light; }
+#rform .hd { display: flex; align-items: center; gap: 8px; } #rform .hd b { flex: 1; font-size: 0.95rem; }
+#rform label { display: flex; flex-direction: column; gap: 3px; font-weight: 600; color: var(--ink-2); min-width: 0; }
+#rform :is(input, textarea) { font: inherit; font-weight: 400; color: var(--ink); background: var(--fill); border: 1px solid var(--glass-line); border-radius: 8px; padding: 6px 8px; width: 100%; resize: vertical; }
+#rform :is(input, textarea):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#rform .rrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#rform .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+#rmsg:empty { display: none; }
+.rsend { all: unset; box-sizing: border-box; text-align: center; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 700; cursor: pointer; }
+.rsend:disabled { opacity: 0.5; cursor: default; }
+.repin { width: 22px; height: 22px; border-radius: 50%; background: var(--rep); border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.5); cursor: grab; }
+#card .opis.rep { white-space: pre-line; overflow-wrap: anywhere; }
+
 /* Narrow desktop: one column; time row, then switches, then chips (all inside the capsule) */
 @media (max-width: 1600px) and (min-width: 761px) {
   #bar { grid-template-columns: 1fr; gap: 8px; }
@@ -194,6 +216,9 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .cmp { grid-template-columns: 1fr; }
   #card { left: 8px !important; right: 8px; width: auto; top: auto !important; bottom: calc(var(--bar-h) + 50px); }
+  #rhint { bottom: calc(var(--bar-h) + 10px); }
+  #rform { left: 8px; right: 8px; width: auto; top: auto; bottom: calc(var(--bar-h) + 8px); max-height: 60dvh; }
+  #rform :is(input, textarea) { font-size: 16px; }
 }
 
 /* traffic restrictions (utrudnienia) */
