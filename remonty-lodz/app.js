@@ -182,7 +182,7 @@
     });
     $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span><span><i class="nd"></i>brak danych (przed 2021 nie ma umów w BZP)</span>`
       : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (fioletowy słupek obok)</span>`
-        + `<span><i style="background:${IMP.czesciowe[1]}"></i>utrudnienia w ruchu w roku (różowy słupek; lodz.pl od XI 2024, poza bilansem)</span>`;
+        + `<span><i style="background:${IMP.czesciowe[1]}"></i>utrudnienia w ruchu w roku (różowy słupek; 2019–2024 komunikaty MPK, tylko roboty zmieniające trasy; od 2025 lodz.pl; poza bilansem)</span>`;
     $("barsNote").textContent = dayMetric
       ? "Dni w roku, w których trwało co najmniej tyle umów z BZP. Okres umowy to górna granica zajęcia drogi. 2026: do 7 listopada."
       : "Roboty na jezdniach i torowiskach (plany + przetargi ZDiT, ZIM, UMŁ), bez umów utrzymaniowych, wg roku postępowania (metoda bilansu). Mapa w widoku „Rok” liczy umowy trwające w danym roku, więc może pokazać więcej. Lata przed 2021 mają tylko plany zamówień, 2026 jest niepełny.";
@@ -344,7 +344,7 @@
     $("impChips").innerHTML = Object.entries(IMP).map(([k, [l, c]]) => { const n = lit.filter((u) => impGroup(u.traffic_impact) === k).length;
       return `<button type="button" data-g="${k}" aria-pressed="${state.imp.has(k)}"><i class="dot" style="background:${c}"></i>${l} <small>${n}</small></button>`; }).join("");
     const cur = all.filter((u) => u.na_stronie).length;
-    $("utrNote").innerHTML = `${lit.length} z ${all.length} utrudnień w wybranym okresie. ${cur} z bieżącej listy <a href="https://lodz.pl/remonty/" target="_blank" rel="noopener">lodz.pl/remonty</a> (stan z 9.11.2026). Wcześniejsze z kopii tej strony w Internet Archive (22 kopie od XI 2024; czytelne karty od 2025) i z ręcznie sprawdzonych komunikatów. Gdy karta nie podaje startu, start to pierwsza kopia z kartą albo szacunek (koniec minus ok. 2,5 mies.). Liczba pasów tylko wtedy, gdy podaje ją źródło. Utrudnienia nie wchodzą do liczby robót ani do bilansu biletu.`;
+    $("utrNote").innerHTML = `${lit.length} z ${all.length} utrudnień w wybranym okresie. ${cur} z bieżącej listy <a href="https://lodz.pl/remonty/" target="_blank" rel="noopener">lodz.pl/remonty</a> (stan z 9.11.2026). Wcześniejsze z kopii tej strony w Internet Archive (22 kopie od XI 2024; czytelne karty od 2025) , z ręcznie sprawdzonych komunikatów, a dla 2019–2024 z komunikatów MPK o zmianach tras (Internet Archive): widać tylko roboty, które zmieniły trasy autobusów lub tramwajów, zwykle bez typu zajęcia pasa; brak końca w komunikacie = start plus ok. 2,5 mies. Gdy karta nie podaje startu, start to pierwsza kopia z kartą albo szacunek (koniec minus ok. 2,5 mies.). Liczba pasów tylko wtedy, gdy podaje ją źródło. Utrudnienia nie wchodzą do liczby robót ani do bilansu biletu.`;
     const ng = all.filter((u) => !u.geom);
     $("utrNoGeoSum").textContent = `Bez miejsca na mapie (${ng.length})`;
     $("utrNoGeo").innerHTML = ng.map((u) => `<li><button class="linkbtn" type="button" data-utr="${esc(u.id)}">${esc(u.ulica)}</button>: ${IMP_PL[u.traffic_impact] || u.traffic_impact}</li>`).join("");
@@ -386,7 +386,7 @@
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
     $("legend").innerHTML = h;
     $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`
-      + `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i style="background:${c};opacity:.6;margin-right:1px"></i>`).join("")}utrudnienia (lodz.pl od XI 2024)</span>`;
+      + `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i style="background:${c};opacity:.6;margin-right:1px"></i>`).join("")}utrudnienia (MPK 2019–2024, lodz.pl od 2025)</span>`;
   }
   let paintView = () => {};
 

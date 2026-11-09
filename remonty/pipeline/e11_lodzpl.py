@@ -444,6 +444,9 @@ def build():
                 start_missing(r, snaps)
         rows += rs
     rows += seed_rows()
+    mpk = WORK / "mpk/rows.json"  # E12: MPK notices 2019-2024
+    if mpk.exists():
+        rows += json.load(open(mpk, encoding="utf-8"))
     if (WORK / "osm/lodz_streets.json").exists():
         geocode(rows)
     (WORK / "utrudnienia.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1), encoding="utf-8")
