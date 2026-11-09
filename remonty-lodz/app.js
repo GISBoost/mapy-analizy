@@ -370,6 +370,12 @@
     } else {
       $("cNum").textContent = its.length; $("cWhat").innerHTML = "robót drogowych w bazie" + (state.osm ? `<br>+ ${D.osm_bilans.stats.only_osm_works} robót tylko OSM` : ""); $("cDate").textContent = "2017–2026";
     }
+    // restrictions lit in the current view; lodz.pl archive starts II 2025, earlier = no data, not zero
+    const u0 = (D.utrudnienia || []).reduce((m, u) => u.okres[0] && u.okres[0] < m ? u.okres[0] : m, "9999");
+    const per = state.view === "dzien" ? state.day : state.view === "rok" ? (state.year || state.day.slice(0, 4)) + "-12-31" : "9999";
+    const nU = (D.utrudnienia || []).filter((u) => state.imp.has(impGroup(u.traffic_impact)) && utrLit(u)).length;
+    $("cWhat").innerHTML += per < u0 ? "<br>utrudnienia: brak danych przed " + u0.slice(5, 7) + "." + u0.slice(0, 4)
+      : `<br><b>${nU}</b> ${state.view === "dzien" ? "utrudnień w ruchu" : state.view === "rok" ? "utrudnień w ruchu w roku" : "utrudnień w bazie"}`;
     moveCursor(); bars(); kpis(); utrSection(); calendar(); paintMap(); legend();
   }
   function legend() {
@@ -403,7 +409,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=18")).json();
+    D = await (await fetch("data/remonty.json?v=19")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));

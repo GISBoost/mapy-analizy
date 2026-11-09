@@ -177,3 +177,13 @@ Do przeglądu: `work/needs_review.csv` (utrudnienia) i `work/needs_review_bzp.cs
 - **Nowe frazy słownika:** „na wahadle”, „zawężenia”, „zajęcia pasa”, „przejazd bez zmian”, „nie ma utrudnień”, „brak możliwości przejazdu”, „w każdym kierunku”, „zachowane są wszystkie kierunki”, „nie będzie możliwości … skrętu”.
 - **SkyscraperCity: odrzucone na teraz.** To forum z wątkami pisanymi swobodnie, zdjęciami i opiniami. Nie ma struktury ani stabilnych identyfikatorów, regulamin ogranicza scraping, a pewność byłaby poniżej mediów lokalnych (§2, decyzja 8). Lepiej używać go ręcznie jako wskazówki do rekordu w seed z linkiem do posta. Wayback lodz.pl daje te same informacje z oficjalnego źródła.
 - **UI:** różowy słupek „utrudnienia w roku” obok fioletowego (poza bilansem). Na dolnym wykresie są półprzezroczyste warstwy utrudnień według grup wpływu, pod warstwami umów. Oś czasu sięga 9.11.2026.
+
+### 9.x Utrudnienia przed II 2025 (decyzja 9.11.2026)
+
+- Najstarsza czytelna kopia lodz.pl/remonty w Wayback pochodzi z II 2025. Kopie z XI 2024–I 2025 nie zawierają kart robót. Dla wcześniejszych lat **nie mamy danych**, co nie znaczy, że utrudnień było zero.
+- Na mapie licznik w kapsule pokazuje „utrudnienia: brak danych przed 02.2025” zamiast 0. Słupki dla 2017–2024 nie mają różowego słupka.
+- Możliwe źródła do sprawdzenia w przyszłości (nie wdrożone):
+  1. komunikaty MPK Łódź o zmianach tras (Wayback, od ok. 2017): pośrednie, opisują objazdy, a nie zakres zajęcia jezdni;
+  2. archiwum aktualności ZDiT i UMŁ (uml.lodz.pl, lodz.pl/artykuly): pojedyncze artykuły bez struktury;
+  3. dzienniki budowy i organizacja ruchu z BZP: niedostępne publicznie.
+- Rekomendacja: nie zgadywać utrudnień z umów sprzed 2025. Jeśli potrzebna jest historia, najtańszy test to sprawdzić w CDX pokrycie komunikatów MPK dla 2–3 dużych remontów i dopiero potem zdecydować.

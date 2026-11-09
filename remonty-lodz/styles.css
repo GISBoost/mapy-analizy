@@ -50,14 +50,15 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent
 .chips .off { opacity: 0.55; cursor: default; text-decoration: line-through; }
 
 /* Zoom capsule */
-.zoomcap { position: absolute; z-index: 500; display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; width: 40px; }
+.zoomcap { position: relative; display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; width: 40px; }
 .zoomcap button { all: unset; box-sizing: border-box; width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; }
 .zoomcap svg { width: 20px; height: 20px; }
 .zoomcap hr { margin: 0; border: 0; background: var(--glass-line); height: .5px; width: 100%; }
-#zoom { left: 12px; bottom: calc(var(--bar-h) + 22px); }
 
 /* Counter */
-#counter { position: absolute; z-index: 400; left: 12px; top: 12px; pointer-events: none; border-radius: 20px; padding: 10px 16px 12px; max-width: 300px; }
+#tl { position: absolute; z-index: 500; left: 12px; top: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; pointer-events: none; }
+#tl > * { pointer-events: auto; } #tl #counter { pointer-events: none; }
+#counter { position: relative; border-radius: 20px; padding: 10px 16px 12px; max-width: 300px; }
 #counter .big { font-size: 64px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 #counter .lbl { color: var(--ink-2); font-size: 14px; margin-top: 4px; } #counter b { color: var(--ink); }
 
@@ -171,7 +172,7 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
   :root { --bar-h: 162px; }
   .topbar { flex-wrap: nowrap; }
   .topbar .brand .sub, .topbar .topnav-link[aria-current] { display: none; }
-  #counter { left: 8px; top: 8px; padding: 8px 12px; max-width: 62vw; } #counter .big { font-size: 38px; } #counter .lbl { font-size: 12px; }
+  #tl { left: 8px; top: 8px; } #counter { padding: 8px 12px; max-width: 62vw; } #counter .big { font-size: 38px; } #counter .lbl { font-size: 12px; }
   #zoom { display: none; }
   #bar { left: 0; right: 0; bottom: 0; border-radius: 22px 22px 0 0; grid-template-columns: 1fr; gap: 8px; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
   #bar .time { flex-wrap: wrap; } #bar .lcol, #bar .ctl { display: contents; } #bar .chartwrap { flex: 1; height: 60px; min-height: 0; order: 0; } #bar .lcol .legend-inline { display: flex; order: 5; flex: 1 1 100%; flex-direction: row; flex-wrap: wrap; gap: 1px 9px; } #bar .attr { grid-column: 1; text-align: left; }
