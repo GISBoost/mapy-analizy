@@ -19,7 +19,7 @@ html, body { margin: 0; padding: 0; }
 body { background: #121418; color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
   display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
 :root[data-theme="light"] body { background: #e8eaee; }
-#stage { position: relative; flex: 1; min-height: 0; }
+#stage { position: relative; flex: 1; min-height: 0; overflow: clip; }  /* the closed report slides off-screen; without clipping phones widen the page and show a black strip */
 #map { position: absolute; inset: 0; background: #121418; }
 :root[data-theme="light"] #map { background: #e8eaee; }
 .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { display: none; }
