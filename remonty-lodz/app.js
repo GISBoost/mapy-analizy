@@ -35,7 +35,7 @@
   const isPhone = () => matchMedia("(max-width: 760px)").matches;
   const isDark = () => document.documentElement.getAttribute("data-theme") !== "light";
 
-  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, imp: new Set(Object.keys(IMP)), color: "status", metric: "roboty", playing: null, speed: 0, card: null };
+  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, imp: new Set(Object.keys(IMP)), color: "status", metric: "roboty", playing: null, speed: 0, card: null, rep: true };
   let D, map, roczne, weekly = [], utrWeekly = [], osmY = {}, osmDay = new Map();
   const osmWorks = (y) => (osmY[y] || {}).roboty || 0;
 
@@ -384,7 +384,7 @@
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
     if (state.imp.size) h += `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i class="ring" style="background:${c}"></i>`).join("")}utrudnienia w ruchu (kolory jak w raporcie)</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
-    if (repOn) h += `<span><i style="background:${REP_COLOR}"></i>zgłoszenia mieszkańców (zatwierdzone)</span><span><i style="background:${REP_PENDING};opacity:.55"></i>zgłoszone, czekają na weryfikację</span>`;
+    if (repOn && state.rep) h += `<span><i style="background:${REP_COLOR}"></i>zgłoszenia mieszkańców (zatwierdzone)</span><span><i style="background:${REP_PENDING};opacity:.55"></i>zgłoszone, czekają na weryfikację</span>`;
     $("legend").innerHTML = h;
     $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`
       + `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i style="background:${c};opacity:.6;margin-right:1px"></i>`).join("")}utrudnienia (MPK 2019–2024, lodz.pl od 2025)</span>`;
@@ -420,7 +420,7 @@
     const end = r.ends_on || "9999-12-31", y = state.year || state.day.slice(0, 4);
     return state.view === "dzien" ? r.starts_on <= state.day && state.day <= end : state.view === "rok" ? r.starts_on <= y + "-12-31" && end >= y + "-01-01" : true;
   };
-  const repData = () => ({ type: "FeatureCollection", features: reps.filter(repLit).map((r) => ({ type: "Feature", properties: { id: r.id, st: r.status }, geometry: { type: "Point", coordinates: [r.lng, r.lat] } })) });
+  const repData = () => ({ type: "FeatureCollection", features: reps.filter((r) => state.rep && repLit(r)).map((r) => ({ type: "Feature", properties: { id: r.id, st: r.status }, geometry: { type: "Point", coordinates: [r.lng, r.lat] } })) });
   function say(msg, ms = 4500) {  // hint / toast line; ms = 0 keeps it until the next call
     clearTimeout(toastT);
     $("rhintTx").textContent = msg; $("rhint").hidden = !msg;
@@ -525,10 +525,16 @@
 
     paintView = seg($("viewSeg"), [["dzien", "W trakcie danego dnia"], ["rok", "Rok"], ["wszystko", "Wszystkie"]], () => state.view, (v) => { state.view = v; if (v !== "rok") state.year = null; });
     seg($("colorSeg"), [["status", "Status"], ["rok", "Rok"]], () => state.color, (v) => { state.color = v; });
-    $("srcChips").innerHTML = Object.entries(SRC).map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="true">${l}</button>`).join("") + `<button type="button" data-osm="1" aria-pressed="true" title="Odcinki oznaczone w OpenStreetMap jako droga w budowie, przycięte do granicy Łodzi">OSM: w budowie</button>`;
+    $("srcChips").innerHTML = Object.entries(SRC).map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="true">${l}</button>`).join("") + `<button type="button" data-osm="1" aria-pressed="true" title="Odcinki oznaczone w OpenStreetMap jako droga w budowie, przycięte do granicy Łodzi">OSM: w budowie</button>`
+      + `<button type="button" data-utr="1" aria-pressed="true" title="Komunikaty o utrudnieniach: lodz.pl/remonty od 2025, MPK 2019–2024">Utrudnienia (lodz.pl, MPK)</button>`
+      + (repOn ? `<button type="button" data-rep="1" aria-pressed="true" title="Zgłoszenia mieszkańców (zatwierdzone i czekające na weryfikację)">Zgłoszenia mieszkańców</button>` : "");
     $("srcChips").addEventListener("click", (e) => {
       const o = e.target.closest("button[data-osm]");
       if (o) { state.osm = !state.osm; o.setAttribute("aria-pressed", String(state.osm)); return update(); }
+      const ut = e.target.closest("button[data-utr]");  // master switch for all impact groups
+      if (ut) { state.imp = state.imp.size ? new Set() : new Set(Object.keys(IMP)); ut.setAttribute("aria-pressed", String(!!state.imp.size)); buildWeekly(); drawChart(); return update(); }
+      const rp = e.target.closest("button[data-rep]");
+      if (rp) { state.rep = !state.rep; rp.setAttribute("aria-pressed", String(state.rep)); return update(); }
       const b = e.target.closest("button[data-k]"); if (!b) return;
       state.src.has(b.dataset.k) ? state.src.delete(b.dataset.k) : state.src.add(b.dataset.k);
       b.setAttribute("aria-pressed", String(state.src.has(b.dataset.k)));
@@ -538,7 +544,7 @@
       .map((d) => `<li><b>${d.okres}:</b> ${d.wartosc} ${d.jednostka} — ${d.wskaznik.toLowerCase()} <a href="${d.zrodlo_url}" target="_blank" rel="noopener">↗</a></li>`).join("");
     compare();
     $("impChips").addEventListener("click", (e) => { const b = e.target.closest("button[data-g]"); if (!b) return;
-      state.imp.has(b.dataset.g) ? state.imp.delete(b.dataset.g) : state.imp.add(b.dataset.g); buildWeekly(); drawChart(); update(); });
+      state.imp.has(b.dataset.g) ? state.imp.delete(b.dataset.g) : state.imp.add(b.dataset.g); $("srcChips").querySelector("[data-utr]").setAttribute("aria-pressed", String(!!state.imp.size)); buildWeekly(); drawChart(); update(); });
     $("utrAll").addEventListener("click", () => { state.view = "wszystko"; state.year = null; paintView(); update(); });
     $("utrNoGeo").addEventListener("click", (e) => { const b = e.target.closest("[data-utr]"); if (b) openUtrCard(b.dataset.utr, map ? map.getCenter() : [19.46, 51.76]); });
 
