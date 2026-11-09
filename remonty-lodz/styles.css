@@ -86,11 +86,11 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
 .bars { display: flex; align-items: flex-end; gap: 10px; height: 230px; }
 .bar { all: unset; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
 .bar .track { width: 100%; flex: 1 1 0; min-height: 0; position: relative; margin: 6px 0 2px; }
-@media (min-width: 761px) { .bar .fill, .bar .osm { position: absolute; bottom: 0; } .bar .fill { left: 0; width: 54%; } .bar .osm { right: 0; } }
+@media (min-width: 761px) { .bar .fill, .bar .osm, .bar .utr { position: absolute; bottom: 0; } .bar .fill { left: 0; width: 44%; } .bar .osm { left: 47%; } .bar .utr { right: 0; } }
 .bar .fill { height: var(--p); min-height: 2px; border-radius: 5px 5px 2px 2px; overflow: hidden; display: flex; flex-direction: column-reverse; transition: height .4s ease, width .4s ease, opacity .2s; }
 .bar .fill i { display: block; min-height: 1px; }  /* stacked segments, colours from the map legend */
 .bar.nodata .fill { background: repeating-linear-gradient(45deg, var(--fill-active) 0 3px, transparent 3px 6px); }
-.bar .osm { width: 42%; flex: none; height: var(--o, 0%); min-height: 0; background: #bf5af2; border-radius: 4px 4px 2px 2px; transition: height .4s ease; }
+.bar .osm { width: 25%; flex: none; height: var(--o, 0%); min-height: 0; background: #bf5af2; border-radius: 4px 4px 2px 2px; transition: height .4s ease; }
 .bar .v { min-height: 2.1em; font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; line-height: 1.05; }
 .bar .v small { display: block; font-size: 0.62rem; color: #bf5af2; font-weight: 700; }
 .bar .y { font-size: 0.68rem; color: var(--ink-2); }
@@ -194,3 +194,15 @@ body:not(.report-closed) #reportBtn { opacity: 0; pointer-events: none; }
   .cmp { grid-template-columns: 1fr; }
   #card { left: 8px !important; right: 8px; width: auto; top: auto !important; bottom: calc(var(--bar-h) + 50px); }
 }
+
+/* traffic restrictions (utrudnienia) */
+.chips i.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: 0; }
+.chips small { opacity: 0.7; font-weight: 500; }
+.legend i.ring, .legend-inline i.ring { box-shadow: 0 0 0 1.5px var(--ink); }
+.utrlist { margin-top: 6px; font-size: 0.74rem; color: var(--ink-2); }
+.utrlist summary { cursor: pointer; }
+.utrlist ul { margin: 4px 0 0; padding-left: 16px; }
+.bar .utr { width: 25%; flex: none; height: var(--u, 0%); min-height: 0; background: #ff375f; border-radius: 4px 4px 2px 2px; transition: height .4s ease; }
+.bar .v small.u { color: #ff375f; }
+.bars.sel .bar:not([aria-pressed="true"]) .utr, .bar.future .utr { opacity: .35; }
+@media (max-width: 760px) { .bar .utr { display: none; } }

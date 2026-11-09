@@ -2,7 +2,7 @@
 // Road works in Lodz: map + time scrubber + report. Data: data/remonty.json (remonty/pipeline/e8_web_export.py).
 (() => {
   const $ = (id) => document.getElementById(id);
-  const T0 = "2021-01-01", T1 = "2026-11-07", BILET_END = "2024-12-31", OSM_COLOR = "#bf5af2";
+  const T0 = "2021-01-01", T1 = "2026-11-09", BILET_END = "2024-12-31", OSM_COLOR = "#bf5af2";  // T1: lodz.pl restrictions snapshot (9.11); BZP data itself ends 7.11
   const DAY = 864e5, t = (d) => Date.parse(d + "T00:00:00Z"), iso = (ms) => new Date(ms).toISOString().slice(0, 10);
   const SPAN = (t(T1) - t(T0)) / DAY;
   // OSM classes (e10_osm_balance.py): x = only OSM (in the balance), p = confirmed by city data, u = unnamed (not counted)
@@ -12,6 +12,21 @@
   const ST_PL = { plan: "plan zamówień (BIP)", ogloszone: "przetarg ogłoszony", udzielone: "umowa zawarta", wykonane: "umowa wykonana" };
   const YC = { 2017: "#8e8e93", 2019: "#8e8e93", 2020: "#8e8e93", 2021: "#5e5ce6", 2022: "#0a84ff", 2023: "#64d2ff", 2024: "#30d158", 2025: "#ffd60a", 2026: "#ff9f0a" };
   const SRC = { plan: "Plany UMŁ (BIP)", bzp_zim: "Przetargi ZIM", bzp_zdit: "Przetargi ZDiT", bzp_uml: "Przetargi UMŁ" };
+  // traffic restrictions (remonty/pipeline/e11_lodzpl.py): impact groups shown as filter chips, own palette
+  const IMP = {
+    czesciowe: ["Częściowe zajęcie", "#ff375f", ["one_lane_closed", "one_lane_open", "lane_narrowing"]],
+    wahadlo: ["Ruch wahadłowy", "#ff8fab", ["alternating_traffic"]],
+    kierunek: ["Jeden kierunek / zakaz skrętu", "#ac8e68", ["one_direction_only", "turn_ban"]],
+    utrzymany: ["Ruch utrzymany", "#66d4cf", ["both_directions_maintained", "temporary_carriageway", "no_impact"]],
+    zamkniecie: ["Zamknięcie / tylko dojazd", "#c1121f", ["full_closure", "local_access_only"]],
+    nieustalone: ["Nieustalone", "#8e8e93", ["unknown"]],
+  };
+  const IMP_PL = { full_closure: "pełne zamknięcie", one_lane_closed: "zajęty jeden pas", one_lane_open: "przejazd jednym pasem", lane_narrowing: "zwężenie (liczba pasów zmienna lub nieznana)",
+    alternating_traffic: "ruch wahadłowy", one_direction_only: "ruch tylko w jednym kierunku", both_directions_maintained: "ruch w obu kierunkach utrzymany", temporary_carriageway: "jezdnia tymczasowa",
+    local_access_only: "zamknięte, tylko wjazdy docelowe", turn_ban: "zakaz skrętu", no_impact: "brak utrudnień", unknown: "nieustalone (np. „prace pod ruchem”)" };
+  const impGroup = (k) => Object.keys(IMP).find((g) => IMP[g][2].includes(k)) || "nieustalone";
+  const PREC_PL = { approximate: "około", month: "miesiąc", season: "pora roku", year: "rok" };
+  const STAT_PL = { planned: "planowane", observed: "zaobserwowane", actual: "faktyczne", cancelled: "odwołane" };
   const SPEEDS = [[7, "1 tydz."], [1, "1 dzień"], [30, "1 mies."]];
   const YEARS = ["2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026"];
   const METRICS = [["roboty", "Roboty"], ["dni_ge1", "Dni ≥1"], ["dni_ge3", "≥3"], ["dni_ge5", "≥5"]];
@@ -20,13 +35,18 @@
   const isPhone = () => matchMedia("(max-width: 760px)").matches;
   const isDark = () => document.documentElement.getAttribute("data-theme") !== "light";
 
-  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, color: "status", metric: "roboty", playing: null, speed: 0, card: null };
-  let D, map, roczne, weekly = [], osmY = {}, osmDay = new Map();
+  const state = { day: "2022-06-15", view: "dzien", year: null, src: new Set(Object.keys(SRC)), osm: true, imp: new Set(Object.keys(IMP)), color: "status", metric: "roboty", playing: null, speed: 0, card: null };
+  let D, map, roczne, weekly = [], utrWeekly = [], osmY = {}, osmDay = new Map();
   const osmWorks = (y) => (osmY[y] || {}).roboty || 0;
 
   const shown = (i) => state.src.has(i.zrodlo);
   const activeOn = (i, d) => i.od && i.od <= d && d <= i.do;
-  const lit = (i) => state.view === "dzien" ? activeOn(i, state.day) : state.view === "rok" ? i.rok === (state.year || state.day.slice(0, 4)) : true;
+  // "Rok" = works whose contract period overlaps the year (UTRUDNIENIA.md, decision 9); plan items without dates keep their plan year.
+  // i.rok is the procurement year: a 2026 notice can describe works done in 2025.
+  const inYear = (i, y) => i.od ? i.od <= y + "-12-31" && i.do >= y + "-01-01" : i.rok === y;
+  const lit = (i) => state.view === "dzien" ? activeOn(i, state.day) : state.view === "rok" ? inYear(i, state.year || state.day.slice(0, 4)) : true;
+  const utrLit = (u) => { const [s, e] = u.okres, y = state.year || state.day.slice(0, 4);
+    return !s ? state.view === "wszystko" : state.view === "dzien" ? s <= state.day && state.day <= e : state.view === "rok" ? s <= y + "-12-31" && e >= y + "-01-01" : true; };
 
   // ---------- segmented controls ----------
   function seg(el, opts, get, set) {
@@ -50,9 +70,30 @@
       }
       weekly.push([iso(ms), m, sp]);
     }
+    utrWeekly = [];
+    const us = (D.utrudnienia || []).filter((u) => u.okres[0] && state.imp.has(impGroup(u.traffic_impact)));
+    for (let ms = t(T0); ms <= t(T1); ms += 7 * DAY) {
+      let best = {}, bn = 0;
+      for (let k = 0; k < 7; k++) {
+        const d = iso(ms + k * DAY), c = {}; let n = 0;
+        for (const u of us) if (u.okres[0] <= d && d <= u.okres[1]) { n++; const g = impGroup(u.traffic_impact); c[g] = (c[g] || 0) + 1; }
+        if (n > bn) { bn = n; best = c; }
+      }
+      utrWeekly.push([iso(ms), bn, best]);
+    }
   }
   function drawChart() {
-    const mx = Math.max(10, ...weekly.map((w) => w[1])), Y = (n) => 100 - (n / mx) * 94;
+    const mx = Math.max(10, ...weekly.map((w) => w[1]), ...utrWeekly.map((w) => w[1])), Y = (n) => 100 - (n / mx) * 94;
+    // restrictions (lodz.pl, archive from XI 2024): own stack by impact group, translucent, drawn behind the contracts
+    const G = Object.keys(IMP);
+    const utrLayers = G.map((g, gi) => {
+      const top = (w) => G.slice(0, gi + 1).reduce((a, q) => a + (w[2][q] || 0), 0), below = (w) => top(w) - (w[2][g] || 0);
+      if (!utrWeekly.some((w) => w[2][g])) return "";
+      let p = "M0 100";
+      for (const w of utrWeekly) p += `L${X(w[0]).toFixed(1)} ${Y(top(w)).toFixed(1)}`;
+      for (const w of [...utrWeekly].reverse()) p += `L${X(w[0]).toFixed(1)} ${Y(below(w)).toFixed(1)}`;
+      return `<path d="${p}Z" fill="${IMP[g][1]}" fill-opacity=".5" stroke="none"/>`;
+    }).join("");
     // stacked by status, same colours as the map and the yearly bars (bottom layer first)
     const layers = ["wykonane", "udzielone"].map((st, li) => {
       const top = (w) => ["wykonane", "udzielone"].slice(0, li + 1).reduce((a, q) => a + (w[2][q] || 0), 0);
@@ -72,7 +113,7 @@
         <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="var(--gap)" stroke-width="3"/></pattern></defs>
         <rect x="0" y="0" width="${X(BILET_END)}" height="100" fill="var(--bilet)" stroke="none"/>
         <rect x="${X("2026-01-01")}" y="0" width="${1000 - X("2026-01-01")}" height="100" fill="rgba(255,69,58,.2)" stroke="none"/>
-        ${lines}${layers}${osmLine}</svg>
+        ${lines}${utrLayers}${layers}${osmLine}</svg>
       <span class="tag" style="left:4px">wydłużony bilet MPK (do 31.12.2024)</span>
       <span class="tag gap" style="left:${X("2025-01-01") / 10 + 0.5}%">po bilecie</span>
       <span class="tag low" style="left:${X("2026-01-01") / 10 + 0.5}%">mało danych</span>
@@ -120,9 +161,11 @@
       if (i >= 0) vals[i] = D.dzienne.filter(([d, n]) => d.startsWith(cy) && d <= state.day && n >= th).length;
     }
     $("bars").classList.toggle("sel", !!sel);
-    if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span><span class="osm"></span></span><span class="y">${y}</span></button>`).join("");
+    if (!$("bars").children.length) $("bars").innerHTML = YEARS.map((y) => `<button type="button" class="bar ${y >= "2025" ? "po" : ""}" data-y="${y}"><span class="v"></span><span class="track"><span class="fill"></span><span class="osm"></span><span class="utr"></span></span><span class="y">${y}</span></button>`).join("");
     // "Roboty": stacked by status (legend colours) + "only OSM" on top. Day metrics come from BZP contracts only: one colour.
-    const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y)), mxO = Math.max(mx, ...osmV);
+    const osmV = YEARS.map((y) => dayMetric ? 0 : osmWorks(y));
+    const utrV = YEARS.map((y) => dayMetric ? 0 : (D.utrudnienia || []).filter((u) => u.okres[0] && u.okres[0] <= y + "-12-31" && u.okres[1] >= y + "-01-01" && state.imp.has(impGroup(u.traffic_impact))).length);
+    const mxO = Math.max(mx, ...osmV, ...utrV);
     const parts = (y, i) => dayMetric ? [[ST.udzielone, vals[i]]]
       : Object.keys(ST).map((s) => [ST[s], D.items.filter((x) => x.rok === y && x.status === s).length]);
     [...$("bars").children].forEach((b, i) => {
@@ -130,28 +173,30 @@
       b.classList.toggle("nodata", nodata); b.classList.toggle("cur", y === cy); b.classList.toggle("future", !!cy && y > cy);
       b.setAttribute("aria-pressed", String(sel === y));
       b.setAttribute("aria-label", `${y}: ${nodata ? "brak danych" : vals[i]}${osmV[i] ? `, plus ${osmV[i]} tylko OSM` : ""}`);
-      b.title = nodata ? "brak danych" : ""; b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "");
+      b.title = nodata ? "brak danych" : ""; b.querySelector(".v").innerHTML = nodata ? "–" : vals[i] + (osmV[i] ? `<small>+${osmV[i]}</small>` : "") + (utrV[i] ? `<small class="u">${utrV[i]} utr.</small>` : "");
+      b.style.setProperty("--u", (utrV[i] / mxO) * 100 + "%");
       const f = b.querySelector(".fill");
       f.style.setProperty("--p", (nodata ? 100 : (vals[i] / mxO) * 100) + "%");
       b.style.setProperty("--o", (osmV[i] / mxO) * 100 + "%");
       f.innerHTML = nodata ? "" : parts(y, i).filter(([, n]) => n > 0).map(([c, n]) => `<i style="flex:${n};background:${c}"></i>`).join("");
     });
     $("barsLeg").innerHTML = dayMetric ? `<span><i style="background:${ST.udzielone}"></i>umowy BZP (bez podziału na status)</span><span><i class="nd"></i>brak danych (przed 2021 nie ma umów w BZP)</span>`
-      : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (fioletowy słupek obok)</span>`;
+      : Object.keys(ST).map((s) => `<span><i style="background:${ST[s]}"></i>${ST_PL[s]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM (fioletowy słupek obok)</span>`
+        + `<span><i style="background:${IMP.czesciowe[1]}"></i>utrudnienia w ruchu w roku (różowy słupek; lodz.pl od XI 2024, poza bilansem)</span>`;
     $("barsNote").textContent = dayMetric
       ? "Dni w roku, w których trwało co najmniej tyle umów z BZP. Okres umowy to górna granica zajęcia drogi. 2026: do 7 listopada."
-      : "Roboty na jezdniach i torowiskach (plany + przetargi ZDiT, ZIM, UMŁ), bez umów utrzymaniowych. Lata przed 2021 mają tylko plany zamówień, 2026 jest niepełny.";
+      : "Roboty na jezdniach i torowiskach (plany + przetargi ZDiT, ZIM, UMŁ), bez umów utrzymaniowych, wg roku postępowania (metoda bilansu). Mapa w widoku „Rok” liczy umowy trwające w danym roku, więc może pokazać więcej. Lata przed 2021 mają tylko plany zamówień, 2026 jest niepełny.";
   }
   function kpis() {
     const y = state.view === "rok" ? (state.year || state.day.slice(0, 4)) : null, r = y ? roczne[y] : null;
     $("kpiTitle").textContent = y ? `Rok ${y}` : "Wszystkie lata (2017–2026)";
     $("yearClear").hidden = !y;
-    const its = D.items.filter((i) => shown(i) && (!y || i.rok === y));
+    const its = D.items.filter((i) => shown(i) && (!y || inYear(i, y)));
     const val = its.filter((i) => i.zrodlo !== "plan").reduce((s, i) => s + (i.wartosc_zl || 0), 0);
     const tile = (v, tt, w) => `<div><div class="v ${w ? "w" : ""}">${v}</div><div class="t">${tt}</div></div>`;
     const oy = y ? osmY[y] : null, oAll = D.osm_bilans.stats.only_osm_works;
     $("osmLine").innerHTML = `<b>Tylko OSM</b> (nazwane odcinki bez odpowiednika w danych urzędu, poza powyższymi liczbami): ${oy ? `${oy.roboty} robót, ${oy.dni_ge1} dni z ≥1 w trakcie` : `${oAll} robót w latach 2019–2026`}.`;
-    $("kpis").innerHTML = tile(its.length, "robót (wybrane źródła)") + tile(its.filter((i) => i.lat).length, "na mapie")
+    $("kpis").innerHTML = tile(its.length, y ? "robót w trakcie w roku (wg dat umowy)" : "robót (wybrane źródła)") + tile(its.filter((i) => i.lat).length, "na mapie")
       + (r ? tile(r.dni_ge1, "dni z ≥1 w trakcie") + tile(r.dni_ge5, "dni z ≥5 w trakcie", 1) : tile(its.filter((i) => i.od).length, "z datami umowy") + tile(val ? fmtZl(val) : "–", "wartość (BZP)", 1));
   }
   let calKey = "";
@@ -195,6 +240,15 @@
     }
     return [{ type: "FeatureCollection", features: pts.sort((a, b) => a.properties.a - b.properties.a) }, { type: "FeatureCollection", features: fs }];
   }
+  function utrData() {
+    const pts = [], lines = [];
+    for (const u of D.utrudnienia || []) {
+      const g = impGroup(u.traffic_impact); if (!u.geom || !state.imp.has(g)) continue;
+      const f = { type: "Feature", properties: { id: u.id, g, a: utrLit(u) ? 1 : 0 }, geometry: u.geom };
+      (u.geom.type === "Point" ? pts : lines).push(f);
+    }
+    return [{ type: "FeatureCollection", features: pts.sort((a, b) => a.properties.a - b.properties.a) }, { type: "FeatureCollection", features: lines }];
+  }
   function osmData() {
     if (!state.osm) return { type: "FeatureCollection", features: [] };
     const y = state.year || state.day.slice(0, 4);
@@ -214,6 +268,14 @@
     map.setPaintProperty("pts", "circle-stroke-width", ["case", ["==", ["get", "a"], 1], 1.2, 0]);
     map.setPaintProperty("secs", "line-color", ["case", ["==", ["get", "a"], 1], c, dim]);
     map.setPaintProperty("secs", "line-opacity", ["case", ["==", ["get", "a"], 1], 1, 0.5]);
+    const [up, ul] = utrData(); map.getSource("utrp").setData(up); map.getSource("utrl").setData(ul);
+    const ic = ["match", ["get", "g"], ...Object.entries(IMP).flatMap(([k, v]) => [k, v[1]]), "#8e8e93"];
+    map.setPaintProperty("utrp", "circle-color", ["case", ["==", ["get", "a"], 1], ic, dim]);
+    map.setPaintProperty("utrp", "circle-radius", ["case", ["==", ["get", "a"], 1], 6, 2.5]);
+    map.setPaintProperty("utrp", "circle-stroke-width", ["case", ["==", ["get", "a"], 1], 1.2, 0]);
+    map.setPaintProperty("utrl", "line-color", ["case", ["==", ["get", "a"], 1], ic, dim]);
+    map.setPaintProperty("utrl", "line-opacity", ["case", ["==", ["get", "a"], 1], 1, 0.45]);
+    map.setPaintProperty("utrl-case", "line-opacity", ["case", ["==", ["get", "a"], 1], 0.5, 0]);
     map.setPaintProperty("osmb", "line-color", ["match", ["get", "k"], ...Object.entries(OSM_K).flat(), OSM_COLOR]);
     map.setPaintProperty("osmb", "line-opacity", ["match", ["get", "k"], "u", 0.5, 0.9]);
   }
@@ -223,6 +285,7 @@
     set("raster-brightness-min", dark ? 0.86 : 0); set("raster-brightness-max", dark ? 0.04 : 1);
     set("raster-hue-rotate", dark ? 180 : 0); set("raster-saturation", dark ? -0.7 : -0.3); set("raster-contrast", dark ? -0.1 : 0);
     map.setPaintProperty("pts", "circle-stroke-color", dark ? "rgba(0,0,0,.6)" : "#fff");
+    map.setPaintProperty("utrp", "circle-stroke-color", dark ? "#fff" : "#1c1c1e");
   }
 
   // ---------- record card ----------
@@ -246,12 +309,45 @@
       <div class="opis">${i.opis || "–"}</div>
       <dl><dt>Status</dt><dd>${ST_PL[i.status]}</dd>
         <dt>Umowa</dt><dd>${i.od ? fmtDate(i.od) + " → " + fmtDate(i.do) : "brak dat (plan: rok " + (i.rok || "?") + ")"}</dd>
+        ${i.od && i.rok ? `<dt>Rok postępowania</dt><dd>${i.rok}</dd>` : ""}
+        ${i.zadanie ? `<dt>Część zamówienia</dt><dd>zadanie ${i.zadanie}: ${i.opis_zadania}${i.id !== i.contract_id ? " (wartość w zadaniu 1)" : ""}</dd>` : ""}
         <dt>Wartość</dt><dd>${i.wartosc_zl ? fmtZl(i.wartosc_zl) + (i.zrodlo === "plan" ? " (szacunek z planu)" : "") : "–"}</dd>
         <dt>Źródło</dt><dd>${SRC[i.zrodlo]}${i.osm ? ` · potwierdzone w OSM (${i.osm} odc.)` : ""}</dd></dl>
       <ul>${src}</ul>`;
     $("card").hidden = false;
     $("cardX").onclick = closeCard;
     placeCard();
+  }
+  const esc = (x) => String(x ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmtPart = (d, prec) => !d ? "?" : d.length === 4 ? d : d.length === 7 ? new Date(t(d + "-01")).toLocaleDateString("pl-PL", { month: "long", year: "numeric", timeZone: "UTC" }) + (prec === "season" ? " (pora roku)" : "") : (prec === "approximate" ? "ok. " : "") + fmtDate(d);
+  function openUtrCard(id, lngLat) {
+    const u = (D.utrudnienia || []).find((x) => x.id === id); if (!u) return;
+    state.card = { id, lngLat };
+    const g = impGroup(u.traffic_impact), rel = [u.od && u.do ? `${u.od} – ${u.do}` : u.od, u.kierunek, u.jezdnia, u.wlot, u.pas && `pas ${u.pas}`].filter(Boolean).map(esc).join(" · ");
+    const lanes = [u.lanes_open != null && `otwarte: ${u.lanes_open}`, u.lanes_closed != null && `zajęte: ${u.lanes_closed}`].filter(Boolean).join(", ");
+    const link = (u.links || []).map((l) => { const i = D.items.find((x) => x.id === l.id); return i ? `<li><button class="linkbtn" type="button" data-item="${esc(i.id)}">Przetarg: ${esc(i.ulica || i.id)}${l.how === "auto" ? " (dopasowany automatycznie: ta sama ulica, nakładające się daty)" : ""}</button></li>` : ""; }).join("");
+    const obs = (u.obserwacje || []).map((o) => `<li><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(u.source || "źródło")}${o.published_at ? " · " + o.published_at : ""}${o.captured_at ? " · pobrano " + o.captured_at.slice(0, 10) : ""}</a></li>`).join("");
+    const geo = { odcinek: "odcinek między skrzyżowaniami", odcinek_punkt: "środek odcinka (przybliżenie)", skrzyzowanie: "skrzyżowanie", ulica: "środek ulicy (przybliżenie)" }[u.geom_typ] || "brak";
+    $("card").innerHTML = `<div class="hd"><span class="dot" style="background:${IMP[g][1]}"></span><b>${esc(u.ulica)}</b><button class="ib sm" id="cardX" type="button" aria-label="Zamknij"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="opis"><b>${IMP_PL[u.traffic_impact] || u.traffic_impact}</b>${u.cytat ? `<br>„${esc(u.cytat)}”` : ""}</div>
+      <dl>${rel ? `<dt>Gdzie</dt><dd>${rel}</dd>` : ""}${lanes ? `<dt>Pasy</dt><dd>${lanes}</dd>` : ""}${u.faza ? `<dt>Etap</dt><dd>${esc(u.faza)}</dd>` : ""}
+        <dt>Termin</dt><dd>${fmtPart(u.date_start, u.start_precision)} → ${fmtPart(u.date_end, u.end_precision)}${STAT_PL[u.date_status] ? ` (${STAT_PL[u.date_status]})` : ""}</dd>
+        <dt>Pewność</dt><dd>${{ high: "wysoka", medium: "średnia", low: "niska" }[u.confidence] || "–"}${u.needs_review ? ` · do weryfikacji: ${esc(u.needs_review)}` : ""}</dd>
+        <dt>Na mapie</dt><dd>${geo}</dd>${u.zakres_prac && u.zakres_prac.length ? `<dt>Prace</dt><dd>${u.zakres_prac.map(esc).join(", ")}</dd>` : ""}</dl>
+      <ul>${obs}${link}</ul>`;
+    $("card").hidden = false; $("cardX").onclick = closeCard;
+    $("card").querySelectorAll("[data-item]").forEach((b) => b.addEventListener("click", () => { const i = D.items.find((x) => x.id === b.dataset.item); openCard(i.id, i.lat ? [i.lon, i.lat] : state.card.lngLat); }));
+    placeCard();
+  }
+  function utrSection() {
+    const all = D.utrudnienia || [], lit = all.filter(utrLit);
+    $("impChips").innerHTML = Object.entries(IMP).map(([k, [l, c]]) => { const n = lit.filter((u) => impGroup(u.traffic_impact) === k).length;
+      return `<button type="button" data-g="${k}" aria-pressed="${state.imp.has(k)}"><i class="dot" style="background:${c}"></i>${l} <small>${n}</small></button>`; }).join("");
+    const cur = all.filter((u) => u.na_stronie).length;
+    $("utrNote").innerHTML = `${lit.length} z ${all.length} utrudnień w wybranym okresie. ${cur} z bieżącej listy <a href="https://lodz.pl/remonty/" target="_blank" rel="noopener">lodz.pl/remonty</a> (stan z 9.11.2026). Wcześniejsze z kopii tej strony w Internet Archive (22 kopie od XI 2024; czytelne karty od 2025) i z ręcznie sprawdzonych komunikatów. Gdy karta nie podaje startu, start to pierwsza kopia z kartą albo szacunek (koniec minus ok. 2,5 mies.). Liczba pasów tylko wtedy, gdy podaje ją źródło. Utrudnienia nie wchodzą do liczby robót ani do bilansu biletu.`;
+    const ng = all.filter((u) => !u.geom);
+    $("utrNoGeoSum").textContent = `Bez miejsca na mapie (${ng.length})`;
+    $("utrNoGeo").innerHTML = ng.map((u) => `<li><button class="linkbtn" type="button" data-utr="${esc(u.id)}">${esc(u.ulica)}</button>: ${IMP_PL[u.traffic_impact] || u.traffic_impact}</li>`).join("");
   }
   function placeCard() {
     if (!state.card || isPhone()) return;
@@ -266,23 +362,25 @@
     const its = D.items.filter(shown);
     if (state.view === "dzien") {
       $("cNum").textContent = its.filter((i) => activeOn(i, state.day)).length;
-      $("cWhat").innerHTML = "umów na roboty drogowe w trakcie" + (state.osm ? `<br>+ ${osmDay.get(state.day) || 0} robót tylko OSM` : ""); $("cDate").textContent = fmtDate(state.day);
+      $("cWhat").innerHTML = "umów na roboty drogowe w trakcie" + (state.osm ? (state.day > "2026-11-07" ? "<br>OSM i BZP: dane do 7.11" : `<br>+ ${osmDay.get(state.day) || 0} robót tylko OSM`) : ""); $("cDate").textContent = fmtDate(state.day);
     } else if (state.view === "rok") {
       const y = state.year || state.day.slice(0, 4);
-      $("cNum").textContent = its.filter((i) => i.rok === y).length;
-      $("cWhat").innerHTML = "robót drogowych w roku" + (state.osm ? `<br>+ ${osmWorks(y)} robót tylko OSM` : ""); $("cDate").textContent = y;
+      $("cNum").textContent = its.filter((i) => inYear(i, y)).length;
+      $("cWhat").innerHTML = "robót drogowych w trakcie w roku" + (state.osm ? `<br>+ ${osmWorks(y)} robót tylko OSM` : ""); $("cDate").textContent = y;
     } else {
       $("cNum").textContent = its.length; $("cWhat").innerHTML = "robót drogowych w bazie" + (state.osm ? `<br>+ ${D.osm_bilans.stats.only_osm_works} robót tylko OSM` : ""); $("cDate").textContent = "2017–2026";
     }
-    moveCursor(); bars(); kpis(); calendar(); paintMap(); legend();
+    moveCursor(); bars(); kpis(); utrSection(); calendar(); paintMap(); legend();
   }
   function legend() {
     let h = state.color === "status"
       ? Object.keys(ST).map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("")
       : ["2021", "2022", "2023", "2024", "2025"].map((y) => `<span><i style="background:${YC[y]}"></i>${y}</span>`).join("") + `<span><i style="background:#8e8e93"></i>inne</span>`;
+    if (state.imp.size) h += `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i class="ring" style="background:${c}"></i>`).join("")}utrudnienia w ruchu (kolory jak w raporcie)</span>`;
     if (state.osm) h += Object.keys(OSM_K).map((k) => `<span><i class="ln" style="background:${OSM_K[k]}"></i>${OSM_PL[k]}</span>`).join("");
     $("legend").innerHTML = h;
-    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`;
+    $("chartLeg").innerHTML = ["wykonane", "udzielone"].map((k) => `<span><i style="background:${ST[k]}"></i>${ST_PL[k]}</span>`).join("") + `<span><i style="background:${OSM_COLOR}"></i>tylko OSM</span>`
+      + `<span>${Object.entries(IMP).filter(([k]) => state.imp.has(k)).map(([, [, c]]) => `<i style="background:${c};opacity:.6;margin-right:1px"></i>`).join("")}utrudnienia (lodz.pl od XI 2024)</span>`;
   }
   let paintView = () => {};
 
@@ -305,7 +403,7 @@
 
   // ---------- init ----------
   async function init() {
-    D = await (await fetch("data/remonty.json?v=16")).json();
+    D = await (await fetch("data/remonty.json?v=18")).json();
     roczne = Object.fromEntries(D.roczne.map((r) => [r.rok, r]));
     osmY = Object.fromEntries(D.osm_bilans.roczne.map((r) => [r.rok, r])); osmDay = new Map(D.osm_bilans.dzienne);
     new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", $("bar").offsetHeight + "px")).observe($("bar"));
@@ -327,6 +425,10 @@
     $("dekl").innerHTML = D.deklaracje.filter((d) => ["d01", "d06", "d11", "d14", "d16"].includes(d.id))
       .map((d) => `<li><b>${d.okres}:</b> ${d.wartosc} ${d.jednostka} — ${d.wskaznik.toLowerCase()} <a href="${d.zrodlo_url}" target="_blank" rel="noopener">↗</a></li>`).join("");
     compare();
+    $("impChips").addEventListener("click", (e) => { const b = e.target.closest("button[data-g]"); if (!b) return;
+      state.imp.has(b.dataset.g) ? state.imp.delete(b.dataset.g) : state.imp.add(b.dataset.g); buildWeekly(); drawChart(); update(); });
+    $("utrAll").addEventListener("click", () => { state.view = "wszystko"; state.year = null; paintView(); update(); });
+    $("utrNoGeo").addEventListener("click", (e) => { const b = e.target.closest("[data-utr]"); if (b) openUtrCard(b.dataset.utr, map ? map.getCenter() : [19.46, 51.76]); });
 
     seg($("metricSeg"), METRICS, () => state.metric, (v) => { state.metric = v; });
     $("bars").addEventListener("click", (e) => { const b = e.target.closest(".bar"); if (!b) return;
@@ -371,16 +473,24 @@
     map.addLayer({ id: "secs", type: "line", source: "secs", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 15, 7] } });
     map.addSource("pts", { type: "geojson", data: pts });
     map.addLayer({ id: "pts", type: "circle", source: "pts", paint: {} });
+    // restrictions on top: lines with a dark casing, points with a contrasting ring, so they read apart from contract dots
+    map.addSource("utrl", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "utrl-case", type: "line", source: "utrl", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#1c1c1e", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 6, 15, 12], "line-opacity": 0.5 } });
+    map.addLayer({ id: "utrl", type: "line", source: "utrl", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3.5, 15, 8] } });
+    map.addSource("utrp", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addLayer({ id: "utrp", type: "circle", source: "utrp", paint: {} });
     basemapTheme();
     // click opens the record; hover only changes the cursor (no tooltip, by design)
     const hit = (p, r = 12) => [[p.x - r, p.y - r], [p.x + r, p.y + r]];  // click tolerance in px around points and lines
     map.on("click", (e) => {
-      const f = map.queryRenderedFeatures(hit(e.point), { layers: ["pts", "secs", "osmb"] })
-        .sort((a, b) => (b.layer.id !== "osmb") - (a.layer.id !== "osmb") || b.properties.a - a.properties.a)[0];
-      if (f && f.layer.id === "osmb") openOsmCard(f.properties, e.lngLat);
+      const pri = (l) => l.startsWith("utr") ? 2 : l !== "osmb" ? 1 : 0;
+      const f = map.queryRenderedFeatures(hit(e.point), { layers: ["utrp", "utrl", "pts", "secs", "osmb"] })
+        .sort((a, b) => (b.properties.a || 0) - (a.properties.a || 0) || pri(b.layer.id) - pri(a.layer.id))[0];
+      if (f && f.layer.id.startsWith("utr")) openUtrCard(f.properties.id, f.geometry.type === "Point" ? f.geometry.coordinates : e.lngLat);
+      else if (f && f.layer.id === "osmb") openOsmCard(f.properties, e.lngLat);
       else if (f) openCard(f.properties.id, f.geometry.type === "Point" ? f.geometry.coordinates : e.lngLat); else closeCard();
     });
-    map.on("mousemove", (e) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(hit(e.point), { layers: ["pts", "secs", "osmb"] }).length ? "pointer" : ""; });
+    map.on("mousemove", (e) => { map.getCanvas().style.cursor = map.queryRenderedFeatures(hit(e.point), { layers: ["utrp", "utrl", "pts", "secs", "osmb"] }).length ? "pointer" : ""; });
     map.on("move", placeCard);
     $("zIn").addEventListener("click", () => map.zoomIn()); $("zOut").addEventListener("click", () => map.zoomOut());
     update();

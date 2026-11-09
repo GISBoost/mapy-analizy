@@ -69,6 +69,13 @@
       <p class="note" id="barsNote"></p>
     </section>
 
+    <section class="sec" id="utrSec">
+      <div class="row"><p class="eyebrow">Utrudnienia w ruchu (komunikaty miasta)</p><button class="linkbtn" id="utrAll" type="button">pokaż wszystkie</button></div>
+      <div class="chips" id="impChips" role="group" aria-label="Wpływ na ruch"></div>
+      <p class="note" id="utrNote"></p>
+      <details class="utrlist"><summary id="utrNoGeoSum">Bez miejsca na mapie</summary><ul id="utrNoGeo"></ul></details>
+    </section>
+
     <section class="sec" id="kpiSec">
       <div class="row"><p class="eyebrow" id="kpiTitle">Wszystkie lata</p><button class="linkbtn" id="yearClear" type="button" hidden>wszystkie lata ×</button></div>
       <div class="kpis" id="kpis"></div>
@@ -89,7 +96,7 @@
     <p class="note"><a href="../badanie-remonty-lodz/">Raport: skąd dane, metoda, ograniczenia →</a></p>
   </aside>
 
-  <div id="card" class="glass" hidden role="dialog" aria-label="Szczegóły roboty"></div>
+  <div id="card" class="glass" hidden role="dialog" aria-label="Szczegóły"></div>
 
   <footer id="bar" class="glass">
     <div class="col time">
