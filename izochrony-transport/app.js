@@ -117,11 +117,13 @@
   let wheelUntil = 0;
   let outsideCoverage = false; // hovering farther than maxHoverDistDegSq from any origin
 
-  // city -> { manifest, boundary, origin, hourPack: { variant: { hour: Promise<Map> } } }
+  // city -> { manifest, boundary, hourPack: { variant: { hour: Promise<Map> } } }
   const cache = {};
+  let packLoading = false;
+  let packFail = false;
 
   function cityCache(city) {
-    if (!cache[city]) cache[city] = { manifest: null, boundary: null, origin: {}, hourPack: {} };
+    if (!cache[city]) cache[city] = { manifest: null, boundary: null, hourPack: {} };
     return cache[city];
   }
 
@@ -135,17 +137,6 @@
     const c = cityCache(city);
     if (!c.boundary) c.boundary = fetch(`data/${city}/boundary.geojson`).then((r) => r.json());
     return c.boundary;
-  }
-
-  function fetchOrigin(city, variant, originId) {
-    const c = cityCache(city);
-    if (!c.origin[variant]) c.origin[variant] = {};
-    if (!c.origin[variant][originId]) {
-      c.origin[variant][originId] = fetch(`data/${city}/${variant}/${originId}.pbf`)
-        .then((r) => r.arrayBuffer())
-        .then((buf) => geobuf.decode(new Pbf(new Uint8Array(buf))));
-    }
-    return c.origin[variant][originId];
   }
 
   function fetchHourPack(city, variant, hour) {
@@ -205,28 +196,32 @@
     const requestedVariant = currentVariant;
     const requestedCity = currentCity;
     const hour = cityManifest.hours[hourIndex];
+    packLoading = true;
+    packFail = false;
+    updateStat();
     const pack = await fetchHourPack(requestedCity, requestedVariant, hour);
     if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant || currentCity !== requestedCity) return;
-    if (pack) {
-      paintSlot(HourPack.lookupOrigin(pack, requestedOriginId));
+    packLoading = false;
+    if (!pack) {
+      packFail = true;
       updateStat();
-      prefetchAdjacentHours();
       return;
     }
-    const fc = await fetchOrigin(requestedCity, requestedVariant, requestedOriginId);
-    if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant || currentCity !== requestedCity) return;
-    const features = fc.features.filter((f) => f.properties.hour === hour);
-    for (const c of CUTOFFS) {
-      const layer = isoLayers[c.min];
-      layer.clearLayers();
-      if (!activeCutoffs.has(c.min)) continue;
-      const feats = features.filter((f) => f.properties.cutoff_min === c.min);
-      if (feats.length) layer.addData({ type: "FeatureCollection", features: feats });
-    }
+    packFail = false;
+    paintSlot(HourPack.lookupOrigin(pack, requestedOriginId));
     updateStat();
+    prefetchAdjacentHours();
   }
 
   function updateStat() {
+    if (packFail) {
+      statlineEl.innerHTML = t("statPackFail");
+      return;
+    }
+    if (packLoading) {
+      statlineEl.innerHTML = t("statLoading");
+      return;
+    }
     if (outsideCoverage) {
       statlineEl.innerHTML = t("statOutsideArea");
       return;
@@ -374,9 +369,8 @@
   async function loadCity(city) {
     currentCity = city;
     const requestedCity = city;
-    // Only one city is ever on screen -- drop decoded origin data for every
-    // other city so touring several cities doesn't accumulate their caches
-    // forever (a full city's worth of hovered origins is tens-hundreds of MB).
+    // Only one city is ever on screen -- drop decoded hour packs for every
+    // other city so touring several cities doesn't keep every pack in RAM.
     for (const k of Object.keys(cache)) if (k !== city) delete cache[k];
     const [cm, boundary] = await Promise.all([fetchCityManifest(city), fetchCityBoundary(city)]);
     if (currentCity !== requestedCity) return; // superseded by a later tab click
@@ -399,9 +393,17 @@
     for (const c of CUTOFFS) isoLayers[c.min].clearLayers();
 
     map.fitBounds(cityManifest.bounds, { padding: [20, 20] });
-    fetchHourPack(city, currentVariant, cityManifest.hours[hourIndex]);
-    prefetchAdjacentHours();
+    packLoading = true;
+    packFail = false;
     updateStat();
+    const hour = cityManifest.hours[hourIndex];
+    fetchHourPack(city, currentVariant, hour).then((pack) => {
+      if (currentCity !== requestedCity) return;
+      packLoading = false;
+      packFail = !pack;
+      updateStat();
+      if (pack) prefetchAdjacentHours();
+    });
   }
 
   hourSliderEl.addEventListener("input", () => {

@@ -43,9 +43,10 @@ obcięta do 6 miejsc po przecinku — ~10cm, więcej niż potrzeba przy siatce
 siatki heksagonalnej tego miasta. `data/<city>/{rt,static}/hours/<hour>.pbf` — jedna paczka na miasto, wariant
 i godzinę (geobuf, 3 progi × wszystkie origins). Hover czyta paczkę z pamięci;
 fetch jest przy starcie, zmianie godziny, wariantu albo miasta. Sąsiednie
-godziny dogrzewane w tle. Stare `data/<city>/{rt,static}/{origin_id}.pbf`
-zostają jako fallback, gdy paczki godzinowej nie ma. Budowa paczek:
-`node izochrony-transport/build_hour_packs.mjs` (opcjonalnie lista city id).
+godziny dogrzewane w tle. Mapa i granica rysują się od razu; izochrona
+czeka na paczkę (status „Wczytuję zasięgi…”). Per-origin `.pbf` nie wchodzi
+do repo. Paczki w pipeline easy-R5: `node geobuf_pack/pack_hours.js <city> <variant>`
+po `convert.js`. Lokalnie z originów: `node izochrony-transport/build_hour_packs.mjs`.
 
 Hover bierze ostatni punkt kursora raz na klatkę (`requestAnimationFrame`).
 Zimny heks nie robi już round-tripu na origin. TTFB ~150 ms na GitHub Pages
