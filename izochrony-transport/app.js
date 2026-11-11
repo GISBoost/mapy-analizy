@@ -16,11 +16,15 @@
 
   const VARIANT_KEYS = { rt: "variantRt", static: "variantStatic" };
 
-  // Warm the adjacent hour packs so moving the time slider hits cache.
-  // Origin-neighbor .pbf prefetch is gone: hover reads the current hour pack.
+  // Hour packs load one at a time, and only while a point is pinned: the
+  // hand-to-slider window. Hover reads the current pack and does not walk
+  // the day. Origin-neighbor .pbf prefetch is gone.
   // Wheel zoom would otherwise pick a new origin every frame; pause preview
   // the same 180 ms as dijkstra-paths.
   const WHEEL_PAUSE_MS = 180;
+  // Slider drags must not decode or redraw on every notch. The label updates
+  // immediately; polygons and the next queued pack wait until the thumb rests.
+  const SLIDER_SETTLE_MS = 150;
 
   // Every origin in the grid has complete data (checked directly: all 1479
   // Lodz origin files carry exactly 17 hours x 3 cutoffs, zero gaps) -- so
@@ -121,6 +125,12 @@
   const cache = {};
   let packLoading = false;
   let packFail = false;
+  let drawnHour = null; // clock hour currently on the map; null until the first paint
+  let skippedHours = new Set(); // failed this pass; slider landing on one retries it
+  let queueGen = 0;
+  let queuePumping = false;
+  let sliderTimer = 0;
+  let sliderMoving = false;
 
   function cityCache(city) {
     if (!cache[city]) cache[city] = { manifest: null, boundary: null, hourPack: {} };
@@ -139,28 +149,48 @@
     return c.boundary;
   }
 
+  function packSlot(city, variant, hour) {
+    const c = cache[city];
+    return c && c.hourPack[variant] && c.hourPack[variant][hour];
+  }
+
+  function packReady(city, variant, hour) {
+    const slot = packSlot(city, variant, hour);
+    return !!(slot && slot.pack);
+  }
+
   function fetchHourPack(city, variant, hour) {
     const c = cityCache(city);
     if (!c.hourPack[variant]) c.hourPack[variant] = {};
-    if (!c.hourPack[variant][hour]) {
-      c.hourPack[variant][hour] = fetch(HourPack.packUrl(city, variant, hour))
+    const slots = c.hourPack[variant];
+    let slot = slots[hour];
+    if (!slot) {
+      slot = slots[hour] = {};
+      slot.promise = fetch(HourPack.packUrl(city, variant, hour))
         .then((r) => {
           if (!r.ok) throw new Error("hour pack " + r.status);
           return r.arrayBuffer();
         })
-        .then((buf) => HourPack.indexHourPack(geobuf.decode(new Pbf(new Uint8Array(buf)))))
-        .catch(() => null);
+        .then((buf) => {
+          const pack = HourPack.indexHourPack(geobuf.decode(new Pbf(new Uint8Array(buf))));
+          if (!pack) {
+            delete slots[hour];
+            return null;
+          }
+          slot.pack = pack;
+          return pack;
+        })
+        .catch(() => {
+          delete slots[hour];
+          return null;
+        });
     }
-    return c.hourPack[variant][hour];
+    return slot.promise;
   }
 
-  function prefetchAdjacentHours() {
-    if (!cityManifest) return;
-    const hours = cityManifest.hours;
-    for (const d of [-1, 1]) {
-      const h = hours[hourIndex + d];
-      if (h != null) fetchHourPack(currentCity, currentVariant, h);
-    }
+  function dropVariantPacks(city, variant) {
+    const c = cache[city];
+    if (c && c.hourPack) delete c.hourPack[variant];
   }
 
   function nearestOrigins(latlng, n) {
@@ -190,27 +220,113 @@
     }
   }
 
-  async function renderCurrent() {
-    if (!displayOriginId) return;
-    const requestedOriginId = displayOriginId;
-    const requestedVariant = currentVariant;
-    const requestedCity = currentCity;
-    const hour = cityManifest.hours[hourIndex];
-    packLoading = true;
+  function paintOrigin(pack, originId, hour) {
+    paintSlot(HourPack.lookupOrigin(pack, originId));
+    drawnHour = hour;
+    packLoading = false;
     packFail = false;
     updateStat();
-    const pack = await fetchHourPack(requestedCity, requestedVariant, hour);
-    if (displayOriginId !== requestedOriginId || currentVariant !== requestedVariant || currentCity !== requestedCity) return;
+  }
+
+  function notePackFail(hour) {
+    skippedHours.add(hour);
     packLoading = false;
-    if (!pack) {
-      packFail = true;
-      updateStat();
+    packFail = true;
+    updateStat();
+  }
+
+  // Polygons stay until this hour's pack arrives. The loader is only for an empty map.
+  function showHour(originId) {
+    if (!originId || !cityManifest) return;
+    const hour = cityManifest.hours[hourIndex];
+    const city = currentCity;
+    const variant = currentVariant;
+    if (packReady(city, variant, hour)) {
+      paintOrigin(packSlot(city, variant, hour).pack, originId, hour);
       return;
     }
     packFail = false;
-    paintSlot(HourPack.lookupOrigin(pack, requestedOriginId));
+    packLoading = drawnHour == null;
     updateStat();
-    prefetchAdjacentHours();
+    // Bytes for the visible hour are not here yet. While pinned, the queue
+    // is already fetching that hour; it paints when the bytes arrive.
+    if (pinnedOriginId) return;
+    const requestedOrigin = originId;
+    fetchHourPack(city, variant, hour).then((pack) => {
+      if (currentCity !== city || currentVariant !== variant || !cityManifest) return;
+      if (cityManifest.hours[hourIndex] !== hour || displayOriginId !== requestedOrigin) return;
+      if (!pack) {
+        notePackFail(hour);
+        return;
+      }
+      paintOrigin(pack, requestedOrigin, hour);
+    });
+  }
+
+  function cancelSliderSettle() {
+    sliderMoving = false;
+    clearTimeout(sliderTimer);
+    sliderTimer = 0;
+  }
+
+  function settleSlider() {
+    sliderMoving = false;
+    sliderTimer = 0;
+    if (!cityManifest) return;
+    const hour = cityManifest.hours[hourIndex];
+    skippedHours.delete(hour);
+    if (displayOriginId) showHour(displayOriginId);
+    else if (!pinnedOriginId) fetchHourPack(currentCity, currentVariant, hour);
+    if (pinnedOriginId) recenterQueue();
+  }
+
+  function stopHourQueue() {
+    queueGen++;
+  }
+
+  function kickHourQueue() {
+    if (!pinnedOriginId || !cityManifest || queuePumping) return;
+    queuePumping = true;
+    const gen = queueGen;
+    pumpHourQueue(gen);
+  }
+
+  function recenterQueue() {
+    queueGen++;
+    kickHourQueue();
+  }
+
+  async function pumpHourQueue(gen) {
+    try {
+      while (pinnedOriginId && gen === queueGen && cityManifest) {
+        const hours = cityManifest.hours;
+        const city = currentCity;
+        const variant = currentVariant;
+        const hour = HourQueue.nextHour(
+          hours,
+          hourIndex,
+          (h) => packReady(city, variant, h),
+          (h) => skippedHours.has(h)
+        );
+        if (hour == null) return;
+        const pack = await fetchHourPack(city, variant, hour);
+        if (!pinnedOriginId || currentCity !== city || currentVariant !== variant || !cityManifest) return;
+        const stillThisWalk = gen === queueGen && !sliderMoving;
+        if (!pack) {
+          skippedHours.add(hour);
+          if (stillThisWalk && cityManifest.hours[hourIndex] === hour) notePackFail(hour);
+          if (!stillThisWalk) return;
+          continue;
+        }
+        if (!sliderMoving && cityManifest.hours[hourIndex] === hour && displayOriginId) {
+          paintOrigin(pack, displayOriginId, hour);
+        }
+        if (!stillThisWalk) return;
+      }
+    } finally {
+      queuePumping = false;
+      if (pinnedOriginId && gen !== queueGen && !sliderMoving) kickHourQueue();
+    }
   }
 
   function updateStat() {
@@ -247,11 +363,13 @@
     pinMarker = L.circleMarker([origin.lat, origin.lon], {
       radius: 6, color: cssVar("--pin"), weight: 2, fillColor: cssVar("--pin"), fillOpacity: 0.9,
     }).addTo(map);
-    renderCurrent();
+    showHour(origin.id);
+    recenterQueue();
   }
 
   function unpin() {
     pinnedOriginId = null;
+    stopHourQueue();
     if (pinMarker) { map.removeLayer(pinMarker); pinMarker = null; }
     updateStat();
   }
@@ -274,13 +392,14 @@
     if (next.action === "outside") {
       outsideCoverage = true;
       displayOriginId = null;
+      drawnHour = null;
       for (const c of CUTOFFS) isoLayers[c.min].clearLayers();
       updateStat();
       return;
     }
     outsideCoverage = false;
     displayOriginId = next.displayId;
-    renderCurrent();
+    showHour(next.displayId);
   }
 
   function onMapMouseMove(e) {
@@ -332,12 +451,16 @@
       btn.textContent = t(VARIANT_KEYS[v] || v);
       if (v === currentVariant) btn.classList.add("active");
       btn.addEventListener("click", () => {
+        if (v === currentVariant) return;
+        const previous = currentVariant;
         currentVariant = v;
         variantbarEl.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        const hour = cityManifest.hours[hourIndex];
-        fetchHourPack(currentCity, currentVariant, hour);
-        renderCurrent();
+        dropVariantPacks(currentCity, previous);
+        skippedHours = new Set();
+        if (displayOriginId) showHour(displayOriginId);
+        if (pinnedOriginId) recenterQueue();
+        else stopHourQueue();
       });
       variantbarEl.appendChild(btn);
     });
@@ -354,7 +477,10 @@
       cb.checked = activeCutoffs.has(c.min);
       cb.addEventListener("change", () => {
         if (cb.checked) activeCutoffs.add(c.min); else activeCutoffs.delete(c.min);
-        renderCurrent();
+        const hour = cityManifest && cityManifest.hours[hourIndex];
+        if (displayOriginId && hour != null && packReady(currentCity, currentVariant, hour)) {
+          paintOrigin(packSlot(currentCity, currentVariant, hour).pack, displayOriginId, hour);
+        }
       });
       const swatch = document.createElement("span");
       swatch.className = "swatch";
@@ -369,6 +495,12 @@
   async function loadCity(city) {
     currentCity = city;
     const requestedCity = city;
+    cancelSliderSettle();
+    // Drop the pin before touching the queue. A generation bump while the
+    // pin is still set makes the pump restart during the manifest fetch.
+    unpin();
+    skippedHours = new Set();
+    drawnHour = null;
     // Only one city is ever on screen -- drop decoded hour packs for every
     // other city so touring several cities doesn't keep every pack in RAM.
     for (const k of Object.keys(cache)) if (k !== city) delete cache[k];
@@ -402,7 +534,6 @@
       packLoading = false;
       packFail = !pack;
       updateStat();
-      if (pack) prefetchAdjacentHours();
     });
   }
 
@@ -410,7 +541,13 @@
     hourIndex = parseInt(hourSliderEl.value, 10);
     const hour = cityManifest ? cityManifest.hours[hourIndex] : hourIndex;
     hourValEl.textContent = `${String(hour).padStart(2, "0")}:00`;
-    renderCurrent();
+    if (!cityManifest) return;
+    sliderMoving = true;
+    stopHourQueue();
+    packFail = false;
+    if (displayOriginId && drawnHour != null) updateStat();
+    clearTimeout(sliderTimer);
+    sliderTimer = setTimeout(settleSlider, SLIDER_SETTLE_MS);
   });
 
   map.on("mousemove", onMapMouseMove);

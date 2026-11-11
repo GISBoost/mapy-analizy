@@ -41,10 +41,12 @@ obcięta do 6 miejsc po przecinku — ~10cm, więcej niż potrzeba przy siatce
 500 m), godziny, progi cutoff, dostępne warianty (wszystkie 6 miast mają
 `["rt","static"]`), bounds. `data/<city>/boundary.geojson` — dissolved outline
 siatki heksagonalnej tego miasta. `data/<city>/{rt,static}/hours/<hour>.pbf` — jedna paczka na miasto, wariant
-i godzinę (geobuf, 3 progi × wszystkie origins). Hover czyta paczkę z pamięci;
-fetch jest przy starcie, zmianie godziny, wariantu albo miasta. Sąsiednie
-godziny dogrzewane w tle. Mapa i granica rysują się od razu; izochrona
-czeka na paczkę (status „Wczytuję zasięgi…”). Per-origin `.pbf` nie wchodzi
+i godzinę (geobuf, 3 progi × wszystkie origins). Hover czyta paczkę z pamięci.
+Fetch doby startuje po przypięciu pinezki: jedna paczka naraz, najbliższa
+godzinie na suwaku. Suwak zmienia etykietę od razu. Wielokąty ruszają, gdy
+suwak stanie. Bez pinezki pobierana jest tylko ustawiona godzina. Mapa
+i granica rysują się od razu; pierwszy zasięg czeka na paczkę (status
+„Wczytuję zasięgi…”). Per-origin `.pbf` nie wchodzi
 do repo. Paczki w pipeline easy-R5: `node geobuf_pack/pack_hours.js <city> <variant>`
 po `convert.js`. Lokalnie z originów: `node izochrony-transport/build_hour_packs.mjs`.
 
