@@ -131,6 +131,7 @@
   let queuePumping = false;
   let sliderTimer = 0;
   let sliderMoving = false;
+  let warmTimer = 0;
 
   function cityCache(city) {
     if (!cache[city]) cache[city] = { manifest: null, boundary: null, hourPack: {} };
@@ -154,11 +155,12 @@
     return c && c.hourPack[variant] && c.hourPack[variant][hour];
   }
 
-  function packReady(city, variant, hour) {
+  function bytesReady(city, variant, hour) {
     const slot = packSlot(city, variant, hour);
-    return !!(slot && slot.pack);
+    return !!(slot && (slot.buf || slot.pack));
   }
 
+  // Download only. Decoding a whole day of packs on the main thread froze the slider.
   function fetchHourPack(city, variant, hour) {
     const c = cityCache(city);
     if (!c.hourPack[variant]) c.hourPack[variant] = {};
@@ -172,13 +174,8 @@
           return r.arrayBuffer();
         })
         .then((buf) => {
-          const pack = HourPack.indexHourPack(geobuf.decode(new Pbf(new Uint8Array(buf))));
-          if (!pack) {
-            delete slots[hour];
-            return null;
-          }
-          slot.pack = pack;
-          return pack;
+          slot.buf = buf;
+          return slot;
         })
         .catch(() => {
           delete slots[hour];
@@ -186,6 +183,56 @@
         });
     }
     return slot.promise;
+  }
+
+  function decodeHour(city, variant, hour) {
+    const slot = packSlot(city, variant, hour);
+    if (!slot) return null;
+    if (slot.pack) return slot.pack;
+    if (!slot.buf) return null;
+    try {
+      const pack = HourPack.indexHourPack(geobuf.decode(new Pbf(new Uint8Array(slot.buf))));
+      if (!pack) return null;
+      slot.pack = pack;
+      slot.buf = null;
+      return pack;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // One decoded hour ahead of the slider, then yield. A tight loop of every
+  // hour froze the page. Never decoding ahead made every notch slow.
+  function scheduleWarm() {
+    if (warmTimer || sliderMoving || !pinnedOriginId || !cityManifest) return;
+    warmTimer = setTimeout(warmOne, 0);
+  }
+
+  function warmOne() {
+    warmTimer = 0;
+    if (sliderMoving || !pinnedOriginId || !cityManifest) return;
+    const city = currentCity;
+    const variant = currentVariant;
+    const hour = HourQueue.nextHour(
+      cityManifest.hours,
+      hourIndex,
+      (h) => {
+        const slot = packSlot(city, variant, h);
+        return !(slot && slot.buf && !slot.pack);
+      },
+      (h) => skippedHours.has(h)
+    );
+    if (hour == null) return;
+    const pack = decodeHour(city, variant, hour);
+    if (pack && cityManifest.hours[hourIndex] === hour && displayOriginId) {
+      paintOrigin(pack, displayOriginId, hour);
+    }
+    scheduleWarm();
+  }
+
+  function stopWarm() {
+    clearTimeout(warmTimer);
+    warmTimer = 0;
   }
 
   function dropVariantPacks(city, variant) {
@@ -241,8 +288,9 @@
     const hour = cityManifest.hours[hourIndex];
     const city = currentCity;
     const variant = currentVariant;
-    if (packReady(city, variant, hour)) {
-      paintOrigin(packSlot(city, variant, hour).pack, originId, hour);
+    const ready = decodeHour(city, variant, hour);
+    if (ready) {
+      paintOrigin(ready, originId, hour);
       return;
     }
     packFail = false;
@@ -252,9 +300,10 @@
     // is already fetching that hour; it paints when the bytes arrive.
     if (pinnedOriginId) return;
     const requestedOrigin = originId;
-    fetchHourPack(city, variant, hour).then((pack) => {
+    fetchHourPack(city, variant, hour).then((slot) => {
       if (currentCity !== city || currentVariant !== variant || !cityManifest) return;
       if (cityManifest.hours[hourIndex] !== hour || displayOriginId !== requestedOrigin) return;
+      const pack = slot && decodeHour(city, variant, hour);
       if (!pack) {
         notePackFail(hour);
         return;
@@ -277,7 +326,10 @@
     skippedHours.delete(hour);
     if (displayOriginId) showHour(displayOriginId);
     else if (!pinnedOriginId) fetchHourPack(currentCity, currentVariant, hour);
-    if (pinnedOriginId) recenterQueue();
+    if (pinnedOriginId) {
+      recenterQueue();
+      scheduleWarm();
+    }
   }
 
   function stopHourQueue() {
@@ -305,23 +357,25 @@
         const hour = HourQueue.nextHour(
           hours,
           hourIndex,
-          (h) => packReady(city, variant, h),
+          (h) => bytesReady(city, variant, h),
           (h) => skippedHours.has(h)
         );
         if (hour == null) return;
-        const pack = await fetchHourPack(city, variant, hour);
+        const slot = await fetchHourPack(city, variant, hour);
         if (!pinnedOriginId || currentCity !== city || currentVariant !== variant || !cityManifest) return;
-        const stillThisWalk = gen === queueGen && !sliderMoving;
-        if (!pack) {
+        if (!slot) {
           skippedHours.add(hour);
-          if (stillThisWalk && cityManifest.hours[hourIndex] === hour) notePackFail(hour);
-          if (!stillThisWalk) return;
+          if (!sliderMoving && cityManifest.hours[hourIndex] === hour) notePackFail(hour);
+          if (gen !== queueGen) return;
           continue;
         }
         if (!sliderMoving && cityManifest.hours[hourIndex] === hour && displayOriginId) {
-          paintOrigin(pack, displayOriginId, hour);
+          const pack = decodeHour(city, variant, hour);
+          if (pack) paintOrigin(pack, displayOriginId, hour);
+          else notePackFail(hour);
         }
-        if (!stillThisWalk) return;
+        if (!sliderMoving) scheduleWarm();
+        if (gen !== queueGen) return;
       }
     } finally {
       queuePumping = false;
@@ -365,11 +419,13 @@
     }).addTo(map);
     showHour(origin.id);
     recenterQueue();
+    scheduleWarm();
   }
 
   function unpin() {
     pinnedOriginId = null;
     stopHourQueue();
+    stopWarm();
     if (pinMarker) { map.removeLayer(pinMarker); pinMarker = null; }
     updateStat();
   }
@@ -478,8 +534,9 @@
       cb.addEventListener("change", () => {
         if (cb.checked) activeCutoffs.add(c.min); else activeCutoffs.delete(c.min);
         const hour = cityManifest && cityManifest.hours[hourIndex];
-        if (displayOriginId && hour != null && packReady(currentCity, currentVariant, hour)) {
-          paintOrigin(packSlot(currentCity, currentVariant, hour).pack, displayOriginId, hour);
+        if (displayOriginId && hour != null) {
+          const pack = decodeHour(currentCity, currentVariant, hour);
+          if (pack) paintOrigin(pack, displayOriginId, hour);
         }
       });
       const swatch = document.createElement("span");
@@ -529,10 +586,10 @@
     packFail = false;
     updateStat();
     const hour = cityManifest.hours[hourIndex];
-    fetchHourPack(city, currentVariant, hour).then((pack) => {
+    fetchHourPack(city, currentVariant, hour).then((slot) => {
       if (currentCity !== requestedCity) return;
       packLoading = false;
-      packFail = !pack;
+      packFail = !slot;
       updateStat();
     });
   }
@@ -543,7 +600,7 @@
     hourValEl.textContent = `${String(hour).padStart(2, "0")}:00`;
     if (!cityManifest) return;
     sliderMoving = true;
-    stopHourQueue();
+    stopWarm();
     packFail = false;
     if (displayOriginId && drawnHour != null) updateStat();
     clearTimeout(sliderTimer);

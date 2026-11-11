@@ -43,8 +43,9 @@ obcięta do 6 miejsc po przecinku — ~10cm, więcej niż potrzeba przy siatce
 siatki heksagonalnej tego miasta. `data/<city>/{rt,static}/hours/<hour>.pbf` — jedna paczka na miasto, wariant
 i godzinę (geobuf, 3 progi × wszystkie origins). Hover czyta paczkę z pamięci.
 Fetch doby startuje po przypięciu pinezki: jedna paczka naraz, najbliższa
-godzinie na suwaku. Suwak zmienia etykietę od razu. Wielokąty ruszają, gdy
-suwak stanie. Bez pinezki pobierana jest tylko ustawiona godzina. Mapa
+godzinie na suwaku. Kolejka trzyma surowe bajty i dekoduje je po jednej godzinie, od najbliższej,
+z przerwą między nimi. Godzina już zdekodowana rysuje się bez czekania. Suwak zmienia
+etykietę od razu. Wielokąty ruszają, gdy suwak stanie. Bez pinezki pobierana jest tylko ustawiona godzina. Mapa
 i granica rysują się od razu; pierwszy zasięg czeka na paczkę (status
 „Wczytuję zasięgi…”). Per-origin `.pbf` nie wchodzi
 do repo. Paczki w pipeline easy-R5: `node geobuf_pack/pack_hours.js <city> <variant>`
