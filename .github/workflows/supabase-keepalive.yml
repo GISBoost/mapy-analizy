@@ -2,7 +2,8 @@ name: Supabase keep-alive (remonty-lodz)
 
 # Darmowy plan Supabase usypia projekt, gdy przez tydzień baza ma za mało zapytań
 # („kilka zapytań dziennie zwykle wystarcza” wg dokumentacji Supabase).
-# Ten workflow 4 razy na dobę robi zwykły odczyt przez REST API, dokładnie taki jak mapa.
+# Ten workflow co 5 dni robi zwykły odczyt przez REST API, dokładnie taki jak mapa.
+# Jeśli projekt mimo to zaśnie, skróć odstęp (np. "23 6 * * *" = codziennie).
 # Niczego nie zapisuje i nie potrzebuje sekretów: URL i publishable key są publiczne
 # i czytane z remonty-lodz/reports-config.js (jedno źródło prawdy).
 # Gdy projekt już jest uśpiony, zapytanie się nie uda, workflow skończy się błędem,
@@ -10,7 +11,7 @@ name: Supabase keep-alive (remonty-lodz)
 
 on:
   schedule:
-    - cron: "23 */6 * * *"   # co 6 h (UTC)
+    - cron: "23 6 */5 * *"   # 1., 6., 11., 16., 21., 26. i 31. dnia miesiąca, 06:23 UTC; odstęp nigdy > 5 dni
   workflow_dispatch:          # ręczne uruchomienie z zakładki Actions
 
 permissions:
