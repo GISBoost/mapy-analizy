@@ -1,0 +1,49 @@
+name: Supabase keep-alive (remonty-lodz)
+
+# Darmowy plan Supabase usypia projekt, gdy przez tydzień baza ma za mało zapytań
+# („kilka zapytań dziennie zwykle wystarcza” wg dokumentacji Supabase).
+# Ten workflow 4 razy na dobę robi zwykły odczyt przez REST API, dokładnie taki jak mapa.
+# Niczego nie zapisuje i nie potrzebuje sekretów: URL i publishable key są publiczne
+# i czytane z remonty-lodz/reports-config.js (jedno źródło prawdy).
+# Gdy projekt już jest uśpiony, zapytanie się nie uda, workflow skończy się błędem,
+# a GitHub wyśle maila: to sygnał, żeby w Supabase kliknąć „Resume project”.
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"   # co 6 h (UTC)
+  workflow_dispatch:          # ręczne uruchomienie z zakładki Actions
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: remonty-lodz/reports-config.js
+          sparse-checkout-cone-mode: false
+
+      - name: Odczytaj publiczną konfigurację
+        id: cfg
+        run: |
+          node -e '
+            global.window = {};
+            require("./remonty-lodz/reports-config.js");
+            const c = window.REMONTY_REPORTS || {};
+            if (!c.url || !c.key) { console.error("reports-config.js: brak url lub key"); process.exit(1); }
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, `url=${c.url}\nkey=${c.key}\n`);
+          '
+
+      - name: Zapytanie do bazy (SELECT)
+        env:
+          SB_URL: ${{ steps.cfg.outputs.url }}
+          SB_KEY: ${{ steps.cfg.outputs.key }}
+        run: |
+          curl --fail-with-body -sS -m 30 --retry 3 --retry-delay 30 --retry-all-errors \
+            -o resp.json "$SB_URL/rest/v1/remonty_reports?select=id&limit=1" \
+            -H "apikey: $SB_KEY" \
+            || { echo "::error::Supabase nie odpowiada (projekt uśpiony?). Wznów go w Dashboard."; cat resp.json 2>/dev/null; exit 1; }
+          echo "OK: baza odpowiedziała"
