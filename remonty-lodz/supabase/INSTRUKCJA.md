@@ -76,7 +76,11 @@ kolejne zgłoszenia i zatwierdzenia nie wymagają żadnego pushu.
 ## 8. Na co uważać
 
 - **Darmowy plan usypia projekt po ok. tygodniu bez ruchu.** Wtedy mapa nadal działa, ale zgłoszeń nie pobierze
-  ani nie wyśle (formularz pokaże błąd). Wejdź w Dashboard i kliknij **Restore project**, albo rozważ plan płatny.
+  ani nie wyśle (formularz pokaże błąd). Wejdź w Dashboard i kliknij **Resume project**, albo rozważ plan płatny.
+  Zapobiega temu workflow `.github/workflows/supabase-keepalive.yml`: co 5 dni robi zwykły odczyt z bazy
+  (bez sekretów, bez zapisu). Gdy projekt mimo to zaśnie, workflow się wywali i GitHub wyśle maila.
+  Uwaga: GitHub wyłącza zaplanowane workflowy w publicznym repo po 60 dniach bez commitów (przyjdzie mail,
+  włącza się jednym kliknięciem w zakładce **Actions**).
 - **Moderacja** to ręczna zmiana `status` w Table Editor: `approved` (publiczne) lub `rejected` (ukryte). Warto zaglądać
   regularnie. Zgłoszenia `pending` nie wygasają.
 - **Spam**: honeypot zatrzymuje tylko proste boty. Spam nigdy nie jest publiczny, bo wymaga Twojej akceptacji.
